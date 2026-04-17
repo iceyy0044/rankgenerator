@@ -269,7 +269,7 @@ export default function RankTagGenerator() {
         b: Math.round(baseRgb.b * 0.8 + selectedRgb.b * 0.2),
       }
       glyphCtx.globalCompositeOperation = 'source-atop'
-      glyphCtx.fillStyle = `rgba(${mixedRgb.r}, ${mixedRgb.g}, ${mixedRgb.b}, 0.3)` // Use background color with some transparency
+      glyphCtx.fillStyle = `rgba(${mixedRgb.r}, ${mixedRgb.g}, ${mixedRgb.b}, 0.4)` // Use background color with some transparency
       glyphCtx.fillRect(0, CHAR_HEIGHT - 3, CHAR_WIDTH, 3) // Apply to the bottom 2 pixels
 
       // Draw main glyph
