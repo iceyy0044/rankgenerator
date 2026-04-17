@@ -246,10 +246,10 @@ export default function RankTagGenerator() {
       shadowCtx.fillRect(0, 0, CHAR_WIDTH, CHAR_HEIGHT)
 
       // Draw shadow
-      ctx.drawImage(shadowCtx.canvas, cx + 1, textY + 1)
+      ctx.drawImage(shadowCtx.canvas, cx + 1, textY)
 
       // Draw main glyph
-      ctx.drawImage(fontSheet, fontChar.x, fontChar.y, CHAR_WIDTH, CHAR_HEIGHT, cx, textY, CHAR_WIDTH, CHAR_HEIGHT)
+      ctx.drawImage(fontSheet, fontChar.x, fontChar.y, CHAR_WIDTH, CHAR_HEIGHT, cx + 1, textY, CHAR_WIDTH, CHAR_HEIGHT)
     }
 
     // --- 4. Scale the small offscreen canvas up to the large display canvas ---
