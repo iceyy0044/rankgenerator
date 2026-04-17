@@ -175,7 +175,16 @@ export default function RankTagGenerator() {
     if (!canvasRef.current) return
 
     const style = currentStyle
-    const rgb = hexToRgb(color)
+    const selectedRgb = hexToRgb(color)
+    const baseRgb = { r: 205, g: 205, b: 205 } // #CDCDCD
+
+    // Mix the base color with the selected color. 80% base, 20% selected.
+    const mixedRgb = {
+      r: Math.round(baseRgb.r * 0.8 + selectedRgb.r * 0.2),
+      g: Math.round(baseRgb.g * 0.8 + selectedRgb.g * 0.2),
+      b: Math.round(baseRgb.b * 0.8 + selectedRgb.b * 0.2),
+    }
+    
     const displayText = text || " "
 
     // --- 1. Calculate exact integer dimensions for the offscreen canvas ---
@@ -214,17 +223,17 @@ export default function RankTagGenerator() {
 
     // === LAYER 1: Background Tiles (No Overlap) ===
     // Left tile
-    tintImageData(ctx, leftImg, 0, 0, leftW, tileH, rgb)
+    tintImageData(ctx, leftImg, 0, 0, leftW, tileH, mixedRgb)
 
     // Middle tiles
     for (let i = 0; i < charCount; i++) {
       const x = leftW + i * midW
-      tintImageData(ctx, midImg, x, 0, midW, tileH, rgb)
+      tintImageData(ctx, midImg, x, 0, midW, tileH, mixedRgb)
     }
 
     // Right tile
     const rightX = leftW + charCount * midW
-    tintImageData(ctx, rightImg, rightX, 0, rightW, tileH, rgb)
+    tintImageData(ctx, rightImg, rightX, 0, rightW, tileH, mixedRgb)
 
     // === LAYER 2 & 3: Text with Shadow (from Bitmap Font) ===
     for (let i = 0; i < charCount; i++) {
@@ -262,7 +271,7 @@ export default function RankTagGenerator() {
       // This adds a little bit of the background color to the very bottom of the text,
       // making it look more integrated with the tag.
       glyphCtx.globalCompositeOperation = 'source-atop'
-      glyphCtx.fillStyle = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.25)` // Use background color with some transparency
+      glyphCtx.fillStyle = `rgba(${mixedRgb.r}, ${mixedRgb.g}, ${mixedRgb.b}, 0.3)` // Use background color with some transparency
       glyphCtx.fillRect(0, CHAR_HEIGHT - 3, CHAR_WIDTH, 3) // Apply to the bottom 2 pixels
 
       // Draw main glyph
@@ -378,20 +387,25 @@ font_images:
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-semibold text-[#e8d8a8] uppercase tracking-wider">Rank Text</label>
-              <input
-                type="text"
-                value={text}
-                onChange={(e) => {
-                  // Only allow standard A-Z alphabet, uppercase, limit length
-                  const filtered = e.target.value.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 20)
-                  setText(filtered)
-                }}
-                placeholder="ADMIN"
-                className="px-4 py-2.5 rounded-xl bg-[#1e1706] border border-[rgba(120,80,10,0.12)] text-[#fff8e1]
-                  placeholder-[#6b4f1a] text-sm focus:outline-none focus:border-[#f59e0b] focus:ring-1
-                  focus:ring-[rgba(245,158,11,0.14)] transition-all"
-                maxLength={20}
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  value={text}
+                  onChange={(e) => {
+                    // Only allow standard A-Z alphabet, uppercase, limit length
+                    const filtered = e.target.value.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 15)
+                    setText(filtered)
+                  }}
+                  placeholder="ADMIN"
+                  className="w-full px-4 py-2.5 rounded-xl bg-[#1e1706] border border-[rgba(120,80,10,0.12)] text-[#fff8e1]
+                    placeholder-[#6b4f1a] text-sm focus:outline-none focus:border-[#f59e0b] focus:ring-1
+                    focus:ring-[rgba(245,158,11,0.14)] transition-all pr-12"
+                  maxLength={15}
+                />
+                <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
+                  <span className="text-xs text-[#7a869a]">{text.length}/15</span>
+                </div>
+              </div>
               <p className="text-xs text-[#7a869a] mt-1">
                 Allowed characters: ABCDEFGHIJKLMNOPQRSTUVWXYZ
               </p>
@@ -441,7 +455,7 @@ font_images:
               />
               {/* Preset swatches */}
               <div className="flex items-center gap-2 flex-wrap">
-                {["#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#00FFFF", "#FF00FF", "#FFFFFF"].map((c) => (
+                {["#e3e2a0", "#a1d59f", "#f7cfb1", "#DD3838", "#5E719E"].map((c) => (
                   <button
                     key={c}
                     onClick={() => setColor(c)}
@@ -452,6 +466,18 @@ font_images:
                     style={{ backgroundColor: c }}
                   />
                 ))}
+                <button
+                  onClick={() => {
+                    const randomColor = "#" + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
+                    setColor(randomColor);
+                  }}
+                  title="Random Color"
+                  className="w-7 h-7 rounded-lg border-2 border-transparent flex items-center justify-center
+                             bg-gradient-to-br from-red-500 via-yellow-500 to-blue-500
+                             hover:border-[rgba(255,255,255,0.3)] transition-all"
+                >
+                  <span className="iconify w-4 h-4 text-white" data-icon="mdi:dice-5" />
+                </button>
               </div>
             </div>
           </div>
@@ -530,6 +556,20 @@ font_images:
           <pre className="rounded-xl bg-[#0a0d13] border border-[rgba(120,80,10,0.12)] p-4 text-xs font-mono text-[#7a869a] overflow-x-auto leading-relaxed">
             {generateJsonSnippet()}
           </pre>
+          {snippetFormat === "itemsadder" && (
+            <div className="mt-2 text-xs text-[#7a869a] bg-[#0a0d13] border border-[rgba(120,80,10,0.12)] rounded-lg p-3">
+              <p className="font-semibold text-[#e8d8a8]">Place this configuration in:</p>
+              <code className="block bg-black/20 px-2 py-1 rounded-md my-1">plugins/ItemsAdder/contents/[namespace]/configs/prefixes.yml</code>
+              <p>Don't forget to place the exported PNG image in the appropriate textures folder!</p>
+            </div>
+          )}
+          {snippetFormat === "nexo" && (
+            <div className="mt-2 text-xs text-[#7a869a] bg-[#0a0d13] border border-[rgba(120,80,10,0.12)] rounded-lg p-3">
+              <p className="font-semibold text-[#e8d8a8]">Place this configuration in:</p>
+              <code className="block bg-black/20 px-2 py-1 rounded-md my-1">plugins/Nexo/glyphs/[namespace]/configs/prefixes.yml</code>
+              <p>Don't forget to place the exported PNG image in the appropriate textures folder!</p>
+            </div>
+          )}
         </div>
         <footer className="text-center text-sm text-[#7a869a] py-4">
           © {new Date().getFullYear()} Sam's Ranks. All Rights Reserved.
