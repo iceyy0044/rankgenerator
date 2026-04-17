@@ -331,12 +331,9 @@ export default function RankTagGenerator() {
 
     // === LAYER 4 (FINAL): 45° diagonal shading pass across whole tag ===
     //applyDiagonalShading(ctx, 0, 0, totalW, tileH, 0.15)
-<<<<<<< HEAD
 
     // Also generate SVG preview for lossless scaling
     await generateSvgPreview()
-=======
->>>>>>> 7a2198c4cadf20b543370390a0bb223c1e0a4c9d
 
     // === Display copy — upscale with nearest-neighbor for preview ===
     const display = canvasRef.current
