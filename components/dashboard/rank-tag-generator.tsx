@@ -159,29 +159,28 @@ export default function RankTagGenerator() {
     const rgb = hexToRgb(color)
     const displayText = text || " "
 
-    // Tile dimensions — raw native values, no rounding
-    const tileH = Math.round(style.tileHeight * SCALE)
-    const leftW = Math.round(style.leftWidth * SCALE)
-    const rightW = Math.round(style.rightWidth * SCALE)
-    const midW = Math.round(style.middleWidth * SCALE)
+    // --- 1. Calculate exact integer dimensions for the offscreen canvas ---
+    const tileH = style.tileHeight
+    const leftW = style.leftWidth
+    const rightW = style.rightWidth
+    const midW = style.middleWidth
     const charCount = displayText.length
-    // total width exactly integer — no extra padding
-    const totalW = leftW + midW * charCount + rightW + RIGHT_SAFE_PAD
+    // The total width is the sum of all its parts, with no rounding and no extra padding.
+    const totalW = leftW + midW * charCount + rightW
 
-    // Create or reuse offscreen canvas (native resolution — no super-sampling)
+    // --- 2. Create or reuse offscreen canvas at native, unscaled resolution ---
     if (!offscreenRef.current) {
       offscreenRef.current = document.createElement("canvas")
     }
     const off = offscreenRef.current
-  off.width = totalW
+    off.width = totalW
     off.height = tileH
 
     const ctx = off.getContext("2d", { willReadFrequently: true })
     if (!ctx) return
 
-    // Disable ALL smoothing for pixel-perfect output
+    // Disable ALL smoothing for pixel-perfect rendering.
     ctx.imageSmoothingEnabled = false
-  ctx.imageSmoothingQuality = "low"
 
     ctx.clearRect(0, 0, totalW, tileH)
 
@@ -192,79 +191,71 @@ export default function RankTagGenerator() {
       getCachedImage(style.rightUrl),
     ])
 
-    // === LAYER 1: Base background (tinted grayscale tiles) ===
+    // --- 3. Render the tag piece by piece, with correct layering ---
+
+    // === LAYER 1: Background Tiles (No Overlap) ===
+    // Left tile
     tintImageData(ctx, leftImg, 0, 0, leftW, tileH, rgb)
 
+    // Middle tiles
     for (let i = 0; i < charCount; i++) {
-      const x = Math.round(leftW + i * midW)
+      const x = leftW + i * midW
       tintImageData(ctx, midImg, x, 0, midW, tileH, rgb)
     }
 
-    // right tile — positioned immediately after all middle tiles, ensure it renders fully
-  // place right tile at exact integer pixel offset
-  const rightX = leftW + charCount * midW
-    // Verify right tile fits in canvas
-    if (rightX + rightW <= totalW) {
-      tintImageData(ctx, rightImg, rightX, 0, rightW, tileH, rgb)
-    }
+    // Right tile
+    const rightX = leftW + charCount * midW
+    tintImageData(ctx, rightImg, rightX, 0, rightW, tileH, rgb)
 
-    // === LAYER 2 (skipped — merged into LAYER 1 via tinted background) ===
-
-    // === LAYER 3: Text (5px pixel font, render per-character into each mid tile) ===
-    const fontSize = 2.5
+    // === LAYER 2 & 3: Text with Shadow ===
+    const fontSize = 5 // The font is designed for a 5px grid
     ctx.font = `${fontSize}px "${FONT_FAMILY}"`
     ctx.textAlign = "center"
     ctx.textBaseline = "middle"
 
-    // Clip to the middle area where glyphs are allowed
-    ctx.save()
-    ctx.beginPath()
-    ctx.rect(leftW, 0, charCount * midW, tileH)
-    ctx.clip()
-
-    const textY = Math.floor((tileH - fontSize) / 2)
+    // The vertical position to center the 5px font inside the 9px height tile
+    const textY = Math.floor(tileH / 2) + 1
 
     for (let i = 0; i < charCount; i++) {
       const ch = displayText[i]
-      const cx = Math.floor(leftW + i * midW + midW / 2)
+      // Center of each middle tile
+      const cx = leftW + i * midW + Math.floor(midW / 2)
 
-      // shadow (1px down-right)
+      // Shadow (1px down-right, dark)
       ctx.fillStyle = "rgba(0,0,0,0.55)"
-      ctx.fillText(ch, cx + 2, textY + 3)
+      ctx.fillText(ch, cx + 1, textY + 1)
 
-      // main glyph (white)
+      // Main glyph (white)
       ctx.fillStyle = "#ffffff"
-      ctx.fillText(ch, cx + 1, textY + 3)
+      ctx.fillText(ch, cx, textY)
     }
 
-    ctx.restore()
-
-    // === LAYER 4 (FINAL): 45° diagonal shading pass across whole tag ===
-    //applyDiagonalShading(ctx, 0, 0, totalW, tileH, 0.15)
-
-    // === Display copy — upscale with nearest-neighbor for preview ===
+    // --- 4. Scale the small offscreen canvas up to the large display canvas ---
     const display = canvasRef.current
-    const dpr = window.devicePixelRatio ?? 1
-    // Adaptive scaling: ensure minimum 8x on all screens for crisp pixel rendering
-    // Standard (96 DPI): 10x, High-DPI (144+ DPI): 8x, Ultra-high (192+ DPI): 6x
-    const displayScale = dpr <= 1 ? 10 : dpr <= 1.5 ? 9 : dpr <= 2 ? 8 : 6
-    const displayH = tileH * displayScale
+    const displayScale = 12 // Fixed integer scale for a large, crisp preview
     const displayW = totalW * displayScale
+    const displayH = tileH * displayScale
 
-    display.width = displayW * dpr
-    display.height = displayH * dpr
+    // Set the actual size of the canvas element
+    display.width = displayW
+    display.height = displayH
+
+    // The CSS size can be different if needed, but for 1:1 pixel mapping, it should match
     display.style.width = `${displayW}px`
     display.style.height = `${displayH}px`
 
     const dCtx = display.getContext("2d")
     if (!dCtx) return
+
+    // Ensure the display canvas also uses nearest-neighbor
     dCtx.imageSmoothingEnabled = false
-    dCtx.imageSmoothingQuality = "low"
-    dCtx.save()
-    dCtx.scale(dpr, dpr)
-    dCtx.imageSmoothingEnabled = false
-    dCtx.drawImage(off, 0, 0, displayW, displayH)
-    dCtx.restore()
+    dCtx.drawImage(
+      off, // The small, complete offscreen canvas
+      0,
+      0,
+      displayW, // Scale it up to the full size of the display canvas
+      displayH
+    )
   }, [text, color, styleId, fontLoaded, imagesLoaded, currentStyle])
 
   useEffect(() => {
@@ -408,7 +399,8 @@ export default function RankTagGenerator() {
             ) : (
               <canvas
                 ref={canvasRef}
-                style={{ imageRendering: "crisp-edges", borderRadius: 0 }}
+                className="rounded-sm"
+                style={{ imageRendering: "pixelated" }}
               />
             )}
           </div>
