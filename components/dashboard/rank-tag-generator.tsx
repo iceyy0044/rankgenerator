@@ -189,11 +189,15 @@ export default function RankTagGenerator() {
 
     // === LAYER 1: Base background (tinted grayscale tiles) ===
     tintImageData(ctx, leftImg, 0, 0, leftW, tileH, rgb)
+
     for (let i = 0; i < charCount; i++) {
-      tintImageData(ctx, midImg, leftW + i * midW, 0, midW, tileH, rgb)
+      const x = Math.round(leftW + i * midW)
+      tintImageData(ctx, midImg, x, 0, midW, tileH, rgb)
     }
-    // draw right tile slightly inset from the extreme edge so its bevel isn't cut off visually
-    tintImageData(ctx, rightImg, leftW + charCount * midW, 0, rightW, tileH, rgb)
+
+    // right tile (no inset, no bevel hack)
+    const rightX = Math.round(leftW + charCount * midW)
+    tintImageData(ctx, rightImg, rightX, 0, rightW, tileH, rgb)
 
     // === LAYER 2 (skipped — merged into LAYER 1 via tinted background) ===
 
