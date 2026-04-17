@@ -6,6 +6,20 @@ import { RANK_TAG_STYLES, DEFAULT_STYLE_ID, type RankTagStyle } from "@/lib/rank
 const FONT_URL =
   "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/5x5-font-monospaced-0fGxzkqEby3jzE6VeuPUC7wYMuj5oZ.ttf"
 const FONT_FAMILY = "RankFont"
+const FONT_SHEET_URL = "/font_sheet.png"
+
+// --- Bitmap Font Configuration ---
+const FONT_MAP: { [key: string]: { x: number; y: number } } = {
+  A: { x: 0, y: 0 }, B: { x: 8, y: 0 }, C: { x: 16, y: 0 }, D: { x: 24, y: 0 },
+  E: { x: 32, y: 0 }, F: { x: 40, y: 0 }, G: { x: 48, y: 0 }, H: { x: 56, y: 0 },
+  I: { x: 64, y: 0 }, J: { x: 72, y: 0 }, K: { x: 80, y: 0 }, L: { x: 88, y: 0 },
+  M: { x: 96, y: 0 }, N: { x: 104, y: 0 }, O: { x: 112, y: 0 }, P: { x: 120, y: 0 },
+  Q: { x: 0, y: 8 }, R: { x: 8, y: 8 }, S: { x: 16, y: 8 }, T: { x: 24, y: 8 },
+  U: { x: 32, y: 8 }, V: { x: 40, y: 8 }, W: { x: 48, y: 8 }, X: { x: 56, y: 8 },
+  Y: { x: 64, y: 8 }, Z: { x: 72, y: 8 },
+}
+const CHAR_WIDTH = 5
+const CHAR_HEIGHT = 7
 
 // Scale factor for internal rendering precision (render internally at higher res, display at actual size)
 const SCALE = 1 // 1:1 final render size (12px high base)
@@ -112,6 +126,7 @@ export default function RankTagGenerator() {
   const [color, setColor] = useState("#fbbf24")
   const [styleId, setStyleId] = useState(DEFAULT_STYLE_ID)
   const [fontLoaded, setFontLoaded] = useState(false)
+  const [fontSheet, setFontSheet] = useState<HTMLImageElement | null>(null)
   const [imagesLoaded, setImagesLoaded] = useState(false)
   const [downloading, setDownloading] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -138,6 +153,9 @@ export default function RankTagGenerator() {
     }).catch(() => {
       setFontLoaded(true) // fallback: proceed anyway
     })
+
+    // Load the bitmap font sheet
+    loadImage(FONT_SHEET_URL).then(setFontSheet)
   }, [])
 
   // Preload images for current style
@@ -152,7 +170,7 @@ export default function RankTagGenerator() {
 
   // Main render function — called on every change, runs synchronously on offscreen canvas
   const renderTag = useCallback(async () => {
-    if (!fontLoaded || !imagesLoaded) return
+    if (!fontLoaded || !imagesLoaded || !fontSheet) return
     if (!canvasRef.current) return
 
     const style = currentStyle
@@ -207,27 +225,31 @@ export default function RankTagGenerator() {
     const rightX = leftW + charCount * midW
     tintImageData(ctx, rightImg, rightX, 0, rightW, tileH, rgb)
 
-    // === LAYER 2 & 3: Text with Shadow ===
-    const fontSize = 2.5 // The font is designed for a 5px grid
-    ctx.font = `${fontSize}px "${FONT_FAMILY}"`
-    ctx.textAlign = "center"
-    ctx.textBaseline = "middle"
-
-    // The vertical position to center the 5px font inside the 9px height tile
-    const textY = Math.floor(tileH / 2) + 1
-
+    // === LAYER 2 & 3: Text with Shadow (from Bitmap Font) ===
     for (let i = 0; i < charCount; i++) {
       const ch = displayText[i]
+      const fontChar = FONT_MAP[ch]
+      if (!fontChar) continue // Skip if character not in font map
+
       // Center of each middle tile
-      const cx = leftW + i * midW + Math.floor(midW / 2)
+      const cx = leftW + i * midW + Math.floor((midW - CHAR_WIDTH) / 2)
+      // The vertical position to center the 7px font inside the 9px height tile
+      const textY = Math.floor((tileH - CHAR_HEIGHT) / 2)
 
-      // Shadow (1px down-right, dark)
-      ctx.fillStyle = "rgba(0,0,0,0.55)"
-      ctx.fillText(ch, cx + 3, textY + 2)
+      // Create a temporary canvas for the shadow
+      const shadowCtx = document.createElement('canvas').getContext('2d')!
+      shadowCtx.canvas.width = CHAR_WIDTH
+      shadowCtx.canvas.height = CHAR_HEIGHT
+      shadowCtx.drawImage(fontSheet, fontChar.x, fontChar.y, CHAR_WIDTH, CHAR_HEIGHT, 0, 0, CHAR_WIDTH, CHAR_HEIGHT)
+      shadowCtx.globalCompositeOperation = 'source-in'
+      shadowCtx.fillStyle = 'rgba(0,0,0,0.55)'
+      shadowCtx.fillRect(0, 0, CHAR_WIDTH, CHAR_HEIGHT)
 
-      // Main glyph (white)
-      ctx.fillStyle = "#ffffff"
-      ctx.fillText(ch, cx + 2, textY + 1)
+      // Draw shadow
+      ctx.drawImage(shadowCtx.canvas, cx + 1, textY + 1)
+
+      // Draw main glyph
+      ctx.drawImage(fontSheet, fontChar.x, fontChar.y, CHAR_WIDTH, CHAR_HEIGHT, cx, textY, CHAR_WIDTH, CHAR_HEIGHT)
     }
 
     // --- 4. Scale the small offscreen canvas up to the large display canvas ---
@@ -256,7 +278,7 @@ export default function RankTagGenerator() {
       displayW, // Scale it up to the full size of the display canvas
       displayH
     )
-  }, [text, color, styleId, fontLoaded, imagesLoaded, currentStyle])
+  }, [text, color, styleId, fontLoaded, imagesLoaded, fontSheet, currentStyle])
 
   useEffect(() => {
     renderTag()
