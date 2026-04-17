@@ -26,7 +26,7 @@ export const RANK_TAG_STYLES: RankTagStyle[] = [
     tileHeight: 9,
     leftWidth: 4,
     middleWidth: 6,
-    rightWidth: 4,
+    rightWidth: 8,
   },
 ]
 
