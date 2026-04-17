@@ -221,7 +221,7 @@ export default function RankTagGenerator() {
 
       // shadow (1px down-right)
       ctx.fillStyle = "rgba(0,0,0,0.55)"
-      ctx.fillText(ch, cx + 2, textY + 3)
+      ctx.fillText(ch, cx + 3, textY + 3)
 
       // main glyph (white)
       ctx.fillStyle = "#ffffff"
@@ -231,7 +231,7 @@ export default function RankTagGenerator() {
     ctx.restore()
 
     // === LAYER 4 (FINAL): 45° diagonal shading pass across whole tag ===
-    applyDiagonalShading(ctx, 0, 0, totalW + 1, tileH, 0.15)
+    applyDiagonalShading(ctx, 0, 0, totalW, tileH, 0.15)
 
     // === Display copy — upscale with nearest-neighbor for preview ===
     const display = canvasRef.current
