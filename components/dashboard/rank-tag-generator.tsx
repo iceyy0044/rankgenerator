@@ -160,13 +160,13 @@ export default function RankTagGenerator() {
     const displayText = text || " "
 
     // Tile dimensions — raw native values, no rounding
-    const tileH = style.tileHeight * SCALE
-    const leftW = style.leftWidth * SCALE
-    const rightW = style.rightWidth * SCALE
-    const midW = style.middleWidth * SCALE
-  const charCount = displayText.length
-  // add a small right padding to prevent template bevels being cut off in previews
-  const totalW = leftW + midW * charCount + rightW + RIGHT_SAFE_PAD
+    const tileH = Math.round(style.tileHeight * SCALE)
+    const leftW = Math.round(style.leftWidth * SCALE)
+    const rightW = Math.round(style.rightWidth * SCALE)
+    const midW = Math.round(style.middleWidth * SCALE)
+    const charCount = displayText.length
+    // total width exactly integer — no extra padding
+    const totalW = leftW + midW * charCount + rightW + RIGHT_SAFE_PAD
 
     // Create or reuse offscreen canvas (native resolution — no super-sampling)
     if (!offscreenRef.current) {
@@ -201,7 +201,8 @@ export default function RankTagGenerator() {
     }
 
     // right tile — positioned immediately after all middle tiles, ensure it renders fully
-    const rightX = leftW + charCount * midW
+  // place right tile at exact integer pixel offset
+  const rightX = leftW + charCount * midW
     // Verify right tile fits in canvas
     if (rightX + rightW <= totalW) {
       tintImageData(ctx, rightImg, rightX, 0, rightW, tileH, rgb)
@@ -259,11 +260,21 @@ export default function RankTagGenerator() {
     if (!dCtx) return
     dCtx.imageSmoothingEnabled = false
     dCtx.imageSmoothingQuality = "low"
-    dCtx.save()
-    dCtx.scale(dpr, dpr)
-    dCtx.imageSmoothingEnabled = false
-    dCtx.drawImage(off, 0, 0, displayW, displayH)
-    dCtx.restore()
+    // Try to use scale-pixel-art for perfect integer scaling when available
+    try {
+      const spa = await import("scale-pixel-art")
+      // scaleCanvas takes (srcCanvas, destCanvas, scale) — compute integer scale
+      const intScale = Math.max(1, Math.floor(displayScale))
+      // dest canvas is already sized in CSS pixels; we need to pass actual dest canvas element
+      spa.scaleCanvas(off, display, intScale)
+    } catch (e) {
+      // Fallback: drawImage with nearest-neighbor
+      dCtx.save()
+      dCtx.scale(dpr, dpr)
+      dCtx.imageSmoothingEnabled = false
+      dCtx.drawImage(off, 0, 0, displayW, displayH)
+      dCtx.restore()
+    }
   }, [text, color, styleId, fontLoaded, imagesLoaded, currentStyle])
 
   useEffect(() => {
@@ -407,8 +418,7 @@ export default function RankTagGenerator() {
             ) : (
               <canvas
                 ref={canvasRef}
-                className="rounded-sm"
-                style={{ imageRendering: "crisp-edges" }}
+                style={{ imageRendering: "crisp-edges", borderRadius: 0 }}
               />
             )}
           </div>
