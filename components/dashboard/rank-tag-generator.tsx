@@ -246,7 +246,7 @@ export default function RankTagGenerator() {
       shadowCtx.fillRect(0, 0, CHAR_WIDTH, CHAR_HEIGHT)
 
       // Draw shadow
-      ctx.drawImage(shadowCtx.canvas, cx + 1, textY)
+      ctx.drawImage(shadowCtx.canvas, cx + 2, textY)
 
       // Draw main glyph
       ctx.drawImage(fontSheet, fontChar.x, fontChar.y, CHAR_WIDTH, CHAR_HEIGHT, cx + 1, textY, CHAR_WIDTH, CHAR_HEIGHT)
