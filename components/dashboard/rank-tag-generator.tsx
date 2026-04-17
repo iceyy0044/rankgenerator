@@ -130,6 +130,7 @@ export default function RankTagGenerator() {
   const [imagesLoaded, setImagesLoaded] = useState(false)
   const [downloading, setDownloading] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [snippetFormat, setSnippetFormat] = useState("vanilla")
 
   const currentStyle = RANK_TAG_STYLES.find((s) => s.id === styleId) ?? RANK_TAG_STYLES[0]
 
@@ -249,7 +250,7 @@ export default function RankTagGenerator() {
       ctx.drawImage(shadowCtx.canvas, cx + 1, textY + 1)
 
       // Draw main glyph
-      ctx.drawImage(fontSheet, fontChar.x, fontChar.y, CHAR_WIDTH, CHAR_HEIGHT, cx + 1, textY, CHAR_WIDTH, CHAR_HEIGHT)
+      ctx.drawImage(fontSheet, fontChar.x, fontChar.y, CHAR_WIDTH, CHAR_HEIGHT, cx, textY, CHAR_WIDTH, CHAR_HEIGHT)
     }
 
     // --- 4. Scale the small offscreen canvas up to the large display canvas ---
@@ -301,17 +302,51 @@ export default function RankTagGenerator() {
 
   function generateJsonSnippet() {
     const safeName = (text || "rank").toLowerCase().replace(/\s+/g, "_")
-    return JSON.stringify(
-      {
-        type: "bitmap",
-        file: `minecraft:font/${safeName}.png`,
-        ascent: 8,
-        height: 9,
-        chars: ["UNIQUE-CHARACTER-HERE"],
-      },
-      null,
-      2
-    )
+    const char = "" // Using a Private Use Area character
+
+    switch (snippetFormat) {
+      case "nexo":
+        return JSON.stringify(
+          {
+            permission: `ranks.${safeName}`,
+            prefix: ["UNIQUE-CHARACTER-HERE"],
+          },
+          null,
+          2
+        )
+      case "itemsadder":
+        return JSON.stringify(
+          {
+            font_images: {
+              [`${safeName}`]: {
+                path: `minecraft:font/${safeName}.png`,
+                height: 9,
+                ascent: 8,
+                chars: ["UNIQUE-CHARACTER-HERE"],
+              },
+            },
+          },
+          null,
+          2
+        )
+      case "vanilla":
+      default:
+        return JSON.stringify(
+          {
+            providers: [
+              {
+                type: "bitmap",
+                file: `minecraft:font/${safeName}.png`,
+                ascent: 8,
+                height: 9,
+                chars: ["UNIQUE-CHARACTER-HERE"],
+              },
+            ],
+          },
+          null,
+          2
+        )
+    }
   }
 
   async function handleCopySnippet() {
@@ -444,7 +479,20 @@ export default function RankTagGenerator() {
       {/* Resource Pack JSON Snippet */}
       <div className="glass rounded-2xl p-6 flex flex-col gap-3">
         <div className="flex items-center justify-between">
-          <label className="text-xs font-semibold text-[#7a869a] uppercase tracking-wider">Resource Pack JSON Snippet</label>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-[#7a869a] uppercase tracking-wider">Resource Pack JSON Snippet</label>
+            <select
+              value={snippetFormat}
+              onChange={(e) => setSnippetFormat(e.target.value)}
+              className="px-3 py-1.5 rounded-lg bg-[#1e2435] border border-[rgba(99,120,180,0.2)] text-[#e8eaf0]
+        text-sm focus:outline-none focus:border-[#f59e0b] focus:ring-1 focus:ring-[rgba(245,158,11,0.14)]
+                transition-all appearance-none cursor-pointer w-40 mt-1"
+            >
+              <option value="vanilla">Vanilla</option>
+              <option value="itemsadder">ItemsAdder</option>
+              <option value="nexo">Nexo</option>
+            </select>
+          </div>
           <button
             onClick={handleCopySnippet}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-150
