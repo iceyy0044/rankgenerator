@@ -201,7 +201,7 @@ export default function RankTagGenerator() {
     const fontSize = 2.5
     ctx.font = `${fontSize}px "${FONT_FAMILY}"`
     ctx.textAlign = "center"
-    ctx.textBaseline = "bottom"
+    ctx.textBaseline = "middle"
 
     // Clip to the middle area where glyphs are allowed
     ctx.save()
