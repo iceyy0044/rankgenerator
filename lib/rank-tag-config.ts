@@ -40,6 +40,30 @@ export const RANK_TAG_STYLES: RankTagStyle[] = [
     middleWidth: 6,
     rightWidth: 8,
   },
+  {
+    id: "extra-rounded",
+    name: "Extra Rounded",
+    description: "",
+    leftUrl: "https://tmmijtrssqoabdbqucij.supabase.co/storage/v1/object/sign/Images/rd_lavy_bg.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9kNjg0MGY5Yi02Mjc2LTQ4MjQtOGEyOC0xODc3ZTY4NTFhNzgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJJbWFnZXMvcmRfbGF2eV9iZy5wbmciLCJpYXQiOjE3NzY0NTg2NjYsImV4cCI6MTc1NDQ0NTg2NjZ9.903Dn1FvF68GpnCMA-ogZxdr8ZnchWn07X2YVHQk5W4",
+    middleUrl: "https://tmmijtrssqoabdbqucij.supabase.co/storage/v1/object/sign/Images/rd_stred_bg.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9kNjg0MGY5Yi02Mjc2LTQ4MjQtOGEyOC0xODc3ZTY4NTFhNzgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJJbWFnZXMvcmRfc3RyZWRfYmcucG5nIiwiaWF0IjoxNzc2NDU4NzAzLCJleHAiOjE3NTQ0NDU4NzAzfQ.ZTuk9R_x1tD685qUX-btWL3pDLr8nww21XQ2Di8I_jQ",
+    rightUrl: "https://tmmijtrssqoabdbqucij.supabase.co/storage/v1/object/sign/Images/rd_pravy_bg.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9kNjg0MGY5Yi02Mjc2LTQ4MjQtOGEyOC0xODc3ZTY4NTFhNzgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJJbWFnZXMvcmRfcHJhdnlfYmcucG5nIiwiaWF0IjoxNzc2NDU4Njg3LCJleHAiOjE3NTQ0NDU4Njg3fQ.nDYhWa8QXyhAX56HeJkLzryC58bUs9VM4h-R6yANT0s",
+    tileHeight: 12,
+    leftWidth: 7,
+    middleWidth: 6,
+    rightWidth: 8,
+  },
+  {
+    id: "medieval",
+    name: "Medieval",
+    description: "",
+    leftUrl: "https://tmmijtrssqoabdbqucij.supabase.co/storage/v1/object/sign/Images/sg_lavy_bg.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9kNjg0MGY5Yi02Mjc2LTQ4MjQtOGEyOC0xODc3ZTY4NTFhNzgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJJbWFnZXMvc2dfbGF2eV9iZy5wbmciLCJpYXQiOjE3NzY0NTg1NDEsImV4cCI6MTc1NDQ0NTg1NDF9._fuLv2Mp1_8k1qGSWuf1d-jX7-F-xgQX6o6NA2thSy4",
+    middleUrl: "https://tmmijtrssqoabdbqucij.supabase.co/storage/v1/object/sign/Images/sg_stred_bg.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9kNjg0MGY5Yi02Mjc2LTQ4MjQtOGEyOC0xODc3ZTY4NTFhNzgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJJbWFnZXMvc2dfc3RyZWRfYmcucG5nIiwiaWF0IjoxNzc2NDU4NTk4LCJleHAiOjE3NTQ0NDU4NTk4fQ.HgB559jmgGE1rx6TOEIxj6TabGFceMyRGlKNC0UG2wQ",
+    rightUrl: "https://tmmijtrssqoabdbqucij.supabase.co/storage/v1/object/sign/Images/sg_pravy_bg.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9kNjg0MGY5Yi02Mjc2LTQ4MjQtOGEyOC0xODc3ZTY4NTFhNzgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJJbWFnZXMvc2dfcHJhdnlfYmcucG5nIiwiaWF0IjoxNzc2NDU4NTY3LCJleHAiOjE3NTQ0NDU4NTY3fQ.T26ljLcTZfOqNMVknuOjU8o0GpA_UUhZS3-eMMJT4Gg",
+    tileHeight: 12,
+    leftWidth: 8,
+    middleWidth: 6,
+    rightWidth: 9,
+  },
 ]
 
 export const DEFAULT_STYLE_ID = "classic"
