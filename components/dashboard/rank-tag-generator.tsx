@@ -263,7 +263,7 @@ export default function RankTagGenerator() {
       // This adds a little bit of the background color to the very bottom of the text,
       // making it look more integrated with the tag.
       glyphCtx.globalCompositeOperation = 'source-atop'
-      glyphCtx.fillStyle = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.1)` // Use background color with some transparency
+      glyphCtx.fillStyle = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.25)` // Use background color with some transparency
       glyphCtx.fillRect(0, CHAR_HEIGHT - 4, CHAR_WIDTH, 4) // Apply to the bottom 2 pixels
 
       // Draw main glyph
