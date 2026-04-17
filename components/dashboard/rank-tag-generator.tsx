@@ -406,7 +406,7 @@ font_images:
                 </div>
               </div>
               <p className="text-xs text-[#7a869a] mt-1">
-                Allowed characters: ABCDEFGHIJKLMNOPQRSTUVWXYZ
+                Allowed characters: ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-.+! and a space
               </p>
             </div>
 
