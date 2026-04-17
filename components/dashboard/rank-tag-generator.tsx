@@ -243,6 +243,7 @@ export default function RankTagGenerator() {
       shadowCtx.canvas.height = CHAR_HEIGHT
       shadowCtx.drawImage(fontSheet, fontChar.x, fontChar.y, CHAR_WIDTH, CHAR_HEIGHT, 0, 0, CHAR_WIDTH, CHAR_HEIGHT)
       shadowCtx.globalCompositeOperation = 'source-in'
+      shadowCtx.fillStyle = 'rgba(0,0,0,0.55)'
       shadowCtx.fillRect(0, 0, CHAR_WIDTH, CHAR_HEIGHT)
 
       // Draw shadow
@@ -254,6 +255,7 @@ export default function RankTagGenerator() {
       glyphCtx.canvas.height = CHAR_HEIGHT
       glyphCtx.drawImage(fontSheet, fontChar.x, fontChar.y, CHAR_WIDTH, CHAR_HEIGHT, 0, 0, CHAR_WIDTH, CHAR_HEIGHT)
       glyphCtx.globalCompositeOperation = 'source-in'
+      glyphCtx.fillStyle = '#ffffff'
       glyphCtx.fillRect(0, 0, CHAR_WIDTH, CHAR_HEIGHT)
 
       // === NEW: Apply subtle tint to bottom of glyph ===
@@ -293,7 +295,7 @@ export default function RankTagGenerator() {
       displayW, // Scale it up to the full size of the display canvas
       displayH
     )
-  }, [text, color, styleId, fontLoaded, imagesLoaded, fontSheet, currentStyle, invertColors])
+  }, [text, color, styleId, fontLoaded, imagesLoaded, fontSheet, currentStyle])
 
   useEffect(() => {
     renderTag()
@@ -316,33 +318,25 @@ export default function RankTagGenerator() {
 
   function generateJsonSnippet() {
     const safeName = (text || "rank").toLowerCase().replace(/\s+/g, "_")
-    const char = "" // Using a Private Use Area character
 
     switch (snippetFormat) {
       case "nexo":
-        return JSON.stringify(
-          {
-            permission: `ranks.${safeName}`,
-            prefix: ["UNIQUE-CHARACTER-HERE"],
-          },
-          null,
-          2
-        )
+        return `${safeName}:
+  texture: ${safeName}.png
+  height: 7
+  ascent: 7
+  permission: sams_rank.${safeName}`
       case "itemsadder":
-        return JSON.stringify(
-          {
-            font_images: {
-              [`${safeName}`]: {
-                path: `minecraft:font/${safeName}.png`,
-                height: 9,
-                ascent: 8,
-                chars: ["UNIQUE-CHARACTER-HERE"],
-              },
-            },
-          },
-          null,
-          2
-        )
+        return `info:
+  namespace: "sams_ranks"
+font_images:
+  ${safeName}:
+    permission: "sams_rank.${safeName}"
+    show_in_gui: true
+    suggest_in_command: false
+    path: "${safeName}.png"
+    scale_ratio: 7
+    y_position: 7`
       case "vanilla":
       default:
         return JSON.stringify(
@@ -447,7 +441,7 @@ export default function RankTagGenerator() {
               />
               {/* Preset swatches */}
               <div className="flex items-center gap-2 flex-wrap">
-                {["#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#00FFFF", "#FF00FF", "#FFFFFF", "#000000"].map((c) => (
+                {["#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#00FFFF", "#FF00FF", "#FFFFFF"].map((c) => (
                   <button
                     key={c}
                     onClick={() => setColor(c)}
