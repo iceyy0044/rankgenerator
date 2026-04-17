@@ -470,11 +470,11 @@ font_images:
                     setColor(randomColor);
                   }}
                   title="Random Color"
-                  className="w-7 h-7 rounded-lg border-2 border-transparent flex items-center justify-center
-                             bg-gradient-to-br from-red-500 via-yellow-500 to-blue-500
-                             hover:border-[rgba(255,255,255,0.3)] transition-all"
+                  className="group relative w-7 h-7 rounded-lg border-2 border-transparent flex items-center justify-center
+                             overflow-hidden transition-all duration-300 hover:border-yellow-400/50"
                 >
-                  <span className="iconify w-4 h-4 text-white" data-icon="mdi:dice-5" />
+                  <div className="absolute inset-0 bg-gradient-to-br from-yellow-400/20 via-yellow-600/20 to-yellow-800/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <span className="iconify w-4 h-4 text-yellow-400/70 group-hover:text-white transition-colors duration-300 z-10" data-icon="ion:sparkles-sharp" />
                 </button>
               </div>
             </div>
