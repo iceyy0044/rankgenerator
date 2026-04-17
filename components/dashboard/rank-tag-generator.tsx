@@ -392,7 +392,7 @@ font_images:
                   value={text}
                   onChange={(e) => {
                     // Only allow standard A-Z alphabet, uppercase, limit length
-                    const filtered = e.target.value.toUpperCase().replace(/[^A-Z0-9_\/\. +!]/g, "").slice(0, 15)
+                    const filtered = e.target.value.toUpperCase().replace(/[^A-Z0-9_\/\.\- +!]/g, "").slice(0, 15)
                     setText(filtered)
                   }}
                   placeholder="ADMIN"
