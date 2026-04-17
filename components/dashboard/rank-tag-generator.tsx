@@ -231,7 +231,7 @@ export default function RankTagGenerator() {
     ctx.restore()
 
     // === LAYER 4 (FINAL): 45° diagonal shading pass across whole tag ===
-    applyDiagonalShading(ctx, 0, 0, totalW, tileH, 0.15)
+    //applyDiagonalShading(ctx, 0, 0, totalW, tileH, 0.15)
 
     // === Display copy — upscale with nearest-neighbor for preview ===
     const display = canvasRef.current
