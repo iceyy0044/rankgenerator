@@ -176,14 +176,6 @@ export default function RankTagGenerator() {
 
     const style = currentStyle
     const selectedRgb = hexToRgb(color)
-    const baseRgb = { r: 205, g: 205, b: 205 } // #CDCDCD
-
-    // Mix the base color with the selected color. 80% base, 20% selected.
-    const mixedRgb = {
-      r: Math.round(baseRgb.r * 0.8 + selectedRgb.r * 0.2),
-      g: Math.round(baseRgb.g * 0.8 + selectedRgb.g * 0.2),
-      b: Math.round(baseRgb.b * 0.8 + selectedRgb.b * 0.2),
-    }
     
     const displayText = text || " "
 
@@ -223,17 +215,17 @@ export default function RankTagGenerator() {
 
     // === LAYER 1: Background Tiles (No Overlap) ===
     // Left tile
-    tintImageData(ctx, leftImg, 0, 0, leftW, tileH, mixedRgb)
+    tintImageData(ctx, leftImg, 0, 0, leftW, tileH, selectedRgb)
 
     // Middle tiles
     for (let i = 0; i < charCount; i++) {
       const x = leftW + i * midW
-      tintImageData(ctx, midImg, x, 0, midW, tileH, mixedRgb)
+      tintImageData(ctx, midImg, x, 0, midW, tileH, selectedRgb)
     }
 
     // Right tile
     const rightX = leftW + charCount * midW
-    tintImageData(ctx, rightImg, rightX, 0, rightW, tileH, mixedRgb)
+    tintImageData(ctx, rightImg, rightX, 0, rightW, tileH, selectedRgb)
 
     // === LAYER 2 & 3: Text with Shadow (from Bitmap Font) ===
     for (let i = 0; i < charCount; i++) {
@@ -270,6 +262,12 @@ export default function RankTagGenerator() {
       // === NEW: Apply subtle tint to bottom of glyph ===
       // This adds a little bit of the background color to the very bottom of the text,
       // making it look more integrated with the tag.
+      const baseRgb = { r: 205, g: 205, b: 205 } // #CDCDCD
+      const mixedRgb = {
+        r: Math.round(baseRgb.r * 0.8 + selectedRgb.r * 0.2),
+        g: Math.round(baseRgb.g * 0.8 + selectedRgb.g * 0.2),
+        b: Math.round(baseRgb.b * 0.8 + selectedRgb.b * 0.2),
+      }
       glyphCtx.globalCompositeOperation = 'source-atop'
       glyphCtx.fillStyle = `rgba(${mixedRgb.r}, ${mixedRgb.g}, ${mixedRgb.b}, 0.3)` // Use background color with some transparency
       glyphCtx.fillRect(0, CHAR_HEIGHT - 3, CHAR_WIDTH, 3) // Apply to the bottom 2 pixels
