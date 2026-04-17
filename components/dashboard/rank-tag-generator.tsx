@@ -9,8 +9,8 @@ const FONT_FAMILY = "RankFont"
 
 // Scale factor for internal rendering precision (render internally at higher res, display at actual size)
 const SCALE = 1 // 1:1 final render size (12px high base)
-// Small right padding to avoid template bevels being cut off when previewing/downloading
-const RIGHT_SAFE_PAD = 2
+// No right padding — let the right tile render fully
+const RIGHT_SAFE_PAD = 0
 
 function hexToRgb(hex: string) {
   const r = parseInt(hex.slice(1, 3), 16)
@@ -51,7 +51,10 @@ function applyDiagonalShading(
 function loadImage(url: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image()
-    img.crossOrigin = "anonymous"
+    // Only set crossOrigin for remote URLs, not local ones
+    if (url.startsWith("http")) {
+      img.crossOrigin = "anonymous"
+    }
     img.onload = () => resolve(img)
     img.onerror = reject
     img.src = url
@@ -197,9 +200,12 @@ export default function RankTagGenerator() {
       tintImageData(ctx, midImg, x, 0, midW, tileH, rgb)
     }
 
-    // right tile (no inset, no bevel hack)
-    const rightX = Math.round(leftW + charCount * midW)
-    tintImageData(ctx, rightImg, rightX, 0, rightW, tileH, rgb)
+    // right tile — positioned immediately after all middle tiles, ensure it renders fully
+    const rightX = leftW + charCount * midW
+    // Verify right tile fits in canvas
+    if (rightX + rightW <= totalW) {
+      tintImageData(ctx, rightImg, rightX, 0, rightW, tileH, rgb)
+    }
 
     // === LAYER 2 (skipped — merged into LAYER 1 via tinted background) ===
 
@@ -237,8 +243,10 @@ export default function RankTagGenerator() {
 
     // === Display copy — upscale with nearest-neighbor for preview ===
     const display = canvasRef.current
-    const dpr = Math.min(window.devicePixelRatio ?? 1, 2)
-    const displayScale = 12 // 12px × 12 = 144px preview height (crisp-edges scaling)
+    const dpr = window.devicePixelRatio ?? 1
+    // Adaptive scaling: ensure minimum 8x on all screens for crisp pixel rendering
+    // Standard (96 DPI): 10x, High-DPI (144+ DPI): 8x, Ultra-high (192+ DPI): 6x
+    const displayScale = dpr <= 1 ? 10 : dpr <= 1.5 ? 9 : dpr <= 2 ? 8 : 6
     const displayH = tileH * displayScale
     const displayW = totalW * displayScale
 
@@ -249,8 +257,8 @@ export default function RankTagGenerator() {
 
     const dCtx = display.getContext("2d")
     if (!dCtx) return
-  dCtx.imageSmoothingEnabled = false
-  dCtx.imageSmoothingQuality = "low"
+    dCtx.imageSmoothingEnabled = false
+    dCtx.imageSmoothingQuality = "low"
     dCtx.save()
     dCtx.scale(dpr, dpr)
     dCtx.imageSmoothingEnabled = false
