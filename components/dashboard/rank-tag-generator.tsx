@@ -78,8 +78,9 @@ function tintImageData(
   h: number,
   color: { r: number; g: number; b: number }
 ) {
-  // Draw template first
+  // Draw template first — scale to fit w×h
   ctx.drawImage(img, x, y, w, h)
+  // Read back the drawn pixels for tinting
   const imageData = ctx.getImageData(x, y, w, h)
   const data = imageData.data
 
@@ -96,6 +97,7 @@ function tintImageData(
     data[i + 2] = Math.round(color.b * lum)
     // keep alpha as-is
   }
+  // Write back the tinted pixels
   ctx.putImageData(imageData, x, y)
 }
 
@@ -236,7 +238,7 @@ export default function RankTagGenerator() {
     // === Display copy — upscale with nearest-neighbor for preview ===
     const display = canvasRef.current
     const dpr = Math.min(window.devicePixelRatio ?? 1, 2)
-    const displayScale = 6 // 12px × 6 = 72px preview height
+    const displayScale = 12 // 12px × 12 = 144px preview height (crisp-edges scaling)
     const displayH = tileH * displayScale
     const displayW = totalW * displayScale
 
