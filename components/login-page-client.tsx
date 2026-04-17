@@ -85,7 +85,7 @@ export default function LoginPageClient() {
               )}
             </button>
             <p className="text-xs text-center text-[#7a869a]">
-              By signing in, you agree to our non-existent Terms of Service.
+              By signing in, you agree to our Terms of Service on BBB. In order to use our services you have to have a valid license key.
             </p>
           </div>
 
