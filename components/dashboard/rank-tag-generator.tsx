@@ -411,19 +411,24 @@ font_images:
 
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-semibold text-[#e8d8a8] uppercase tracking-wider">Template Style</label>
-              <select
-                value={styleId}
-                onChange={(e) => setStyleId(e.target.value)}
-                className="px-4 py-2.5 rounded-xl bg-[#1e1706] border border-[rgba(120,80,10,0.12)] text-[#e8eaf0]
-        text-sm focus:outline-none focus:border-[#f59e0b] focus:ring-1 focus:ring-[rgba(245,158,11,0.14)]
-                transition-all appearance-none cursor-pointer"
-              >
-                {RANK_TAG_STYLES.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
+              <div className="relative">
+                <select
+                  value={styleId}
+                  onChange={(e) => setStyleId(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl bg-[#1e1706] border border-[rgba(120,80,10,0.12)] text-[#e8eaf0]
+          text-sm focus:outline-none focus:border-[#f59e0b] focus:ring-1 focus:ring-[rgba(245,158,11,0.14)]
+                  transition-all appearance-none cursor-pointer"
+                >
+                  {RANK_TAG_STYLES.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3">
+                  <span className="iconify text-[#7a869a]" data-icon="mdi:chevron-down" />
+                </div>
+              </div>
             </div>
           </div>
 
@@ -521,22 +526,27 @@ font_images:
               <label className="text-xs font-semibold text-[#e8d8a8] uppercase tracking-wider">
                 Resource Pack JSON Snippet
               </label>
-              <select
-                value={snippetFormat}
-                onChange={(e) => setSnippetFormat(e.target.value)}
-                className="px-3 py-1.5 rounded-lg bg-[#1e1706] border border-[rgba(120,80,10,0.12)] text-[#e8eaf0]
-        text-sm focus:outline-none focus:border-[#f59e0b] focus:ring-1 focus:ring-[rgba(245,158,11,0.14)]
-                transition-all appearance-none cursor-pointer w-40 mt-1"
-              >
-                <option value="vanilla">Vanilla</option>
-                <option value="itemsadder">ItemsAdder</option>
-                <option value="nexo">Nexo</option>
-              </select>
+              <div className="relative w-40 mt-1">
+                <select
+                  value={snippetFormat}
+                  onChange={(e) => setSnippetFormat(e.target.value)}
+                  className="w-full px-3 py-1.5 rounded-lg bg-[#1e1706] border border-[rgba(120,80,10,0.12)] text-[#e8eaf0]
+          text-sm focus:outline-none focus:border-[#f59e0b] focus:ring-1 focus:ring-[rgba(245,158,11,0.14)]
+                  transition-all appearance-none cursor-pointer"
+                >
+                  <option value="vanilla">Vanilla</option>
+                  <option value="itemsadder">ItemsAdder</option>
+                  <option value="nexo">Nexo</option>
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2">
+                  <span className="iconify text-[#7a869a]" data-icon="mdi:chevron-down" />
+                </div>
+              </div>
             </div>
             <button
               onClick={handleCopySnippet}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-150
-              text-[#e6d8a3] hover:text-[#000000] hover:bg-[rgba(245,158,11,0.08)] border border-[rgba(120,80,10,0.08)]"
+              bg-[#1e1706] border border-[rgba(120,80,10,0.12)] text-[#e6d8a3] hover:bg-[#2a2108]"
             >
               {copied ? (
                 <>
