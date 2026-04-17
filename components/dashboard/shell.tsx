@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import ParticleBackground from "./particle-background"
 
 interface User {
   id: string
@@ -54,7 +55,9 @@ export default function DashboardShell({ user, children }: Props) {
   ].filter((item) => !item.adminOnly || user.role === "admin")
 
   return (
-  
+    <>
+      <ParticleBackground />
+
       <div className="relative z-10">
         <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-[rgba(120,80,10,0.15)] bg-[#0a0d13]/50 px-6 backdrop-blur-sm">
           <div className="flex items-center gap-4">
@@ -118,6 +121,7 @@ export default function DashboardShell({ user, children }: Props) {
 
           <main className="flex-1 p-6">{children}</main>
         </div>
-    </div>
+      </div>
+    </>
   )
 }
