@@ -225,7 +225,7 @@ export default function RankTagGenerator() {
 
       // main glyph (white)
       ctx.fillStyle = "#ffffff"
-      ctx.fillText(ch, cx + 1, textY - 3)
+      ctx.fillText(ch, cx + 1, textY + 3)
     }
 
     ctx.restore()
