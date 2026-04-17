@@ -5,8 +5,9 @@ import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import Particles, { initParticlesEngine } from "react-tsparticles"
-import { loadSlim } from "tsparticles-slim"
+import { useEffect, useMemo, useState } from "react";
+import Particles, { initParticlesEngine } from "@tsparticles/react";
+import { loadSlim } from "@tsparticles/slim";
 
 interface User {
   id: string
@@ -26,19 +27,19 @@ export default function DashboardShell({ user, children }: Props) {
   const [signingOut, setSigningOut] = useState(false)
   const router = useRouter()
   const pathname = usePathname()
-  const [init, setInit] = useState(false)
+  const [init, setInit] = useState(false);
 
   useEffect(() => {
     initParticlesEngine(async (engine) => {
-      await loadSlim(engine)
+      await loadSlim(engine);
     }).then(() => {
-      setInit(true)
-    })
-  }, [])
+      setInit(true);
+    });
+  }, []);
 
-  const particlesLoaded = (container) => {
-    console.log(container)
-  }
+  const particlesLoaded = async (container) => {
+    console.log(container);
+  };
 
   const options = useMemo(
     () => ({
@@ -140,14 +141,7 @@ export default function DashboardShell({ user, children }: Props) {
 
   return (
     <div className="min-h-screen bg-[#0a0d13] text-[#e8eaf0] relative">
-      {init && (
-        <Particles
-          id="tsparticles"
-          particlesLoaded={particlesLoaded}
-          options={options}
-          className="absolute inset-0 -z-0"
-        />
-      )}
+      {init && <Particles id="tsparticles" particlesLoaded={particlesLoaded} options={options} className="absolute inset-0 -z-0" />}
       <div
         className="absolute inset-0 z-0 opacity-[0.02] pointer-events-none"
         style={{
