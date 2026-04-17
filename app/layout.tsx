@@ -10,8 +10,8 @@ const poppins = Poppins({
 })
 
 export const metadata: Metadata = {
-  title: 'RankForge — Minecraft Rank Tag Generator',
-  description: 'Generate pixel-perfect custom Minecraft rank tags in seconds. Fast, customizable, and ready to use.',
+  title: 'Sams Ranks | Minecraft Rank Generator',
+  description: 'Create your own custom Minecraft rank with an easy builder and a clean, stylish design!',
 }
 
 export default function RootLayout({
