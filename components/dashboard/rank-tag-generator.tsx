@@ -131,6 +131,7 @@ export default function RankTagGenerator() {
   const [downloading, setDownloading] = useState(false)
   const [copied, setCopied] = useState(false)
   const [snippetFormat, setSnippetFormat] = useState("vanilla")
+  const [invertColors, setInvertColors] = useState(false)
 
   const currentStyle = RANK_TAG_STYLES.find((s) => s.id === styleId) ?? RANK_TAG_STYLES[0]
 
@@ -243,14 +244,30 @@ export default function RankTagGenerator() {
       shadowCtx.canvas.height = CHAR_HEIGHT
       shadowCtx.drawImage(fontSheet, fontChar.x, fontChar.y, CHAR_WIDTH, CHAR_HEIGHT, 0, 0, CHAR_WIDTH, CHAR_HEIGHT)
       shadowCtx.globalCompositeOperation = 'source-in'
-      shadowCtx.fillStyle = 'rgba(0,0,0,0.55)'
+      shadowCtx.fillStyle = invertColors ? '#ffffff' : 'rgba(0,0,0,0.55)'
       shadowCtx.fillRect(0, 0, CHAR_WIDTH, CHAR_HEIGHT)
 
       // Draw shadow
       ctx.drawImage(shadowCtx.canvas, cx + 1, textY + 1)
 
+      // Create a temporary canvas for the main glyph
+      const glyphCtx = document.createElement('canvas').getContext('2d')!
+      glyphCtx.canvas.width = CHAR_WIDTH
+      glyphCtx.canvas.height = CHAR_HEIGHT
+      glyphCtx.drawImage(fontSheet, fontChar.x, fontChar.y, CHAR_WIDTH, CHAR_HEIGHT, 0, 0, CHAR_WIDTH, CHAR_HEIGHT)
+      glyphCtx.globalCompositeOperation = 'source-in'
+      glyphCtx.fillStyle = invertColors ? 'rgba(0,0,0,0.55)' : '#ffffff'
+      glyphCtx.fillRect(0, 0, CHAR_WIDTH, CHAR_HEIGHT)
+
+      // === NEW: Apply subtle tint to bottom of glyph ===
+      // This adds a little bit of the background color to the very bottom of the text,
+      // making it look more integrated with the tag.
+      glyphCtx.globalCompositeOperation = 'source-atop'
+      glyphCtx.fillStyle = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.5)` // Use background color with some transparency
+      glyphCtx.fillRect(0, CHAR_HEIGHT - 2, CHAR_WIDTH, 2) // Apply to the bottom 2 pixels
+
       // Draw main glyph
-      ctx.drawImage(fontSheet, fontChar.x, fontChar.y, CHAR_WIDTH, CHAR_HEIGHT, cx+1, textY, CHAR_WIDTH, CHAR_HEIGHT)
+      ctx.drawImage(glyphCtx.canvas, cx, textY)
     }
 
     // --- 4. Scale the small offscreen canvas up to the large display canvas ---
@@ -279,7 +296,7 @@ export default function RankTagGenerator() {
       displayW, // Scale it up to the full size of the display canvas
       displayH
     )
-  }, [text, color, styleId, fontLoaded, imagesLoaded, fontSheet, currentStyle])
+  }, [text, color, styleId, fontLoaded, imagesLoaded, fontSheet, currentStyle, invertColors])
 
   useEffect(() => {
     renderTag()
@@ -356,165 +373,190 @@ export default function RankTagGenerator() {
   }
 
   return (
-    <div className="flex flex-col gap-6 max-w-3xl mx-auto">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-[#e8eaf0] tracking-tight">Rank Tag Generator</h1>
-        <p className="text-sm text-[#7a869a] mt-1">Customize your rank tag in real-time and export as PNG.</p>
-      </div>
+    <>
+      <div className="flex flex-col gap-6 max-w-3xl mx-auto">
+        {/* Header */}
+        <div>
+          <h1 className="text-2xl font-bold text-[#e8eaf0] tracking-tight">Sam's Ranks</h1>
+          <p className="text-sm text-[#7a869a] mt-1">Customize your rank tag in real-time and export as PNG.</p>
+        </div>
 
-      {/* Controls card */}
-      <div className="glass rounded-2xl p-6 flex flex-col gap-5">
-        {/* Row 1: Text + Style */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-[#e8d8a8] uppercase tracking-wider">Rank Text</label>
-            <input
-              type="text"
-              value={text}
-              onChange={(e) => {
-                // Only allow standard A-Z alphabet, uppercase, limit length
-                const filtered = e.target.value.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 20)
-                setText(filtered)
-              }}
-              placeholder="ADMIN"
-              className="px-4 py-2.5 rounded-xl bg-[#1e1706] border border-[rgba(120,80,10,0.12)] text-[#fff8e1]
-                placeholder-[#6b4f1a] text-sm focus:outline-none focus:border-[#f59e0b] focus:ring-1
-                focus:ring-[rgba(245,158,11,0.14)] transition-all"
-              maxLength={20}
-            />
-          </div>
+        {/* Controls card */}
+        <div className="glass rounded-2xl p-6 flex flex-col gap-5">
+          {/* Row 1: Text + Style */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-[#e8d8a8] uppercase tracking-wider">Rank Text</label>
+              <input
+                type="text"
+                value={text}
+                onChange={(e) => {
+                  // Only allow standard A-Z alphabet, uppercase, limit length
+                  const filtered = e.target.value.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 20)
+                  setText(filtered)
+                }}
+                placeholder="ADMIN"
+                className="px-4 py-2.5 rounded-xl bg-[#1e1706] border border-[rgba(120,80,10,0.12)] text-[#fff8e1]
+                  placeholder-[#6b4f1a] text-sm focus:outline-none focus:border-[#f59e0b] focus:ring-1
+                  focus:ring-[rgba(245,158,11,0.14)] transition-all"
+                maxLength={20}
+              />
+              <p className="text-xs text-[#7a869a] mt-1">
+                Allowed characters: ABCDEFGHIJKLMNOPQRSTUVWXYZ
+              </p>
+            </div>
 
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-[#7a869a] uppercase tracking-wider">Template Style</label>
-      <select
-              value={styleId}
-              onChange={(e) => setStyleId(e.target.value)}
-              className="px-4 py-2.5 rounded-xl bg-[#1e2435] border border-[rgba(99,120,180,0.2)] text-[#e8eaf0]
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-[#e8d8a8] uppercase tracking-wider">Template Style</label>
+              <select
+                value={styleId}
+                onChange={(e) => setStyleId(e.target.value)}
+                className="px-4 py-2.5 rounded-xl bg-[#1e1706] border border-[rgba(120,80,10,0.12)] text-[#e8eaf0]
         text-sm focus:outline-none focus:border-[#f59e0b] focus:ring-1 focus:ring-[rgba(245,158,11,0.14)]
                 transition-all appearance-none cursor-pointer"
-            >
-              {RANK_TAG_STYLES.map((s) => (
-                <option key={s.id} value={s.id}>{s.name}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {/* Row 2: Color picker */}
-        <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-semibold text-[#7a869a] uppercase tracking-wider">Background Tint Color</label>
-            <div className="flex items-center gap-3">
-            <div className="relative">
-              <input
-                type="color"
-                value={color}
-                onChange={(e) => setColor(e.target.value)}
-                className="w-10 h-10 rounded-lg cursor-pointer border border-[rgba(99,120,180,0.2)] bg-transparent p-0.5"
-                title="Pick a color"
-              />
+              >
+                {RANK_TAG_STYLES.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
             </div>
-            <input
-              type="text"
-              value={color}
-              onChange={(e) => {
-                const val = e.target.value
-                if (/^#[0-9a-fA-F]{0,6}$/.test(val)) setColor(val)
-              }}
+          </div>
+
+          {/* Row 2: Color picker */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-[#e8d8a8] uppercase tracking-wider">Background Tint Color</label>
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <input
+                  type="color"
+                  value={color}
+                  onChange={(e) => setColor(e.target.value)}
+                  className="w-10 h-10 rounded-lg cursor-pointer border border-[rgba(120,80,10,0.12)] bg-transparent p-0.5"
+                  title="Pick a color"
+                />
+              </div>
+              <input
+                type="text"
+                value={color}
+                onChange={(e) => {
+                  const val = e.target.value
+                  if (/^#[0-9a-fA-F]{0,6}$/.test(val)) setColor(val)
+                }}
                 className="px-3 py-2 rounded-lg bg-[#1e1706] border border-[rgba(120,80,10,0.12)] text-[#fff8e1]
                   font-mono text-sm w-32 focus:outline-none focus:border-[#f59e0b] transition-all"
-              maxLength={7}
-            />
-            {/* Preset swatches */}
-            <div className="flex items-center gap-2 flex-wrap">
-              {["#f59e0b", "#fbbf24", "#fde68a", "#f97316", "#fff7ed"].map((c) => (
-                <button
-                  key={c}
-                  onClick={() => setColor(c)}
-                  title={c}
-                  className={`w-7 h-7 rounded-lg border-2 transition-all ${
-                    color === c ? "border-white scale-110" : "border-transparent hover:border-[rgba(255,255,255,0.3)]"
-                  }`}
-                  style={{ backgroundColor: c }}
-                />
-              ))}
+                maxLength={7}
+              />
+              {/* Preset swatches */}
+              <div className="flex items-center gap-2 flex-wrap">
+                {["#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#00FFFF", "#FF00FF", "#FFFFFF", "#000000"].map((c) => (
+                  <button
+                    key={c}
+                    onClick={() => setColor(c)}
+                    title={c}
+                    className={`w-7 h-7 rounded-lg border-2 transition-all ${
+                      color === c ? "border-white scale-110" : "border-transparent hover:border-[rgba(255,255,255,0.3)]"
+                    }`}
+                    style={{ backgroundColor: c }}
+                  />
+                ))}
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="h-px bg-[rgba(99,120,180,0.15)]" />
-
-        {/* Preview area */}
-        <div className="flex flex-col gap-3">
-          <label className="text-xs font-semibold text-[#7a869a] uppercase tracking-wider">Live Preview</label>
-          <div className="flex items-center justify-center rounded-xl bg-[#0e1117] border border-[rgba(99,120,180,0.12)] min-h-[100px] py-8">
-            {!fontLoaded || !imagesLoaded ? (
-              <div className="flex items-center gap-2 text-[#e6d8a3] text-sm">
-                <span className="iconify w-4 h-4 animate-spin text-[#fbbf24]" data-icon="mdi:loading" />
-                Loading assets…
-              </div>
-            ) : (
-              <canvas
-                ref={canvasRef}
-                className="rounded-sm"
-                style={{ imageRendering: "pixelated" }}
-              />
-            )}
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              id="invert-colors"
+              checked={invertColors}
+              onChange={(e) => setInvertColors(e.target.checked)}
+              className="h-4 w-4 rounded border-gray-300 text-yellow-600 focus:ring-yellow-500"
+            />
+            <label htmlFor="invert-colors" className="ml-2 block text-sm text-[#e8d8a8]">
+              Invert Text/Shadow Colors
+            </label>
           </div>
-        </div>
 
-        {/* Download button */}
-        <button
-          onClick={handleDownload}
-          disabled={downloading || !fontLoaded || !imagesLoaded}
-          className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-semibold text-black
+          <div className="h-px bg-[rgba(120,80,10,0.15)]" />
+
+          {/* Preview area */}
+          <div className="flex flex-col gap-3">
+            <label className="text-xs font-semibold text-[#e8d8a8] uppercase tracking-wider">Live Preview</label>
+            <div className="flex items-center justify-center rounded-xl bg-[#0e1117] border border-[rgba(120,80,10,0.12)] min-h-[100px] py-8">
+              {!fontLoaded || !imagesLoaded || !fontSheet ? (
+                <div className="flex items-center gap-2 text-[#e6d8a3] text-sm">
+                  <span className="iconify w-4 h-4 animate-spin text-[#fbbf24]" data-icon="mdi:loading" />
+                  Loading assets…
+                </div>
+              ) : (
+                <canvas
+                  ref={canvasRef}
+                  className="rounded-sm"
+                  style={{ imageRendering: "pixelated" }}
+                />
+              )}
+            </div>
+          </div>
+
+          {/* Download button */}
+          <button
+            onClick={handleDownload}
+            disabled={downloading || !fontLoaded || !imagesLoaded}
+            className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-semibold text-black
             bg-[#fbbf24] hover:bg-[#ffd454] disabled:opacity-50 disabled:cursor-not-allowed
             transition-all duration-150 shadow-[0_6px_18px_rgba(245,158,11,0.22)] active:scale-[0.98]"
-        >
-          <span className="iconify w-4 h-4" data-icon="mdi:download" />
-          {downloading ? "Exporting…" : "Download PNG"}
-        </button>
-      </div>
-
-      {/* Resource Pack JSON Snippet */}
-      <div className="glass rounded-2xl p-6 flex flex-col gap-3">
-        <div className="flex items-center justify-between">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-[#7a869a] uppercase tracking-wider">Resource Pack JSON Snippet</label>
-            <select
-              value={snippetFormat}
-              onChange={(e) => setSnippetFormat(e.target.value)}
-              className="px-3 py-1.5 rounded-lg bg-[#1e2435] border border-[rgba(99,120,180,0.2)] text-[#e8eaf0]
-        text-sm focus:outline-none focus:border-[#f59e0b] focus:ring-1 focus:ring-[rgba(245,158,11,0.14)]
-                transition-all appearance-none cursor-pointer w-40 mt-1"
-            >
-              <option value="vanilla">Vanilla</option>
-              <option value="itemsadder">ItemsAdder</option>
-              <option value="nexo">Nexo</option>
-            </select>
-          </div>
-          <button
-            onClick={handleCopySnippet}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-150
-              text-[#e6d8a3] hover:text-[#000000] hover:bg-[rgba(245,158,11,0.08)] border border-[rgba(120,80,10,0.08)]"
           >
-            {copied ? (
-              <>
-                <span className="iconify w-3.5 h-3.5 text-[#22c55e]" data-icon="mdi:check" />
-                Copied!
-              </>
-            ) : (
-              <>
-                <span className="iconify w-3.5 h-3.5" data-icon="mdi:content-copy" />
-                Copy Snippet
-              </>
-            )}
+            <span className="iconify w-4 h-4" data-icon="mdi:download" />
+            {downloading ? "Exporting…" : "Download PNG"}
           </button>
         </div>
-        <pre className="rounded-xl bg-[#0a0d13] border border-[rgba(99,120,180,0.12)] p-4 text-xs font-mono text-[#7a869a] overflow-x-auto leading-relaxed">
-          {generateJsonSnippet()}
-        </pre>
+
+        {/* Resource Pack JSON Snippet */}
+        <div className="glass rounded-2xl p-6 flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-[#e8d8a8] uppercase tracking-wider">
+                Resource Pack JSON Snippet
+              </label>
+              <select
+                value={snippetFormat}
+                onChange={(e) => setSnippetFormat(e.target.value)}
+                className="px-3 py-1.5 rounded-lg bg-[#1e1706] border border-[rgba(120,80,10,0.12)] text-[#e8eaf0]
+        text-sm focus:outline-none focus:border-[#f59e0b] focus:ring-1 focus:ring-[rgba(245,158,11,0.14)]
+                transition-all appearance-none cursor-pointer w-40 mt-1"
+              >
+                <option value="vanilla">Vanilla</option>
+                <option value="itemsadder">ItemsAdder</option>
+                <option value="nexo">Nexo</option>
+              </select>
+            </div>
+            <button
+              onClick={handleCopySnippet}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-150
+              text-[#e6d8a3] hover:text-[#000000] hover:bg-[rgba(245,158,11,0.08)] border border-[rgba(120,80,10,0.08)]"
+            >
+              {copied ? (
+                <>
+                  <span className="iconify w-3.5 h-3.5 text-[#22c55e]" data-icon="mdi:check" />
+                  Copied!
+                </>
+              ) : (
+                <>
+                  <span className="iconify w-3.5 h-3.5" data-icon="mdi:content-copy" />
+                  Copy Snippet
+                </>
+              )}
+            </button>
+          </div>
+          <pre className="rounded-xl bg-[#0a0d13] border border-[rgba(120,80,10,0.12)] p-4 text-xs font-mono text-[#7a869a] overflow-x-auto leading-relaxed">
+            {generateJsonSnippet()}
+          </pre>
+        </div>
+        <footer className="text-center text-sm text-[#7a869a] py-4">
+          © {new Date().getFullYear()} Sam's Ranks. All Rights Reserved.
+        </footer>
       </div>
-    </div>
+    </>
   )
 }
