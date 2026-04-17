@@ -102,6 +102,7 @@ function tintImageData(
 export default function RankTagGenerator() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const offscreenRef = useRef<HTMLCanvasElement | null>(null)
+  const svgRef = useRef<HTMLImageElement>(null)
 
   const [text, setText] = useState("ADMIN")
   const [color, setColor] = useState("#fbbf24")
@@ -110,8 +111,106 @@ export default function RankTagGenerator() {
   const [imagesLoaded, setImagesLoaded] = useState(false)
   const [downloading, setDownloading] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [svgDataUri, setSvgDataUri] = useState<string | null>(null)
 
   const currentStyle = RANK_TAG_STYLES.find((s) => s.id === styleId) ?? RANK_TAG_STYLES[0]
+
+  // Helper to escape HTML in SVG text
+  const escapeHtml = (text: string): string => {
+    const map: Record<string, string> = {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#039;",
+    }
+    return text.replace(/[&<>"']/g, (m) => map[m])
+  }
+
+  // Generate SVG representation for lossless preview scaling
+  const generateSvgPreview = useCallback(async () => {
+    if (!fontLoaded || !imagesLoaded) return
+
+    const style = currentStyle
+    const rgb = hexToRgb(color)
+    const displayText = text || " "
+
+    // Use base tile dimensions (1:1, 12px high)
+    const tileH = style.tileHeight * SCALE
+    const leftW = style.leftWidth * SCALE
+    const rightW = style.rightWidth * SCALE
+    const midW = style.middleWidth * SCALE
+    const charCount = displayText.length
+    const totalW = leftW + midW * charCount + rightW + RIGHT_SAFE_PAD
+
+    // Fetch all template images
+    const [leftImg, midImg, rightImg] = await Promise.all([
+      getCachedImage(style.leftUrl),
+      getCachedImage(style.middleUrl),
+      getCachedImage(style.rightUrl),
+    ])
+
+    // Create temp canvas to extract tinted tile colors (single pixel sample from each)
+    const tempCanvas = document.createElement("canvas")
+    tempCanvas.width = 1
+    tempCanvas.height = 1
+    const tempCtx = tempCanvas.getContext("2d")
+    if (!tempCtx) return
+
+    // Extract average color of each tile by sampling via tinting
+    const getTintedColor = (img: HTMLImageElement): string => {
+      tempCtx.clearRect(0, 0, 1, 1)
+      tempCtx.drawImage(img, 0, 0, 1, 1)
+      const imgData = tempCtx.getImageData(0, 0, 1, 1)
+      const data = imgData.data
+      const lum = (0.299 * data[0] + 0.587 * data[1] + 0.114 * data[2]) / 255
+      const r = Math.round(rgb.r * lum)
+      const g = Math.round(rgb.g * lum)
+      const b = Math.round(rgb.b * lum)
+      return `rgb(${r},${g},${b})`
+    }
+
+    const leftColor = getTintedColor(leftImg)
+    const midColor = getTintedColor(midImg)
+    const rightColor = getTintedColor(rightImg)
+
+    // Build SVG with rectangles for tiles and text
+    let svgContent = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${totalW} ${tileH}" width="${totalW}" height="${tileH}">`
+
+    // Left tile
+    svgContent += `<rect x="0" y="0" width="${leftW}" height="${tileH}" fill="${leftColor}"/>`
+
+    // Middle tiles
+    for (let i = 0; i < charCount; i++) {
+      const x = leftW + i * midW
+      svgContent += `<rect x="${x}" y="0" width="${midW}" height="${tileH}" fill="${midColor}"/>`
+    }
+
+    // Right tile
+    const rightX = leftW + charCount * midW
+    svgContent += `<rect x="${rightX}" y="0" width="${rightW}" height="${tileH}" fill="${rightColor}"/>`
+
+    // Add text for each character
+    const fontSize = 2.5
+    const textY = tileH / 2
+    for (let i = 0; i < charCount; i++) {
+      const ch = displayText[i]
+      const cx = leftW + i * midW + midW / 2
+
+      // Shadow
+      svgContent += `<text x="${cx + 0.2}" y="${textY + 0.3}" font-family="${FONT_FAMILY}, monospace" font-size="${fontSize}" text-anchor="middle" dominant-baseline="middle" fill="rgba(0,0,0,0.55)">${escapeHtml(ch)}</text>`
+
+      // Main text
+      svgContent += `<text x="${cx}" y="${textY}" font-family="${FONT_FAMILY}, monospace" font-size="${fontSize}" text-anchor="middle" dominant-baseline="middle" fill="#ffffff">${escapeHtml(ch)}</text>`
+    }
+
+    svgContent += `</svg>`
+
+    // Convert SVG to data URI
+    const svg = new Blob([svgContent], { type: "image/svg+xml" })
+    const url = URL.createObjectURL(svg)
+    setSvgDataUri(url)
+  }, [text, color, styleId, fontLoaded, imagesLoaded, currentStyle])
 
   // Load Iconify script for icons (iconify.design)
   useEffect(() => {
@@ -232,6 +331,12 @@ export default function RankTagGenerator() {
 
     // === LAYER 4 (FINAL): 45° diagonal shading pass across whole tag ===
     //applyDiagonalShading(ctx, 0, 0, totalW, tileH, 0.15)
+<<<<<<< HEAD
+
+    // Also generate SVG preview for lossless scaling
+    await generateSvgPreview()
+=======
+>>>>>>> 7a2198c4cadf20b543370390a0bb223c1e0a4c9d
 
     // === Display copy — upscale with nearest-neighbor for preview ===
     const display = canvasRef.current
@@ -255,6 +360,13 @@ export default function RankTagGenerator() {
     dCtx.drawImage(off, 0, 0, displayW, displayH)
     dCtx.restore()
   }, [text, color, styleId, fontLoaded, imagesLoaded, currentStyle])
+
+  useEffect(() => {
+    // Clean up old blob URLs
+    return () => {
+      if (svgDataUri) URL.revokeObjectURL(svgDataUri)
+    }
+  }, [svgDataUri])
 
   useEffect(() => {
     renderTag()
@@ -394,12 +506,16 @@ export default function RankTagGenerator() {
                 <span className="iconify w-4 h-4 animate-spin text-[#fbbf24]" data-icon="mdi:loading" />
                 Loading assets…
               </div>
-            ) : (
-              <canvas
-                ref={canvasRef}
-                className="rounded-sm"
-                style={{ imageRendering: "pixelated" }}
+            ) : svgDataUri ? (
+              <img
+                ref={svgRef}
+                src={svgDataUri}
+                alt="Rank tag preview"
+                className="max-h-[200px] max-w-full"
+                style={{ imageRendering: "crisp-edges" }}
               />
+            ) : (
+              <div className="text-[#7a869a] text-sm">Rendering…</div>
             )}
           </div>
         </div>
