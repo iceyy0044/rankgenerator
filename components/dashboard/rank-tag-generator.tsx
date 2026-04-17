@@ -131,7 +131,6 @@ export default function RankTagGenerator() {
   const [downloading, setDownloading] = useState(false)
   const [copied, setCopied] = useState(false)
   const [snippetFormat, setSnippetFormat] = useState("vanilla")
-  const [invertColors, setInvertColors] = useState(false)
 
   const currentStyle = RANK_TAG_STYLES.find((s) => s.id === styleId) ?? RANK_TAG_STYLES[0]
 
@@ -244,7 +243,6 @@ export default function RankTagGenerator() {
       shadowCtx.canvas.height = CHAR_HEIGHT
       shadowCtx.drawImage(fontSheet, fontChar.x, fontChar.y, CHAR_WIDTH, CHAR_HEIGHT, 0, 0, CHAR_WIDTH, CHAR_HEIGHT)
       shadowCtx.globalCompositeOperation = 'source-in'
-      shadowCtx.fillStyle = invertColors ? '#ffffff' : 'rgba(0,0,0,0.55)'
       shadowCtx.fillRect(0, 0, CHAR_WIDTH, CHAR_HEIGHT)
 
       // Draw shadow
@@ -256,15 +254,14 @@ export default function RankTagGenerator() {
       glyphCtx.canvas.height = CHAR_HEIGHT
       glyphCtx.drawImage(fontSheet, fontChar.x, fontChar.y, CHAR_WIDTH, CHAR_HEIGHT, 0, 0, CHAR_WIDTH, CHAR_HEIGHT)
       glyphCtx.globalCompositeOperation = 'source-in'
-      glyphCtx.fillStyle = invertColors ? 'rgba(0,0,0,0.55)' : '#ffffff'
       glyphCtx.fillRect(0, 0, CHAR_WIDTH, CHAR_HEIGHT)
 
       // === NEW: Apply subtle tint to bottom of glyph ===
       // This adds a little bit of the background color to the very bottom of the text,
       // making it look more integrated with the tag.
       glyphCtx.globalCompositeOperation = 'source-atop'
-      glyphCtx.fillStyle = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.25)` // Use background color with some transparency
-      glyphCtx.fillRect(0, CHAR_HEIGHT - 4, CHAR_WIDTH, 4) // Apply to the bottom 2 pixels
+      glyphCtx.fillStyle = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.3)` // Use background color with some transparency
+      glyphCtx.fillRect(0, CHAR_HEIGHT - 3, CHAR_WIDTH, 3) // Apply to the bottom 2 pixels
 
       // Draw main glyph
       ctx.drawImage(glyphCtx.canvas, cx + 1, textY)
@@ -463,19 +460,6 @@ export default function RankTagGenerator() {
                 ))}
               </div>
             </div>
-          </div>
-
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              id="invert-colors"
-              checked={invertColors}
-              onChange={(e) => setInvertColors(e.target.checked)}
-              className="h-4 w-4 rounded border-gray-300 text-yellow-600 focus:ring-yellow-500"
-            />
-            <label htmlFor="invert-colors" className="ml-2 block text-sm text-[#e8d8a8]">
-              Invert Text/Shadow Colors
-            </label>
           </div>
 
           <div className="h-px bg-[rgba(120,80,10,0.15)]" />
