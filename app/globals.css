@@ -1,0 +1,103 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --background: #0e1117;
+  --foreground: #e8eaf0;
+  --card: #161b27;
+  --card-foreground: #e8eaf0;
+  --popover: #1e2435;
+  --popover-foreground: #e8eaf0;
+  --primary: #4f8ef7;
+  --primary-foreground: #ffffff;
+  --secondary: #1e2435;
+  --secondary-foreground: #e8eaf0;
+  --muted: #1e2435;
+  --muted-foreground: #7a869a;
+  --accent: #4f8ef7;
+  --accent-foreground: #ffffff;
+  --destructive: #f87171;
+  --destructive-foreground: #ffffff;
+  --border: rgba(99, 120, 180, 0.18);
+  --input: #1e2435;
+  --ring: #4f8ef7;
+  --radius: 0.75rem;
+  --surface: #161b27;
+  --surface-2: #1e2435;
+  --accent-muted: rgba(79, 142, 247, 0.15);
+  --accent-glow: rgba(79, 142, 247, 0.25);
+  --success: #34d399;
+  --warning: #fbbf24;
+}
+
+@theme inline {
+  --font-sans: 'Poppins', 'Poppins Fallback';
+  --font-mono: 'JetBrains Mono', monospace;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+    box-sizing: border-box;
+  }
+  html {
+    background-color: #0e1117;
+  }
+  body {
+    @apply bg-background text-foreground;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+/* Glassmorphism */
+.glass {
+  background: rgba(22, 27, 39, 0.75);
+  border: 1px solid rgba(99, 120, 180, 0.18);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.glass-hover {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.glass-hover:hover {
+  border-color: rgba(79, 142, 247, 0.35);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.45),
+    0 0 0 1px rgba(79, 142, 247, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: #0e1117; }
+::-webkit-scrollbar-thumb { background: #2a3045; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #3a4060; }
