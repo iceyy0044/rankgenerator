@@ -198,10 +198,10 @@ export default function RankTagGenerator() {
     // === LAYER 2 (skipped — merged into LAYER 1 via tinted background) ===
 
     // === LAYER 3: Text (5px pixel font, render per-character into each mid tile) ===
-    const fontSize = 5
+    const fontSize = 2.5
     ctx.font = `${fontSize}px "${FONT_FAMILY}"`
     ctx.textAlign = "center"
-    ctx.textBaseline = "top"
+    ctx.textBaseline = "center"
 
     // Clip to the middle area where glyphs are allowed
     ctx.save()
