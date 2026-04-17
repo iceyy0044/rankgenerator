@@ -208,7 +208,7 @@ export default function RankTagGenerator() {
     tintImageData(ctx, rightImg, rightX, 0, rightW, tileH, rgb)
 
     // === LAYER 2 & 3: Text with Shadow ===
-    const fontSize = 5 // The font is designed for a 5px grid
+    const fontSize = 2.5 // The font is designed for a 5px grid
     ctx.font = `${fontSize}px "${FONT_FAMILY}"`
     ctx.textAlign = "center"
     ctx.textBaseline = "middle"
