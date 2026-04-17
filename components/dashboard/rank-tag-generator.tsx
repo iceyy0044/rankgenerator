@@ -260,21 +260,11 @@ export default function RankTagGenerator() {
     if (!dCtx) return
     dCtx.imageSmoothingEnabled = false
     dCtx.imageSmoothingQuality = "low"
-    // Try to use scale-pixel-art for perfect integer scaling when available
-    try {
-      const spa = await import("scale-pixel-art")
-      // scaleCanvas takes (srcCanvas, destCanvas, scale) — compute integer scale
-      const intScale = Math.max(1, Math.floor(displayScale))
-      // dest canvas is already sized in CSS pixels; we need to pass actual dest canvas element
-      spa.scaleCanvas(off, display, intScale)
-    } catch (e) {
-      // Fallback: drawImage with nearest-neighbor
-      dCtx.save()
-      dCtx.scale(dpr, dpr)
-      dCtx.imageSmoothingEnabled = false
-      dCtx.drawImage(off, 0, 0, displayW, displayH)
-      dCtx.restore()
-    }
+    dCtx.save()
+    dCtx.scale(dpr, dpr)
+    dCtx.imageSmoothingEnabled = false
+    dCtx.drawImage(off, 0, 0, displayW, displayH)
+    dCtx.restore()
   }, [text, color, styleId, fontLoaded, imagesLoaded, currentStyle])
 
   useEffect(() => {
