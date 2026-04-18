@@ -8,13 +8,20 @@ const API_SECRET_KEY = "a1b2c3d4-e5f6-7890-1234-567890abcdef"; // This should be
 
 // --- New Local File Reading Function ---
 async function readImageAsBuffer(filePath: string): Promise<Buffer> {
+    // Resolve path by joining the project root with 'public' and the relative file path
+    const absolutePath = path.join(process.cwd(), "public", filePath);
     try {
-        // Resolve path relative to the project root
-        const absolutePath = path.resolve(process.cwd(), filePath);
+        await fs.access(absolutePath);
+    } catch (error) {
+        console.error(`File not found at path: ${absolutePath}`);
+        throw new Error(`File not found: ${filePath}. Resolved path: ${absolutePath}`);
+    }
+
+    try {
         const fileBuffer = await fs.readFile(absolutePath);
         return fileBuffer;
     } catch (error: any) {
-        console.error(`Error reading file: ${filePath} at ${path.resolve(process.cwd(), filePath)}`, error);
+        console.error(`Error reading file: ${filePath} at ${absolutePath}`, error);
         throw new Error(`Could not read image from ${filePath}. Error: ${error.message}`);
     }
 }
