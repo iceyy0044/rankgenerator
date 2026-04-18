@@ -1,79 +1,55 @@
-import { createClient, createAdminClient } from "@/lib/supabase/server"
-import { NextResponse } from "next/server"
+import { createAdminClient } from "@/lib/supabase/server";
+import { NextResponse } from "next/server";
+
+const API_SECRET_KEY = "8f4d7a6e-2b8c-4d9a-8f2c-6e8d7b4a9f1d"; // This should be in an environment variable
 
 export async function POST(req: Request) {
   try {
-    // Use the cookie-based client only for auth verification
-    const supabase = await createClient()
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-
-    if (authError || !user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    const authHeader = req.headers.get("Authorization");
+    if (authHeader !== `Bearer ${API_SECRET_KEY}`) {
+      return NextResponse.json({ valid: false, error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await req.json()
-    const key = typeof body?.key === "string" ? body.key.trim() : ""
-    if (!key) {
-      return NextResponse.json({ error: "License key is required" }, { status: 400 })
+    const body = await req.json();
+    const { discord_username, license_key } = body;
+
+    if (!discord_username || !license_key) {
+      return NextResponse.json(
+        { valid: false, error: "Missing discord_username or license_key" },
+        { status: 400 }
+      );
     }
 
-    // Use admin client for all DB operations to bypass RLS
-    const admin = createAdminClient()
+    const supabase = createAdminClient();
 
-    // Check key exists, is active, and unclaimed
-    const { data: licenseData, error: licenseError } = await admin
-      .from("license_keys")
-      .select("key, is_active, used_by")
-      .eq("key", key)
-      .single()
-
-    if (licenseError || !licenseData) {
-      return NextResponse.json({ error: "Invalid license key" }, { status: 400 })
-    }
-    if (!licenseData.is_active) {
-      return NextResponse.json({ error: "This license key has been deactivated" }, { status: 400 })
-    }
-    if (licenseData.used_by) {
-      return NextResponse.json({ error: "This license key has already been used" }, { status: 400 })
-    }
-
-    // Check user doesn't already have a license
-    const { data: profileData } = await admin
+    // Fetch the profile associated with the Discord username
+    const { data: profileData, error: profileError } = await supabase
       .from("profiles")
       .select("license_key")
-      .eq("id", user.id)
-      .single()
+      .eq("discord_username", discord_username)
+      .single();
 
-    if (profileData?.license_key) {
-      return NextResponse.json({ error: "Your account already has an active license" }, { status: 400 })
+    if (profileError || !profileData) {
+      return NextResponse.json(
+        { valid: false, error: "Profile not found for the given Discord username." },
+        { status: 404 }
+      );
     }
 
-    // Mark license as claimed
-    const { error: updateLicenseError } = await admin
-      .from("license_keys")
-      .update({ used_by: user.id, used_at: new Date().toISOString() })
-      .eq("key", key)
-      .is("used_by", null) // extra guard against race condition
-
-    if (updateLicenseError) {
-      console.error("[v0] License update error:", updateLicenseError)
-      return NextResponse.json({ error: "Failed to claim license key" }, { status: 500 })
+    // Check if the provided license key matches the one in the user's profile
+    if (profileData.license_key !== license_key) {
+      return NextResponse.json(
+        { valid: false, error: "License key does not match the user's profile." },
+        { status: 403 }
+      );
     }
 
-    // Link license to user profile
-    const { error: profileError } = await admin
-      .from("profiles")
-      .update({ license_key: key })
-      .eq("id", user.id)
-
-    if (profileError) {
-      console.error("[v0] Profile update error:", profileError)
-      return NextResponse.json({ error: "Failed to update profile" }, { status: 500 })
-    }
-
-    return NextResponse.json({ success: true })
-  } catch (err) {
-    console.error("[v0] Unexpected error in /api/license/validate:", err)
-    return NextResponse.json({ error: "An unexpected error occurred" }, { status: 500 })
+    // If all checks pass, the license is valid for this user.
+    return NextResponse.json({ valid: true });
+  } catch (error) {
+    return NextResponse.json(
+      { valid: false, error: "An unexpected error occurred." },
+      { status: 500 }
+    );
   }
 }
