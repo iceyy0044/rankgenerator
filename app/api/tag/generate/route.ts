@@ -16,8 +16,13 @@ const s3Client = new S3Client({
 });
 
 async function fetchImageFromS3(key: string): Promise<Buffer> {
+    const bucketName = process.env.SUPABASE_S3_BUCKET;
+    if (!bucketName) {
+        throw new Error("SUPABASE_S3_BUCKET environment variable is not set.");
+    }
+
     const command = new GetObjectCommand({
-        Bucket: process.env.SUPABASE_S3_BUCKET!,
+        Bucket: bucketName,
         Key: key,
     });
 
@@ -26,12 +31,13 @@ async function fetchImageFromS3(key: string): Promise<Buffer> {
         if (!response.Body) {
             throw new Error(`S3 response body is empty for key: ${key}`);
         }
-        // Use the modern, correct way to get the buffer from the stream
         const byteArray = await response.Body.transformToByteArray();
         return Buffer.from(byteArray);
-    } catch (error) {
-        console.error(`Failed to fetch image from S3: ${key}`, error);
-        throw new Error(`Failed to fetch image from S3: ${key}`);
+    } catch (error: any) {
+        // Log the detailed error from the S3 client
+        console.error(`Failed to fetch image from S3. Key: ${key}, Bucket: ${bucketName}. S3 Error:`, error);
+        // Re-throw a more informative error
+        throw new Error(`Failed to fetch image from S3 - ${error.name || 'UnknownError'}: ${error.message || 'No message'}`);
     }
 }
 
