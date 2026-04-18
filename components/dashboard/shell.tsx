@@ -562,13 +562,13 @@ export default function DashboardShell({ user, children }: Props) {
   }
 
   return (
-    <>
+    <div className="relative min-h-screen w-full">
       <video
         autoPlay
         loop
         muted
         playsInline
-        className="hidden md:block fixed top-0 left-0 w-full h-full object-cover z-[-2]"
+        className="hidden md:block fixed top-0 left-0 w-full h-full object-cover z-0"
       >
         <source src="/videos/Grid_horizontal.webm" type="video/webm" />
       </video>
@@ -579,7 +579,7 @@ export default function DashboardShell({ user, children }: Props) {
           options={particleOptions as any}
         />
       )}
-      <div className="relative z-10">
+      <div className="relative z-10 flex flex-col min-h-screen">
         <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-[rgba(120,80,10,0.15)] bg-[#0a0d13]/50 px-4 backdrop-blur-sm sm:px-6">
           <div className="flex items-center gap-4">
             <button
@@ -629,7 +629,7 @@ export default function DashboardShell({ user, children }: Props) {
           </div>
         </header>
 
-        <div className="flex">
+        <div className="flex flex-1">
           <aside
             className={`fixed top-16 z-20 h-[calc(100vh-4rem)] w-56 border-r border-[rgba(120,80,10,0.15)] bg-[#0a0d13]/80 p-4 backdrop-blur-sm transition-transform md:relative md:top-0 md:h-auto md:translate-x-0 ${
               isMenuOpen ? "translate-x-0" : "-translate-x-full"
@@ -653,11 +653,11 @@ export default function DashboardShell({ user, children }: Props) {
               ))}
             </nav>
           </aside>
-          <main className="flex-1 bg-[#0a0d13]/60 p-4 backdrop-blur-sm sm:p-6">
+          <main className="flex-1 bg-[#0a0d13]/60 p-4 backdrop-blur-sm sm:p-6 w-full overflow-x-auto">
             {children}
           </main>
         </div>
       </div>
-    </>
+    </div>
   )
 }
