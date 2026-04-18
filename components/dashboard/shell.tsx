@@ -644,8 +644,7 @@ export default function DashboardShell({ user, children }: Props) {
               ))}
             </nav>
           </aside>
-
-          <main className="flex-1 bg-[#0a0d13]/50 p-4 backdrop-blur-sm sm:p-6">
+          <main className="flex-1 bg-[#0a0d139d]/50 p-4 backdrop-blur-sm sm:p-6">
             {children}
           </main>
         </div>
