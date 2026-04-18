@@ -1,26 +1,16 @@
 import { NextResponse } from "next/server";
 import { RANK_TAG_STYLES_SERVER } from "@/lib/rank-tag-config.server";
-import sharp from "sharp";
+import Jimp from "jimp";
 import fs from "fs/promises";
 import path from "path";
 
 const API_SECRET_KEY = "a1b2c3d4-e5f6-7890-1234-567890abcdef"; // This should be in an environment variable
 
-// --- New Local File Reading Function ---
 async function readImageAsBuffer(filePath: string): Promise<Buffer> {
-    // Resolve path by joining the project root with 'public' and the relative file path
     const absolutePath = path.join(process.cwd(), "public", filePath);
     try {
         await fs.access(absolutePath);
-    } catch (error) {
-        console.error(`File not found at path: ${absolutePath}`);
-        throw new Error(`File not found: ${filePath}. Resolved path: ${absolutePath}`);
-    }
-
-    try {
         const fileBuffer = await fs.readFile(absolutePath);
-        // NEW: Log the size of the buffer to verify it's not empty
-        console.log(`Buffer size for ${filePath}: ${fileBuffer.length}`);
         return fileBuffer;
     } catch (error: any) {
         console.error(`Error reading file: ${filePath} at ${absolutePath}`, error);
@@ -53,36 +43,20 @@ function hexToRgb(hex: string) {
     return { r, g, b };
 }
 
-async function tintImage(imageBuffer: Buffer, color: { r: number, g: number, b: number }) {
-    // "Sanitize" the input buffer by decoding and re-encoding it.
-    // This normalizes the image data and can fix issues with specific PNG formats.
-    const sanitizedBuffer = await sharp(imageBuffer).png().toBuffer();
+async function tintImage(image: Jimp, color: { r: number, g: number, b: number }): Promise<Jimp> {
+    // Create a tint layer by colorizing a white image
+    const tintLayer = new Jimp(image.getWidth(), image.getHeight(), 0xffffffff);
+    tintLayer.color([{ apply: 'red', params: [color.r] }, { apply: 'green', params: [color.g] }, { apply: 'blue', params: [color.b] }]);
 
-    const image = sharp(sanitizedBuffer);
-    const { width, height } = await image.metadata();
+    // Create a copy of the original image to use as a mask
+    const mask = image.clone();
 
-    if (!width || !height) {
-        throw new Error("Could not get image metadata after sanitization");
-    }
-
-    const tintLayer = sharp({
-        create: {
-            width,
-            height,
-            channels: 3,
-            background: color,
-        },
-    });
-
-    const tinted = await image
-        .composite([
-            { input: await tintLayer.toBuffer(), blend: 'dest-in' },
-            // IMPORTANT: Use the sanitized buffer for the multiply blend as well
-            { input: sanitizedBuffer, blend: 'multiply' }
-        ])
-        .toBuffer();
-
-    return tinted;
+    // Apply the tint
+    return image.composite(tintLayer, 0, 0, {
+        mode: Jimp.BLEND_MULTIPLY,
+        opacitySource: 1,
+        opacityDest: 1
+    }).mask(mask, 0, 0);
 }
 
 export async function GET(req: Request) {
@@ -119,38 +93,33 @@ export async function GET(req: Request) {
             return NextResponse.json({ error: `Style '${styleId}' not found.` }, { status: 400 });
         }
         
-        const [leftImgBuffer, midImgBuffer, rightImgBuffer, fontSheetBuffer] = await Promise.all([
-            readImageAsBuffer(style.leftUrl),
-            readImageAsBuffer(style.middleUrl),
-            readImageAsBuffer(style.rightUrl),
-            readImageAsBuffer(FONT_SHEET_PATH)
+        const [leftImg, midImg, rightImg, fontSheet] = await Promise.all([
+            Jimp.read(await readImageAsBuffer(style.leftUrl)),
+            Jimp.read(await readImageAsBuffer(style.middleUrl)),
+            Jimp.read(await readImageAsBuffer(style.rightUrl)),
+            Jimp.read(await readImageAsBuffer(FONT_SHEET_PATH))
         ]);
 
         const [leftTinted, midTinted, rightTinted] = await Promise.all([
-            tintImage(leftImgBuffer, selectedRgb),
-            tintImage(midImgBuffer, selectedRgb),
-            tintImage(rightImgBuffer, selectedRgb),
+            tintImage(leftImg, selectedRgb),
+            tintImage(midImg, selectedRgb),
+            tintImage(rightImg, selectedRgb),
         ]);
 
-        const leftMeta = await sharp(leftTinted).metadata();
-        const midMeta = await sharp(midTinted).metadata();
-
         const charCount = text.length;
-        const leftW = leftMeta.width!;
-        const midW = midMeta.width!;
-        const rightW = (await sharp(rightTinted).metadata()).width!;
-        const tileH = leftMeta.height!;
+        const leftW = leftTinted.getWidth();
+        const midW = midTinted.getWidth();
+        const rightW = rightTinted.getWidth();
+        const tileH = leftTinted.getHeight();
         const totalW = leftW + charCount * midW + rightW;
 
-        const compositeLayers: sharp.OverlayOptions[] = [];
+        const finalImage = new Jimp(totalW, tileH, 0x00000000); // Transparent background
 
-        compositeLayers.push({ input: leftTinted, top: 0, left: 0 });
+        finalImage.composite(leftTinted, 0, 0);
         for (let i = 0; i < charCount; i++) {
-            compositeLayers.push({ input: midTinted, top: 0, left: leftW + i * midW });
+            finalImage.composite(midTinted, leftW + i * midW, 0);
         }
-        compositeLayers.push({ input: rightTinted, top: 0, left: leftW + charCount * midW });
-
-        const fontSheet = sharp(fontSheetBuffer);
+        finalImage.composite(rightTinted, leftW + charCount * midW, 0);
 
         for (let i = 0; i < charCount; i++) {
             const ch = text[i];
@@ -160,50 +129,29 @@ export async function GET(req: Request) {
             const cx = leftW + i * midW + Math.floor((midW - CHAR_WIDTH) / 2);
             const textY = Math.floor((tileH - CHAR_HEIGHT) / 2);
 
-            const charImg = await fontSheet.clone().extract({ left: fontChar.x, top: fontChar.y, width: CHAR_WIDTH, height: CHAR_HEIGHT }).toBuffer();
+            const charImg = fontSheet.clone().crop(fontChar.x, fontChar.y, CHAR_WIDTH, CHAR_HEIGHT);
 
             // Shadow
-            const shadowBuffer = await sharp(charImg).composite([{
-                input: Buffer.from([0, 0, 0, 140]), // approx 0.55 alpha
-                raw: { width: 1, height: 1, channels: 4 },
-                tile: true,
-                blend: 'in'
-            }]).toBuffer();
-            compositeLayers.push({ input: shadowBuffer, top: textY + 1, left: cx + 1 });
+            const shadowImg = charImg.clone().color([{ apply: 'red', params: [0] }, { apply: 'green', params: [0] }, { apply: 'blue', params: [0] }]).opacity(0.55);
+            finalImage.composite(shadowImg, cx + 1, textY + 1);
 
             // Main glyph with tint
             const baseRgb = { r: 205, g: 205, b: 205 };
             const mixedRgb = {
                 r: Math.round(baseRgb.r * 0.8 + selectedRgb.r * 0.2),
-                g: Math.round(baseRgb.g * 0.8 + selectedRgb.b * 0.2),
+                g: Math.round(baseRgb.g * 0.8 + selectedRgb.g * 0.2),
                 b: Math.round(baseRgb.b * 0.8 + selectedRgb.b * 0.2),
             };
+            
+            const glyphTint = new Jimp(CHAR_WIDTH, 3, 0x000000ff).color([{apply: 'red', params: [mixedRgb.r]}, {apply: 'green', params: [mixedRgb.g]}, {apply: 'blue', params: [mixedRgb.b]}]).opacity(0.4);
+            const glyphBuffer = charImg.clone().color([{ apply: 'red', params: [255] }, { apply: 'green', params: [255] }, { apply: 'blue', params: [255] }]).composite(glyphTint, 0, CHAR_HEIGHT - 3);
 
-            const glyphTint = await sharp({ create: { width: CHAR_WIDTH, height: 3, channels: 4, background: { r: mixedRgb.r, g: mixedRgb.g, b: mixedRgb.b, alpha: 0.4 } } }).toBuffer();
-
-            const glyphBuffer = await sharp(charImg)
-                .composite([
-                    { input: Buffer.from([255, 255, 255, 255]), raw: { width: 1, height: 1, channels: 4 }, tile: true, blend: 'in' },
-                    { input: glyphTint, top: CHAR_HEIGHT - 3, left: 0, blend: 'atop' }
-                ])
-                .toBuffer();
-
-            compositeLayers.push({ input: glyphBuffer, top: textY, left: cx + 1 });
+            finalImage.composite(glyphBuffer, cx + 1, textY);
         }
 
-        const finalImage = await sharp({
-            create: {
-                width: totalW,
-                height: tileH,
-                channels: 4,
-                background: { r: 0, g: 0, b: 0, alpha: 0 },
-            },
-        })
-        .composite(compositeLayers)
-        .png()
-        .toBuffer();
+        const finalBuffer = await finalImage.getBufferAsync(Jimp.MIME_PNG);
 
-        return new NextResponse(finalImage, {
+        return new NextResponse(finalBuffer, {
             status: 200,
             headers: {
                 'Content-Type': 'image/png',
@@ -213,6 +161,7 @@ export async function GET(req: Request) {
 
     } catch (error) {
         console.error("Error generating tag:", error);
-        return NextResponse.json({ error: "An unexpected error occurred while generating the tag." }, { status: 500 });
+        const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
+        return NextResponse.json({ error: "An unexpected error occurred while generating the tag.", details: errorMessage }, { status: 500 });
     }
 }
