@@ -61,16 +61,6 @@ export default function DashboardShell({ user, children }: Props) {
       ),
     },
     {
-      href: "/dashboard/favourites",
-      label: "Favourites",
-      icon: (
-        <span
-          className="iconify w-5 h-5"
-          data-icon="fluent:star-24-regular"
-        />
-      ),
-    },
-    {
       href: "/dashboard/admin",
       label: "Admin",
       icon: <span className="iconify w-5 h-5" data-icon="la:user-shield" />,
