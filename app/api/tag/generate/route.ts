@@ -31,7 +31,11 @@ function hexToRgb(hex: string) {
 }
 
 async function fetchImage(url: string) {
-    const response = await fetch(url);
+    const response = await fetch(url, {
+        headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+    });
     if (!response.ok) {
         const errorText = await response.text();
         console.error(`Failed to fetch image from ${url}. Status: ${response.status}. Body: ${errorText}`);
