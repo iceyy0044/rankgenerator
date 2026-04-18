@@ -368,11 +368,11 @@ export default function DashboardShell({ user, children }: Props) {
       },
       reduceDuplicates: false,
       shadow: {
-        blur: 0,
+        blur: 0.5,
         color: {
-          value: "#000",
+          value: "#00000041",
         },
-        enable: false,
+        enable: true,
         offset: {
           x: 0,
           y: 0,
@@ -521,9 +521,9 @@ export default function DashboardShell({ user, children }: Props) {
         frequency: 1,
         opacity: 1,
         shadow: {
-          blur: 5,
+          blur: 2.5,
           color: {
-            value: "#000",
+            value: "#0000008f",
           },
           enable: false,
         },
