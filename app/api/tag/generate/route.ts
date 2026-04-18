@@ -54,11 +54,15 @@ function hexToRgb(hex: string) {
 }
 
 async function tintImage(imageBuffer: Buffer, color: { r: number, g: number, b: number }) {
-    const image = sharp(imageBuffer);
+    // "Sanitize" the input buffer by decoding and re-encoding it.
+    // This normalizes the image data and can fix issues with specific PNG formats.
+    const sanitizedBuffer = await sharp(imageBuffer).png().toBuffer();
+
+    const image = sharp(sanitizedBuffer);
     const { width, height } = await image.metadata();
 
     if (!width || !height) {
-        throw new Error("Could not get image metadata");
+        throw new Error("Could not get image metadata after sanitization");
     }
 
     const tintLayer = sharp({
@@ -73,7 +77,8 @@ async function tintImage(imageBuffer: Buffer, color: { r: number, g: number, b: 
     const tinted = await image
         .composite([
             { input: await tintLayer.toBuffer(), blend: 'dest-in' },
-            { input: imageBuffer, blend: 'multiply' }
+            // IMPORTANT: Use the sanitized buffer for the multiply blend as well
+            { input: sanitizedBuffer, blend: 'multiply' }
         ])
         .toBuffer();
 
