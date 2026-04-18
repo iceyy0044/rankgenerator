@@ -30,8 +30,16 @@ function hexToRgb(hex: string) {
     return { r, g, b };
 }
 
-async function tintImage(imagePath: string, color: { r: number, g: number, b: number }) {
-    const image = sharp(imagePath);
+async function fetchImage(url: string) {
+    const response = await fetch(url);
+    if (!response.ok) {
+        throw new Error(`Failed to fetch image: ${response.statusText} from ${url}`);
+    }
+    return Buffer.from(await response.arrayBuffer());
+}
+
+async function tintImage(imageBuffer: Buffer, color: { r: number, g: number, b: number }) {
+    const image = sharp(imageBuffer);
     const { width, height } = await image.metadata();
 
     if (!width || !height) {
@@ -50,7 +58,7 @@ async function tintImage(imagePath: string, color: { r: number, g: number, b: nu
     const tinted = await image
         .composite([
             { input: await tintLayer.toBuffer(), blend: 'dest-in' },
-            { input: await image.toBuffer(), blend: 'multiply' }
+            { input: imageBuffer, blend: 'multiply' }
         ])
         .toBuffer();
 
@@ -60,13 +68,6 @@ async function tintImage(imagePath: string, color: { r: number, g: number, b: nu
 export async function GET(req: Request) {
     try {
         const authHeader = req.headers.get("Authorization");
-
-        // --- DEBUGGING LOGS ---
-        console.log("Received Authorization Header:", authHeader);
-        console.log("Expected API Secret Key:", API_SECRET_KEY);
-        console.log("Expected Full Header:", `Bearer ${API_SECRET_KEY}`);
-        // --- END DEBUGGING LOGS ---
-
         if (authHeader !== `Bearer ${API_SECRET_KEY}`) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
@@ -98,28 +99,30 @@ export async function GET(req: Request) {
             return NextResponse.json({ error: `Style '${styleId}' not found.` }, { status: 400 });
         }
 
-        const leftImgPath = path.join(process.cwd(), "public", style.leftUrl);
-        const midImgPath = path.join(process.cwd(), "public", style.middleUrl);
-        const rightImgPath = path.join(process.cwd(), "public", style.rightUrl);
+        const [leftImgBuffer, midImgBuffer, rightImgBuffer, fontSheetBuffer] = await Promise.all([
+            fetchImage(style.leftUrl),
+            fetchImage(style.middleUrl),
+            fetchImage(style.rightUrl),
+            sharp(FONT_SHEET_PATH).toBuffer()
+        ]);
 
         const [leftTinted, midTinted, rightTinted] = await Promise.all([
-            tintImage(leftImgPath, selectedRgb),
-            tintImage(midImgPath, selectedRgb),
-            tintImage(rightImgPath, selectedRgb),
+            tintImage(leftImgBuffer, selectedRgb),
+            tintImage(midImgBuffer, selectedRgb),
+            tintImage(rightImgBuffer, selectedRgb),
         ]);
 
         const leftMeta = await sharp(leftTinted).metadata();
         const midMeta = await sharp(midTinted).metadata();
-        const rightMeta = await sharp(rightTinted).metadata();
 
         const charCount = text.length;
         const leftW = leftMeta.width!;
         const midW = midMeta.width!;
-        const rightW = rightMeta.width!;
+        const rightW = (await sharp(rightTinted).metadata()).width!;
         const tileH = leftMeta.height!;
         const totalW = leftW + charCount * midW + rightW;
 
-        const compositeLayers = [];
+        const compositeLayers: sharp.OverlayOptions[] = [];
 
         compositeLayers.push({ input: leftTinted, top: 0, left: 0 });
         for (let i = 0; i < charCount; i++) {
@@ -127,7 +130,7 @@ export async function GET(req: Request) {
         }
         compositeLayers.push({ input: rightTinted, top: 0, left: leftW + charCount * midW });
 
-        const fontSheet = sharp(FONT_SHEET_PATH);
+        const fontSheet = sharp(fontSheetBuffer);
 
         for (let i = 0; i < charCount; i++) {
             const ch = text[i];
@@ -137,11 +140,11 @@ export async function GET(req: Request) {
             const cx = leftW + i * midW + Math.floor((midW - CHAR_WIDTH) / 2);
             const textY = Math.floor((tileH - CHAR_HEIGHT) / 2);
 
-            const charImg = await fontSheet.extract({ left: fontChar.x, top: fontChar.y, width: CHAR_WIDTH, height: CHAR_HEIGHT }).toBuffer();
+            const charImg = await fontSheet.clone().extract({ left: fontChar.x, top: fontChar.y, width: CHAR_WIDTH, height: CHAR_HEIGHT }).toBuffer();
 
             // Shadow
             const shadowBuffer = await sharp(charImg).composite([{
-                input: Buffer.from([0, 0, 0, 0.55 * 255]),
+                input: Buffer.from([0, 0, 0, 140]), // approx 0.55 alpha
                 raw: { width: 1, height: 1, channels: 4 },
                 tile: true,
                 blend: 'in'
