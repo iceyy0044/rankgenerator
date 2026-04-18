@@ -1,8 +1,7 @@
-import { createCanvas, loadImage } from "canvas";
 import { NextResponse } from "next/server";
-import { RANK_TAG_STYLES, RankTagStyle } from "@/lib/rank-tag-config";
+import { RANK_TAG_STYLES } from "@/lib/rank-tag-config";
 import path from "path";
-import fs from "fs/promises";
+import sharp from "sharp";
 
 const API_SECRET_KEY = "a1b2c3d4-e5f6-7890-1234-567890abcdef"; // This should be in an environment variable
 
@@ -24,7 +23,6 @@ const CHAR_HEIGHT = 7;
 const ALLOWED_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-.+! ";
 const FONT_SHEET_PATH = path.join(process.cwd(), "public", "font_sheet.png");
 
-
 function hexToRgb(hex: string) {
     const r = parseInt(hex.slice(1, 3), 16);
     const g = parseInt(hex.slice(3, 5), 16);
@@ -32,21 +30,31 @@ function hexToRgb(hex: string) {
     return { r, g, b };
 }
 
-function tintImageData(ctx: any, image: any, x: number, y: number, w: number, h: number, rgb: { r: number, g: number, b: number }) {
-    const tempCanvas = createCanvas(w, h);
-    const tempCtx = tempCanvas.getContext("2d");
-    tempCtx.imageSmoothingEnabled = false;
+async function tintImage(imagePath: string, color: { r: number, g: number, b: number }) {
+    const image = sharp(imagePath);
+    const { width, height } = await image.metadata();
 
-    tempCtx.fillStyle = `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`;
-    tempCtx.fillRect(0, 0, w, h);
+    if (!width || !height) {
+        throw new Error("Could not get image metadata");
+    }
 
-    tempCtx.globalCompositeOperation = "destination-in";
-    tempCtx.drawImage(image, 0, 0, w, h);
+    const tintLayer = sharp({
+        create: {
+            width,
+            height,
+            channels: 3,
+            background: color,
+        },
+    });
 
-    tempCtx.globalCompositeOperation = "multiply";
-    tempCtx.drawImage(image, 0, 0, w, h);
+    const tinted = await image
+        .composite([
+            { input: await tintLayer.toBuffer(), blend: 'dest-in' },
+            { input: await image.toBuffer(), blend: 'multiply' }
+        ])
+        .toBuffer();
 
-    ctx.drawImage(tempCanvas, x, y, w, h);
+    return tinted;
 }
 
 export async function GET(req: Request) {
@@ -61,7 +69,6 @@ export async function GET(req: Request) {
         let color = (searchParams.get("color") || "random").toLowerCase();
         const styleId = searchParams.get("style") || "classic";
 
-        // Validate text
         for (const char of text) {
             if (!ALLOWED_CHARS.includes(char)) {
                 return NextResponse.json({
@@ -71,7 +78,6 @@ export async function GET(req: Request) {
             }
         }
 
-        // Handle color
         if (color === "random") {
             color = "#" + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
         } else if (!/^#[0-9a-f]{6}$/i.test(color)) {
@@ -80,41 +86,42 @@ export async function GET(req: Request) {
 
         const selectedRgb = hexToRgb(color);
 
-        // Get style
         const style = RANK_TAG_STYLES.find(s => s.id === styleId);
         if (!style) {
             return NextResponse.json({ error: `Style '${styleId}' not found.` }, { status: 400 });
         }
 
-        // Load assets
-        const [leftImg, midImg, rightImg, fontSheet] = await Promise.all([
-            loadImage(path.join(process.cwd(), "public", style.leftUrl)),
-            loadImage(path.join(process.cwd(), "public", style.middleUrl)),
-            loadImage(path.join(process.cwd(), "public", style.rightUrl)),
-            loadImage(FONT_SHEET_PATH)
+        const leftImgPath = path.join(process.cwd(), "public", style.leftUrl);
+        const midImgPath = path.join(process.cwd(), "public", style.middleUrl);
+        const rightImgPath = path.join(process.cwd(), "public", style.rightUrl);
+
+        const [leftTinted, midTinted, rightTinted] = await Promise.all([
+            tintImage(leftImgPath, selectedRgb),
+            tintImage(midImgPath, selectedRgb),
+            tintImage(rightImgPath, selectedRgb),
         ]);
 
+        const leftMeta = await sharp(leftTinted).metadata();
+        const midMeta = await sharp(midTinted).metadata();
+        const rightMeta = await sharp(rightTinted).metadata();
+
         const charCount = text.length;
-        const leftW = leftImg.width;
-        const midW = midImg.width;
-        const rightW = rightImg.width;
-        const tileH = leftImg.height;
+        const leftW = leftMeta.width!;
+        const midW = midMeta.width!;
+        const rightW = rightMeta.width!;
+        const tileH = leftMeta.height!;
         const totalW = leftW + charCount * midW + rightW;
 
-        const canvas = createCanvas(totalW, tileH);
-        const ctx = canvas.getContext("2d");
-        ctx.imageSmoothingEnabled = false;
+        const compositeLayers = [];
 
-        // Render background tiles
-        tintImageData(ctx, leftImg, 0, 0, leftW, tileH, selectedRgb);
+        compositeLayers.push({ input: leftTinted, top: 0, left: 0 });
         for (let i = 0; i < charCount; i++) {
-            const x = leftW + i * midW;
-            tintImageData(ctx, midImg, x, 0, midW, tileH, selectedRgb);
+            compositeLayers.push({ input: midTinted, top: 0, left: leftW + i * midW });
         }
-        const rightX = leftW + charCount * midW;
-        tintImageData(ctx, rightImg, rightX, 0, rightW, tileH, selectedRgb);
+        compositeLayers.push({ input: rightTinted, top: 0, left: leftW + charCount * midW });
 
-        // Render text with shadow
+        const fontSheet = sharp(FONT_SHEET_PATH);
+
         for (let i = 0; i < charCount; i++) {
             const ch = text[i];
             const fontChar = FONT_MAP[ch];
@@ -123,38 +130,50 @@ export async function GET(req: Request) {
             const cx = leftW + i * midW + Math.floor((midW - CHAR_WIDTH) / 2);
             const textY = Math.floor((tileH - CHAR_HEIGHT) / 2);
 
+            const charImg = await fontSheet.extract({ left: fontChar.x, top: fontChar.y, width: CHAR_WIDTH, height: CHAR_HEIGHT }).toBuffer();
+
             // Shadow
-            const shadowCtx = createCanvas(CHAR_WIDTH, CHAR_HEIGHT).getContext("2d");
-            shadowCtx.drawImage(fontSheet, fontChar.x, fontChar.y, CHAR_WIDTH, CHAR_HEIGHT, 0, 0, CHAR_WIDTH, CHAR_HEIGHT);
-            shadowCtx.globalCompositeOperation = 'source-in';
-            shadowCtx.fillStyle = 'rgba(0,0,0,0.55)';
-            shadowCtx.fillRect(0, 0, CHAR_WIDTH, CHAR_HEIGHT);
-            ctx.drawImage(shadowCtx.canvas, cx + 1, textY + 1);
+            const shadowBuffer = await sharp(charImg).composite([{
+                input: Buffer.from([0, 0, 0, 0.55 * 255]),
+                raw: { width: 1, height: 1, channels: 4 },
+                tile: true,
+                blend: 'in'
+            }]).toBuffer();
+            compositeLayers.push({ input: shadowBuffer, top: textY + 1, left: cx + 1 });
 
-            // Main glyph
-            const glyphCtx = createCanvas(CHAR_WIDTH, CHAR_HEIGHT).getContext("2d");
-            glyphCtx.drawImage(fontSheet, fontChar.x, fontChar.y, CHAR_WIDTH, CHAR_HEIGHT, 0, 0, CHAR_WIDTH, CHAR_HEIGHT);
-            glyphCtx.globalCompositeOperation = 'source-in';
-            glyphCtx.fillStyle = '#ffffff';
-            glyphCtx.fillRect(0, 0, CHAR_WIDTH, CHAR_HEIGHT);
-
-            // Glyph tint
+            // Main glyph with tint
             const baseRgb = { r: 205, g: 205, b: 205 };
             const mixedRgb = {
                 r: Math.round(baseRgb.r * 0.8 + selectedRgb.r * 0.2),
-                g: Math.round(baseRgb.g * 0.8 + selectedRgb.g * 0.2),
+                g: Math.round(baseRgb.g * 0.8 + selectedRgb.b * 0.2),
                 b: Math.round(baseRgb.b * 0.8 + selectedRgb.b * 0.2),
             };
-            glyphCtx.globalCompositeOperation = 'source-atop';
-            glyphCtx.fillStyle = `rgba(${mixedRgb.r}, ${mixedRgb.g}, ${mixedRgb.b}, 0.4)`;
-            glyphCtx.fillRect(0, CHAR_HEIGHT - 3, CHAR_WIDTH, 3);
 
-            ctx.drawImage(glyphCtx.canvas, cx + 1, textY);
+            const glyphTint = await sharp({ create: { width: CHAR_WIDTH, height: 3, channels: 4, background: { r: mixedRgb.r, g: mixedRgb.g, b: mixedRgb.b, alpha: 0.4 } } }).toBuffer();
+
+            const glyphBuffer = await sharp(charImg)
+                .composite([
+                    { input: Buffer.from([255, 255, 255, 255]), raw: { width: 1, height: 1, channels: 4 }, tile: true, blend: 'in' },
+                    { input: glyphTint, top: CHAR_HEIGHT - 3, left: 0, blend: 'atop' }
+                ])
+                .toBuffer();
+
+            compositeLayers.push({ input: glyphBuffer, top: textY, left: cx + 1 });
         }
 
-        const buffer = canvas.toBuffer("image/png");
+        const finalImage = await sharp({
+            create: {
+                width: totalW,
+                height: tileH,
+                channels: 4,
+                background: { r: 0, g: 0, b: 0, alpha: 0 },
+            },
+        })
+        .composite(compositeLayers)
+        .png()
+        .toBuffer();
 
-        return new NextResponse(buffer, {
+        return new NextResponse(finalImage, {
             status: 200,
             headers: {
                 'Content-Type': 'image/png',
