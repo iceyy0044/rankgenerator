@@ -39,13 +39,10 @@ function getObjectKeyFromUrl(url: string): string {
     try {
         const pathname = new URL(url).pathname;
         // The path is like /storage/v1/object/sign/Images/lavy_bg.png
-        // We need to extract everything after '/sign/'
-        const signIndex = pathname.indexOf('/sign/');
-        if (signIndex === -1) {
-            throw new Error("'/sign/' not found in URL path");
-        }
-        // This will return "Images/lavy_bg.png"
-        return pathname.substring(signIndex + '/sign/'.length);
+        // We need to extract just the filename at the end.
+        const parts = pathname.split('/');
+        // This will return "lavy_bg.png"
+        return parts[parts.length - 1];
     } catch (e) {
         console.error(`Could not parse object key from URL: ${url}`, e);
         return "";
