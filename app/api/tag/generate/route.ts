@@ -1,9 +1,40 @@
 import { NextResponse } from "next/server";
 import { RANK_TAG_STYLES } from "@/lib/rank-tag-config";
-import path from "path";
 import sharp from "sharp";
+import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 
 const API_SECRET_KEY = "a1b2c3d4-e5f6-7890-1234-567890abcdef"; // This should be in an environment variable
+
+// --- S3 Client Configuration ---
+const s3Client = new S3Client({
+    endpoint: process.env.SUPABASE_S3_ENDPOINT!,
+    region: process.env.SUPABASE_S3_REGION!,
+    credentials: {
+        accessKeyId: process.env.SUPABASE_S3_ACCESS_KEY_ID!,
+        secretAccessKey: process.env.SUPABASE_S3_SECRET_ACCESS_KEY!,
+    },
+});
+
+async function fetchImageFromS3(key: string): Promise<Buffer> {
+    const command = new GetObjectCommand({
+        Bucket: process.env.SUPABASE_S3_BUCKET!,
+        Key: key,
+    });
+
+    try {
+        const response = await s3Client.send(command);
+        const stream = response.Body as require('stream').Readable;
+        const chunks: Buffer[] = [];
+        for await (const chunk of stream) {
+            chunks.push(chunk);
+        }
+        return Buffer.concat(chunks);
+    } catch (error) {
+        console.error(`Failed to fetch image from S3: ${key}`, error);
+        throw new Error(`Failed to fetch image from S3: ${key}`);
+    }
+}
+
 
 // --- Bitmap Font Configuration ---
 const FONT_MAP: { [key: string]: { x: number; y: number } } = {
@@ -21,27 +52,13 @@ const FONT_MAP: { [key: string]: { x: number; y: number } } = {
 const CHAR_WIDTH = 7;
 const CHAR_HEIGHT = 7;
 const ALLOWED_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-.+! ";
-const FONT_SHEET_URL = "https://tmmijtrssqoabdbqucij.supabase.co/storage/v1/object/sign/Images/font_sheet.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9kNjg0MGY5Yi02Mjc2LTQ4MjQtOGEyOC0xODc3ZTY4NTFhNzgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJJbWFnZXMvZm9udF9zaGVldC5wbmciLCJpYXQiOjE3NzY1NDIxODAsImV4cCI6MTc1NDQ1NDIxODB9.B52q1lbtwmaQ5SMhB16zRkwSD0eYZcqW-EdNnWjiNVo";
+const FONT_SHEET_KEY = "font_sheet.png";
 
 function hexToRgb(hex: string) {
     const r = parseInt(hex.slice(1, 3), 16);
     const g = parseInt(hex.slice(3, 5), 16);
     const b = parseInt(hex.slice(5, 7), 16);
     return { r, g, b };
-}
-
-async function fetchImage(url: string) {
-    const response = await fetch(url, {
-        headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-        }
-    });
-    if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`Failed to fetch image from ${url}. Status: ${response.status}. Body: ${errorText}`);
-        throw new Error(`Failed to fetch image: ${response.statusText} from ${url}`);
-    }
-    return Buffer.from(await response.arrayBuffer());
 }
 
 async function tintImage(imageBuffer: Buffer, color: { r: number, g: number, b: number }) {
@@ -105,15 +122,11 @@ export async function GET(req: Request) {
             return NextResponse.json({ error: `Style '${styleId}' not found.` }, { status: 400 });
         }
 
-        if (FONT_SHEET_URL.startsWith("PASTE_YOUR_SUPABASE_URL")) {
-            return NextResponse.json({ error: "Server configuration error: Font sheet URL is not set." }, { status: 500 });
-        }
-
         const [leftImgBuffer, midImgBuffer, rightImgBuffer, fontSheetBuffer] = await Promise.all([
-            fetchImage(style.leftUrl),
-            fetchImage(style.middleUrl),
-            fetchImage(style.rightUrl),
-            fetchImage(FONT_SHEET_URL)
+            fetchImageFromS3(style.leftUrl),
+            fetchImageFromS3(style.middleUrl),
+            fetchImageFromS3(style.rightUrl),
+            fetchImageFromS3(FONT_SHEET_KEY)
         ]);
 
         const [leftTinted, midTinted, rightTinted] = await Promise.all([
