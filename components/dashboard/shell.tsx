@@ -579,7 +579,7 @@ export default function DashboardShell({ user, children }: Props) {
           options={particleOptions as any}
         />
       )}
-      <div className="relative z-10 max-w-7xl mx-auto">
+      <div className="relative z-10">
         <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-[rgba(120,80,10,0.15)] bg-[#0a0d13]/50 px-4 backdrop-blur-sm sm:px-6">
           <div className="flex items-center gap-4">
             <button
