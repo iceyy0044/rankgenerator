@@ -72,13 +72,13 @@ export default function DashboardShell({ user, children }: Props) {
     autoPlay: true,
     background: {
       color: {
-        value: "#0a0d13",
+        value: "transparent",
       },
       image: "",
       position: "",
       repeat: "",
       size: "",
-      opacity: 1,
+      opacity: 0,
     },
     backgroundMask: {
       composite: "destination-out",
@@ -95,7 +95,7 @@ export default function DashboardShell({ user, children }: Props) {
     delay: 0,
     fullScreen: {
       enable: true,
-      zIndex: 0,
+      zIndex: -1,
     },
     detectRetina: true,
     duration: 0,
@@ -568,7 +568,7 @@ export default function DashboardShell({ user, children }: Props) {
         loop
         muted
         playsInline
-        className="fixed top-0 left-0 w-full h-full object-cover z-0"
+        className="fixed top-0 left-0 w-full h-full object-cover z-[-2]"
       >
         <source src="/videos/Grid_horizontal.webm" type="video/webm" />
       </video>
@@ -653,7 +653,7 @@ export default function DashboardShell({ user, children }: Props) {
               ))}
             </nav>
           </aside>
-          <main className="flex-1 bg-[#0a0d139d]/50 p-4 backdrop-blur-sm sm:p-6">
+          <main className="flex-1 bg-[#0a0d13]/80 p-4 sm:p-6">
             {children}
           </main>
         </div>
