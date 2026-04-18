@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { RANK_TAG_STYLES_SERVER } from "@/lib/rank-tag-config.server";
-import Jimp from "jimp";
+import * as Jimp from "jimp";
 import fs from "fs/promises";
 import path from "path";
 
