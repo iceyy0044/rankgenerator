@@ -563,6 +563,15 @@ export default function DashboardShell({ user, children }: Props) {
 
   return (
     <>
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        className="fixed top-0 left-0 w-full h-full object-cover z-0"
+      >
+        <source src="/videos/Grid horizontal.webm" type="video/webm" />
+      </video>
       {init && (
         <Particles
           id="tsparticles"
