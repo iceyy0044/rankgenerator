@@ -35,13 +35,19 @@ async function fetchImageFromS3(key: string): Promise<Buffer> {
     }
 }
 
-function getFilenameFromUrl(url: string): string {
+function getObjectKeyFromUrl(url: string): string {
     try {
         const pathname = new URL(url).pathname;
-        const parts = pathname.split('/');
-        return parts[parts.length - 1];
+        // The path is like /storage/v1/object/sign/Images/lavy_bg.png
+        // We need to extract everything after '/sign/'
+        const signIndex = pathname.indexOf('/sign/');
+        if (signIndex === -1) {
+            throw new Error("'/sign/' not found in URL path");
+        }
+        // This will return "Images/lavy_bg.png"
+        return pathname.substring(signIndex + '/sign/'.length);
     } catch (e) {
-        console.error(`Could not parse filename from URL: ${url}`, e);
+        console.error(`Could not parse object key from URL: ${url}`, e);
         return "";
     }
 }
@@ -132,11 +138,13 @@ export async function GET(req: Request) {
             return NextResponse.json({ error: `Style '${styleId}' not found.` }, { status: 400 });
         }
 
+        const fontSheetUrl = "https://tmmijtrssqoabdbqucij.supabase.co/storage/v1/object/sign/Images/font_sheet.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9kNjg0MGY5Yi02Mjc2LTQ4MjQtOGEyOC0xODc3ZTY4NTFhNzgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJJbWFnZXMvZm9udF9zaGVldC5wbmciLCJpYXQiOjE3NzY1NDIxODAsImV4cCI6MTc1NDQ1NDIxODB9.B52q1lbtwmaQ5SMhB16zRkwSD0eYZcqW-EdNnWjiNVo";
+        
         const [leftImgBuffer, midImgBuffer, rightImgBuffer, fontSheetBuffer] = await Promise.all([
-            fetchImageFromS3(getFilenameFromUrl(style.leftUrl)),
-            fetchImageFromS3(getFilenameFromUrl(style.middleUrl)),
-            fetchImageFromS3(getFilenameFromUrl(style.rightUrl)),
-            fetchImageFromS3(FONT_SHEET_KEY)
+            fetchImageFromS3(getObjectKeyFromUrl(style.leftUrl)),
+            fetchImageFromS3(getObjectKeyFromUrl(style.middleUrl)),
+            fetchImageFromS3(getObjectKeyFromUrl(style.rightUrl)),
+            fetchImageFromS3(getObjectKeyFromUrl(fontSheetUrl))
         ]);
 
         const [leftTinted, midTinted, rightTinted] = await Promise.all([
