@@ -568,7 +568,7 @@ export default function DashboardShell({ user, children }: Props) {
         loop
         muted
         playsInline
-        className="fixed top-0 left-0 w-full h-full object-cover z-0"
+        className="hidden md:block fixed top-0 left-0 w-full h-full object-cover z-0"
       >
         <source src="/videos/Grid_horizontal.webm" type="video/webm" />
       </video>
@@ -653,7 +653,7 @@ export default function DashboardShell({ user, children }: Props) {
               ))}
             </nav>
           </aside>
-          <main className="flex-1 bg-transparent p-4 backdrop-blur-sm sm:p-6">
+          <main className="flex-1 bg-[#0a0d13]/60 p-4 backdrop-blur-sm sm:p-6">
             {children}
           </main>
         </div>
