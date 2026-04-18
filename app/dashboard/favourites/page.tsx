@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { toast } from '@/components/ui/use-toast';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "@/components/ui/use-toast";
 
 interface Favourite {
   id: number;
@@ -25,15 +25,15 @@ export default function FavouritesPage() {
 
   useEffect(() => {
     const fetchFavourites = async () => {
-      const response = await fetch('/api/favourites/list');
+      const response = await fetch("/api/favourites/list");
       if (response.ok) {
         const data = await response.json();
         setFavourites(data);
       } else {
         toast({
-          title: 'Error fetching favourites',
-          description: 'Please try again later.',
-          variant: 'destructive',
+          title: "Error fetching favourites",
+          description: "Please try again later.",
+          variant: "destructive",
         });
       }
     };
@@ -43,7 +43,7 @@ export default function FavouritesPage() {
   const loadFavourite = (fav: Favourite) => {
     const params = new URLSearchParams();
     Object.entries(fav).forEach(([key, value]) => {
-      if (key !== 'id' && key !== 'name' && value) {
+      if (key !== "id" && key !== "name" && value) {
         params.append(key, value);
       }
     });
@@ -51,21 +51,21 @@ export default function FavouritesPage() {
   };
 
   const deleteFavourite = async (id: number) => {
-    const response = await fetch('/api/favourites/delete', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
+    const response = await fetch("/api/favourites/delete", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id }),
     });
 
     if (response.ok) {
       setFavourites(favourites.filter((fav) => fav.id !== id));
       toast({
-        title: 'Favourite deleted',
+        title: "Favourite deleted",
       });
     } else {
       toast({
-        title: 'Error deleting favourite',
-        variant: 'destructive',
+        title: "Error deleting favourite",
+        variant: "destructive",
       });
     }
   };
@@ -75,11 +75,14 @@ export default function FavouritesPage() {
       {favourites.map((fav) => (
         <Card key={fav.id}>
           <CardHeader>
-            <CardTitle>{fav.name || 'Unnamed'}</CardTitle>
+            <CardTitle>{fav.name || "Unnamed"}</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col space-y-2">
             <Button onClick={() => loadFavourite(fav)}>Load</Button>
-            <Button variant="destructive" onClick={() => deleteFavourite(fav.id)}>
+            <Button
+              variant="destructive"
+              onClick={() => deleteFavourite(fav.id)}
+            >
               Delete
             </Button>
           </CardContent>
