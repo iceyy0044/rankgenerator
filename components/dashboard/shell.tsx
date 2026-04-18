@@ -353,7 +353,7 @@ export default function DashboardShell({ user, children }: Props) {
         value: 1200,
       },
       opacity: {
-        value: 0.8,
+        value: 1,
         animation: {
           count: 0,
           enable: false,
