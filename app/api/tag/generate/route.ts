@@ -1,57 +1,26 @@
 import { NextResponse } from "next/server";
 import { RANK_TAG_STYLES } from "@/lib/rank-tag-config";
 import sharp from "sharp";
-import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 
 const API_SECRET_KEY = "a1b2c3d4-e5f6-7890-1234-567890abcdef"; // This should be in an environment variable
 
-// --- S3 Client Configuration ---
-const s3Client = new S3Client({
-    endpoint: process.env.SUPABASE_S3_ENDPOINT!,
-    region: process.env.SUPABASE_S3_REGION!,
-    credentials: {
-        accessKeyId: process.env.SUPABASE_S3_ACCESS_KEY_ID!,
-        secretAccessKey: process.env.SUPABASE_S3_SECRET_ACCESS_KEY!,
-    },
-});
-
-async function fetchImageFromS3(key: string): Promise<Buffer> {
-    const bucketName = process.env.SUPABASE_S3_BUCKET;
-    if (!bucketName) {
-        throw new Error("SUPABASE_S3_BUCKET environment variable is not set.");
-    }
-
-    const command = new GetObjectCommand({
-        Bucket: bucketName,
-        Key: key,
-    });
-
+// --- New URL Fetching Function ---
+async function fetchImageAsBuffer(url: string): Promise<Buffer> {
     try {
-        const response = await s3Client.send(command);
-        if (!response.Body) {
-            throw new Error(`S3 response body is empty for key: ${key}`);
+        const response = await fetch(url, {
+            headers: {
+                // Add a user-agent to mimic a browser and avoid blocking
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            }
+        });
+        if (!response.ok) {
+            throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`);
         }
-        const byteArray = await response.Body.transformToByteArray();
-        return Buffer.from(byteArray);
+        const arrayBuffer = await response.arrayBuffer();
+        return Buffer.from(arrayBuffer);
     } catch (error: any) {
-        // Log the detailed error from the S3 client
-        console.error(`Failed to fetch image from S3. Key: ${key}, Bucket: ${bucketName}. S3 Error:`, error);
-        // Re-throw a more informative error
-        throw new Error(`Failed to fetch image from S3 - ${error.name || 'UnknownError'}: ${error.message || 'No message'}`);
-    }
-}
-
-function getObjectKeyFromUrl(url: string): string {
-    try {
-        const pathname = new URL(url).pathname;
-        // The path is like /storage/v1/object/sign/Images/lavy_bg.png
-        // We need to extract just the filename at the end.
-        const parts = pathname.split('/');
-        // This will return "lavy_bg.png"
-        return parts[parts.length - 1];
-    } catch (e) {
-        console.error(`Could not parse object key from URL: ${url}`, e);
-        return "";
+        console.error(`Error fetching URL: ${url}`, error);
+        throw new Error(`Could not fetch image from ${url}. Error: ${error.message}`);
     }
 }
 
@@ -71,7 +40,8 @@ const FONT_MAP: { [key: string]: { x: number; y: number } } = {
 const CHAR_WIDTH = 7;
 const CHAR_HEIGHT = 7;
 const ALLOWED_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-.+! ";
-const FONT_SHEET_KEY = "font_sheet.png";
+// IMPORTANT: You need to upload font_sheet.png to your image host and put the public URL here.
+const FONT_SHEET_URL = "https://images.guns.lol/fac07446fa95e8dcfb1c9b5c45f47f31d1724fe9/vAC9Q9.png";
 
 function hexToRgb(hex: string) {
     const r = parseInt(hex.slice(1, 3), 16);
@@ -140,14 +110,12 @@ export async function GET(req: Request) {
         if (!style) {
             return NextResponse.json({ error: `Style '${styleId}' not found.` }, { status: 400 });
         }
-
-        const fontSheetUrl = "https://tmmijtrssqoabdbqucij.supabase.co/storage/v1/object/sign/Images/font_sheet.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9kNjg0MGY5Yi02Mjc2LTQ4MjQtOGEyOC0xODc3ZTY4NTFhNzgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJJbWFnZXMvZm9udF9zaGVldC5wbmciLCJpYXQiOjE3NzY1NDIxODAsImV4cCI6MTc1NDQ1NDIxODB9.B52q1lbtwmaQ5SMhB16zRkwSD0eYZcqW-EdNnWjiNVo";
         
         const [leftImgBuffer, midImgBuffer, rightImgBuffer, fontSheetBuffer] = await Promise.all([
-            fetchImageFromS3(getObjectKeyFromUrl(style.leftUrl)),
-            fetchImageFromS3(getObjectKeyFromUrl(style.middleUrl)),
-            fetchImageFromS3(getObjectKeyFromUrl(style.rightUrl)),
-            fetchImageFromS3(getObjectKeyFromUrl(fontSheetUrl))
+            fetchImageAsBuffer(style.leftUrl),
+            fetchImageAsBuffer(style.middleUrl),
+            fetchImageAsBuffer(style.rightUrl),
+            fetchImageAsBuffer(FONT_SHEET_URL)
         ]);
 
         const [leftTinted, midTinted, rightTinted] = await Promise.all([
