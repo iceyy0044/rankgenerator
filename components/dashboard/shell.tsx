@@ -27,6 +27,7 @@ export default function DashboardShell({ user, children }: Props) {
   const router = useRouter()
   const pathname = usePathname()
   const [init, setInit] = useState(false)
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
 
   useEffect(() => {
     initParticlesEngine(async (engine) => {
@@ -359,10 +360,10 @@ export default function DashboardShell({ user, children }: Props) {
           mode: "delete",
           value: 0,
         },
-        value: 400,
+        value: 800,
       },
       opacity: {
-        value: 1,
+        value: 0.5,
         animation: {
           count: 0,
           enable: false,
@@ -394,7 +395,7 @@ export default function DashboardShell({ user, children }: Props) {
         type: "circle",
       },
       size: {
-        value: 10,
+        value: 3,
         animation: {
           count: 0,
           enable: false,
@@ -580,24 +581,33 @@ export default function DashboardShell({ user, children }: Props) {
         />
       )}
       <div className="relative z-10">
-        <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-[rgba(120,80,10,0.15)] bg-[#0a0d13]/50 px-6 backdrop-blur-sm">
+        <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-[rgba(120,80,10,0.15)] bg-[#0a0d13]/50 px-4 backdrop-blur-sm sm:px-6">
           <div className="flex items-center gap-4">
+            <button
+              className="md:hidden"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+            >
+              <span
+                className="iconify h-6 w-6"
+                data-icon="fluent:line-horizontal-3-20-filled"
+              />
+            </button>
             <Link href="/dashboard" className="flex items-center gap-2">
               <img src="/logo.png" alt="Sam's Ranks Logo" className="h-8 w-8" />
-              <span className="font-bold text-lg text-[#e8d8a8]">
+              <span className="hidden font-bold text-lg text-[#e8d8a8] sm:inline">
                 Sam's Ranks
               </span>
             </Link>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             <div className="flex items-center gap-2">
               <img
                 src={user.avatar ?? "/placeholder-user.jpg"}
                 alt={user.name}
                 className="h-8 w-8 rounded-full"
               />
-              <div className="flex flex-col text-sm">
+              <div className="hidden flex-col text-sm sm:flex">
                 <span className="font-semibold">{user.name}</span>
                 <span className="text-xs text-[#7a869a]">{user.email}</span>
               </div>
@@ -610,23 +620,28 @@ export default function DashboardShell({ user, children }: Props) {
             >
               {signingOut ? (
                 <span
-                  className="iconify w-5 h-5 animate-spin"
+                  className="iconify h-5 w-5 animate-spin"
                   data-icon="mdi:loading"
                 />
               ) : (
-                <span className="iconify w-5 h-5" data-icon="fe:logout" />
+                <span className="iconify h-5 w-5" data-icon="fe:logout" />
               )}
             </button>
           </div>
         </header>
 
         <div className="flex">
-          <aside className="w-56 border-r border-[rgba(120,80,10,0.15)] p-4">
+          <aside
+            className={`fixed top-16 z-20 h-[calc(100vh-4rem)] w-56 border-r border-[rgba(120,80,10,0.15)] bg-[#0a0d13]/80 p-4 backdrop-blur-sm transition-transform md:relative md:top-0 md:h-auto md:translate-x-0 ${
+              isMenuOpen ? "translate-x-0" : "-translate-x-full"
+            }`}
+          >
             <nav className="flex flex-col gap-1">
               {navItems.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
+                  onClick={() => setIsMenuOpen(false)}
                   className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
                     pathname === item.href
                       ? "bg-[rgba(245,158,11,0.1)] text-[#fbbf24]"
@@ -640,7 +655,9 @@ export default function DashboardShell({ user, children }: Props) {
             </nav>
           </aside>
 
-          <main className="flex-1 p-6">{children}</main>
+          <main className="flex-1 bg-[#0a0d13]/50 p-4 backdrop-blur-sm sm:p-6">
+            {children}
+          </main>
         </div>
       </div>
     </>
