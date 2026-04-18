@@ -24,20 +24,30 @@ export default async function DashboardLayout({
     .eq("id", user.id)
     .single()
 
+  let activeProfile = profile;
+
   // If no profile yet (trigger might be slow), create one
   if (!profile) {
-    await supabase.from("profiles").insert({
+    const { data: newProfile, error } = await supabase.from("profiles").insert({
       id: user.id,
       discord_username: user.user_metadata?.full_name ?? user.user_metadata?.name ?? null,
       avatar_url: user.user_metadata?.avatar_url ?? null,
       role: "user",
-    })
+    }).select().single();
+
+    if (error) {
+      // Handle error appropriately
+      console.error("Error creating profile:", error);
+      // maybe redirect to an error page
+      redirect("/error");
+    }
+    activeProfile = newProfile;
   }
 
   // If profile exists but no license key, redirect to license entry
-  const activeProfile = profile ?? { role: "user", license_key: null }
+  const finalProfile = activeProfile ?? { role: "user", license_key: null }
 
-  if (!activeProfile.license_key && activeProfile.role !== "admin") {
+  if (!finalProfile.license_key && finalProfile.role !== "admin") {
     // Check if the path is already the license page
     // We'll handle this redirect in the page itself
   }
@@ -49,8 +59,8 @@ export default async function DashboardLayout({
         email: user.email ?? "",
         name: user.user_metadata?.full_name ?? user.user_metadata?.name ?? user.email ?? "User",
         avatar: user.user_metadata?.avatar_url ?? null,
-        role: (activeProfile.role as "user" | "admin") ?? "user",
-        hasLicense: !!activeProfile.license_key,
+        role: (finalProfile.role as "user" | "admin") ?? "user",
+        hasLicense: !!finalProfile.license_key,
       }}
     >
       {children}
