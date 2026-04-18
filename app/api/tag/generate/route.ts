@@ -19,6 +19,8 @@ async function readImageAsBuffer(filePath: string): Promise<Buffer> {
 
     try {
         const fileBuffer = await fs.readFile(absolutePath);
+        // NEW: Log the size of the buffer to verify it's not empty
+        console.log(`Buffer size for ${filePath}: ${fileBuffer.length}`);
         return fileBuffer;
     } catch (error: any) {
         console.error(`Error reading file: ${filePath} at ${absolutePath}`, error);
