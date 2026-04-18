@@ -42,7 +42,7 @@ const FONT_MAP: { [key: string]: { x: number; y: number } } = {
 const CHAR_WIDTH = 7;
 const CHAR_HEIGHT = 7;
 const ALLOWED_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-.+! ";
-const FONT_SHEET_PATH = "public/rank-tag-tiles/font_sheet.png";
+const FONT_SHEET_PATH = "rank-tag-tiles/font_sheet.png";
 
 function hexToRgb(hex: string) {
     const r = parseInt(hex.slice(1, 3), 16);
