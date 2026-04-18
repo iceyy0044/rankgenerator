@@ -2,6 +2,8 @@
 
 import { useRef, useEffect, useState, useCallback } from "react"
 import { RANK_TAG_STYLES, DEFAULT_STYLE_ID, type RankTagStyle } from "@/lib/rank-tag-config"
+import { useToast } from "@/components/ui/use-toast"
+import { useRouter } from "next/navigation"
 
 const FONT_URL =
   "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/5x5-font-monospaced-0fGxzkqEby3jzE6VeuPUC7wYMuj5oZ.ttf"
@@ -17,7 +19,7 @@ const FONT_MAP: { [key: string]: { x: number; y: number } } = {
   Q: { x: 0, y: 8 }, R: { x: 8, y: 8 }, S: { x: 16, y: 8 }, T: { x: 24, y: 8 },
   U: { x: 32, y: 8 }, V: { x: 40, y: 8 }, W: { x: 48, y: 8 }, X: { x: 56, y: 8 },
   Y: { x: 64, y: 8 }, Z: { x: 72, y: 8 }, '_': { x: 80, y: 8}, '-': { x: 88, y: 8}, '.': { x: 96, y: 8}, ' ': { x: 104, y: 8}, '+': { x: 112, y: 8}, '!': { x: 120, y: 8},
-  0: { x: 8, y: 16}, 1: { x: 16, y: 16}, 2: { x: 24, y: 16}, 3: { x: 32, y: 16}, 4: { x: 40, y: 16}, 5: { x: 48, y: 16}, 6: { x: 56, y: 16}, 7: { x: 64, y: 16}, 8: { x: 72, y: 16}, 9: { x: 80, y: 16}
+  0: { x: 0, y: 16}, 1: { x: 8, y: 16}, 2: { x: 16, y: 16}, 3: { x: 24, y: 16}, 4: { x: 32, y: 16}, 5: { x: 40, y: 16}, 6: { x: 48, y: 16}, 7: { x: 56, y: 16}, 8: { x: 64, y: 16}, 9: { x: 72, y: 16}
 }
 const CHAR_WIDTH = 5
 const CHAR_HEIGHT = 7
@@ -119,10 +121,7 @@ function tintImageData(
   ctx.putImageData(imageData, x, y)
 }
 
-export default function RankTagGenerator() {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  const offscreenRef = useRef<HTMLCanvasElement | null>(null)
-
+export default function RankTagGenerator({ user }: Props) {
   const [text, setText] = useState("ADMIN")
   const [color, setColor] = useState("#fbbf24")
   const [styleId, setStyleId] = useState(DEFAULT_STYLE_ID)
@@ -132,6 +131,11 @@ export default function RankTagGenerator() {
   const [downloading, setDownloading] = useState(false)
   const [copied, setCopied] = useState(false)
   const [snippetFormat, setSnippetFormat] = useState("vanilla")
+  const [background, setBackground] = useState("background1")
+  const [zoom, setZoom] = useState(4)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const { toast } = useToast()
+  const router = useRouter()
 
   const currentStyle = RANK_TAG_STYLES.find((s) => s.id === styleId) ?? RANK_TAG_STYLES[0]
 
@@ -318,61 +322,58 @@ export default function RankTagGenerator() {
     if (!off) { setDownloading(false); return }
 
     const link = document.createElement("a")
-    link.download = `${text || "rank"}.png`
+    link.download = "rank-tag.png"
     link.href = off.toDataURL("image/png")
     link.click()
     setDownloading(false)
   }
 
-  function generateJsonSnippet() {
-    const safeName = (text || "rank").toLowerCase().replace(/\s+/g, "_")
+  const handleAddToFavourites = async () => {
+    try {
+      const response = await fetch("/api/favourites/add", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: text,
+          background,
+          text_color: textColor,
+          text_outline_color: textOutlineColor,
+          badge_left_color: badgeLeftColor,
+          badge_right_color: badgeRightColor,
+          badge_text: badgeText,
+          badge_text_color: badgeTextColor,
+          badge_text_outline_color: badgeTextOutlineColor,
+        }),
+      })
 
-    switch (snippetFormat) {
-      case "nexo":
-        return `${safeName}:
-  texture: ${safeName}.png
-  height: 7
-  ascent: 7
-  permission: sams_rank.${safeName}`
-      case "itemsadder":
-        return `info:
-  namespace: "sams_ranks"
-font_images:
-  ${safeName}:
-    permission: "sams_rank.${safeName}"
-    show_in_gui: true
-    suggest_in_command: false
-    path: "${safeName}.png"
-    scale_ratio: 7
-    y_position: 7`
-      case "vanilla":
-      default:
-        return JSON.stringify(
-          {
-            providers: [
-              {
-                type: "bitmap",
-                file: `minecraft:font/${safeName}.png`,
-                ascent: 8,
-                height: 9,
-                chars: ["UNIQUE-CHARACTER-HERE"],
-              },
-            ],
-          },
-          null,
-          2
-        )
+      if (response.ok) {
+        toast({
+          title: "Favourite Saved",
+          description: "Your rank tag has been saved to your favourites.",
+        })
+        router.refresh()
+      } else {
+        const error = await response.json()
+        toast({
+          title: "Error",
+          description:
+            error.message || "There was an error saving your favourite.",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "There was an error saving your favourite.",
+        variant: "destructive",
+      })
     }
   }
 
-  async function handleCopySnippet() {
-    await navigator.clipboard.writeText(generateJsonSnippet())
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
-
   return (
-    <>
+    <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
       <div className="flex flex-col gap-6 max-w-3xl mx-auto">
         {/* Header */}
         <div>
@@ -392,7 +393,7 @@ font_images:
                   value={text}
                   onChange={(e) => {
                     // Only allow standard A-Z alphabet, uppercase, limit length
-                    const filtered = e.target.value.toUpperCase().replace(/[^A-Z0-9_\/\.\- +!]/g, "").slice(0, 15)
+                    const filtered = e.target.value.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 15)
                     setText(filtered)
                   }}
                   placeholder="ADMIN"
@@ -406,7 +407,7 @@ font_images:
                 </div>
               </div>
               <p className="text-xs text-[#7a869a] mt-1">
-                Allowed characters: ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-.+! and a space
+                Allowed characters: ABCDEFGHIJKLMNOPQRSTUVWXYZ
               </p>
             </div>
 
@@ -518,6 +519,9 @@ font_images:
             <span className="iconify w-4 h-4" data-icon="mdi:download" />
             {downloading ? "Exporting…" : "Download PNG"}
           </button>
+          <Button onClick={handleAddToFavourites} variant="outline">
+            <span className="iconify h-5 w-5" data-icon="fluent:star-24-regular" />
+          </Button>
         </div>
 
         {/* Resource Pack JSON Snippet */}
@@ -584,6 +588,6 @@ font_images:
           © {new Date().getFullYear()} Sam's Ranks. All Rights Reserved.
         </footer>
       </div>
-    </>
+    </div>
   )
 }
