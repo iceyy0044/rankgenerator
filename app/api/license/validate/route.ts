@@ -1,15 +1,8 @@
 import { createAdminClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
-const API_SECRET_KEY = "8f4d7a6e-2b8c-4d9a-8f2c-6e8d7b4a9f1d"; // This should be in an environment variable
-
 export async function POST(req: Request) {
   try {
-    const authHeader = req.headers.get("Authorization");
-    if (authHeader !== `Bearer ${API_SECRET_KEY}`) {
-      return NextResponse.json({ valid: false, error: "Unauthorized" }, { status: 401 });
-    }
-
     const body = await req.json();
     const { discord_username, license_key } = body;
 
