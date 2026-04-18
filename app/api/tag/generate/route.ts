@@ -21,7 +21,8 @@ const FONT_MAP: { [key: string]: { x: number; y: number } } = {
 const CHAR_WIDTH = 7;
 const CHAR_HEIGHT = 7;
 const ALLOWED_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-.+! ";
-const FONT_SHEET_PATH = path.join(process.cwd(), "public", "font_sheet.png");
+// TODO: Replace this with the public Supabase URL for your font_sheet.png
+const FONT_SHEET_URL = "https://tmmijtrssqoabdbqucij.supabase.co/storage/v1/object/sign/Images/font_sheet.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9kNjg0MGY5Yi02Mjc2LTQ4MjQtOGEyOC0xODc3ZTY4NTFhNzgiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJJbWFnZXMvZm9udF9zaGVldC5wbmciLCJpYXQiOjE3NzY1NDIxODAsImV4cCI6MTc1NDQ1NDIxODB9.B52q1lbtwmaQ5SMhB16zRkwSD0eYZcqW-EdNnWjiNVo";
 
 function hexToRgb(hex: string) {
     const r = parseInt(hex.slice(1, 3), 16);
@@ -101,11 +102,15 @@ export async function GET(req: Request) {
             return NextResponse.json({ error: `Style '${styleId}' not found.` }, { status: 400 });
         }
 
+        if (FONT_SHEET_URL.startsWith("https://tmmijtrssqoabdbqucij.supabase.co/")) {
+            return NextResponse.json({ error: "Server configuration error: Font sheet URL is not set." }, { status: 500 });
+        }
+
         const [leftImgBuffer, midImgBuffer, rightImgBuffer, fontSheetBuffer] = await Promise.all([
             fetchImage(style.leftUrl),
             fetchImage(style.middleUrl),
             fetchImage(style.rightUrl),
-            sharp(FONT_SHEET_PATH).toBuffer()
+            fetchImage(FONT_SHEET_URL)
         ]);
 
         const [leftTinted, midTinted, rightTinted] = await Promise.all([
