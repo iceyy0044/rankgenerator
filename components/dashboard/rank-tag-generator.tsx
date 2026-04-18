@@ -491,7 +491,7 @@ font_images:
           {/* Preview area */}
           <div className="flex flex-col gap-3">
             <label className="text-xs font-semibold text-[#e8d8a8] uppercase tracking-wider">Live Preview</label>
-            <div className="flex items-center justify-center rounded-xl bg-[#0e1117] border border-[rgba(120,80,10,0.12)] min-h-[100px] py-8 overflow-x-auto">
+            <div className="flex items-center justify-center rounded-xl bg-[#0e1117] border border-[rgba(120,80,10,0.12)] min-h-[100px] p-4 sm:p-8 overflow-x-auto">
               {!fontLoaded || !imagesLoaded || !fontSheet ? (
                 <div className="flex items-center gap-2 text-[#e6d8a3] text-sm">
                   <span className="iconify w-4 h-4 animate-spin text-[#fbbf24]" data-icon="mdi:loading" />
