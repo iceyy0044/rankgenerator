@@ -381,7 +381,7 @@ font_images:
         </div>
 
         {/* Controls card */}
-        <div className="glass rounded-2xl p-6 flex flex-col gap-5">
+        <div className="glass rounded-2xl p-4 sm:p-6 flex flex-col gap-5">
           {/* Row 1: Text + Style */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
@@ -436,7 +436,7 @@ font_images:
           {/* Row 2: Color picker */}
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-semibold text-[#e8d8a8] uppercase tracking-wider">Background Tint Color</label>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="relative">
                 <input
                   type="color"
@@ -491,7 +491,7 @@ font_images:
           {/* Preview area */}
           <div className="flex flex-col gap-3">
             <label className="text-xs font-semibold text-[#e8d8a8] uppercase tracking-wider">Live Preview</label>
-            <div className="flex items-center justify-center rounded-xl bg-[#0e1117] border border-[rgba(120,80,10,0.12)] min-h-[100px] py-8">
+            <div className="flex items-center justify-center rounded-xl bg-[#0e1117] border border-[rgba(120,80,10,0.12)] min-h-[100px] py-8 overflow-x-auto">
               {!fontLoaded || !imagesLoaded || !fontSheet ? (
                 <div className="flex items-center gap-2 text-[#e6d8a3] text-sm">
                   <span className="iconify w-4 h-4 animate-spin text-[#fbbf24]" data-icon="mdi:loading" />
