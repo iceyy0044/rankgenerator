@@ -95,7 +95,7 @@ export default function DashboardShell({ user, children }: Props) {
     delay: 0,
     fullScreen: {
       enable: true,
-      zIndex: -11,
+      zIndex: -1,
     },
     detectRetina: true,
     duration: 0,
@@ -629,7 +629,7 @@ export default function DashboardShell({ user, children }: Props) {
           </div>
         </header>
 
-        <div className="flex">
+        <div className="flex max-w-full overflow-x-hidden">
           <aside
             className={`fixed top-16 z-20 h-[calc(100vh-4rem)] w-56 border-r border-[rgba(120,80,10,0.15)] bg-[#0a0d13]/80 p-4 backdrop-blur-sm transition-transform md:relative md:top-0 md:h-auto md:translate-x-0 ${
               isMenuOpen ? "translate-x-0" : "-translate-x-full"
