@@ -353,7 +353,7 @@ export default function DashboardShell({ user, children }: Props) {
         value: 800,
       },
       opacity: {
-        value: 0.5,
+        value: 0.8,
         animation: {
           count: 0,
           enable: false,
@@ -385,7 +385,7 @@ export default function DashboardShell({ user, children }: Props) {
         type: "circle",
       },
       size: {
-        value: 3,
+        value: 2,
         animation: {
           count: 0,
           enable: false,
@@ -406,8 +406,8 @@ export default function DashboardShell({ user, children }: Props) {
           min: 0,
           max: 100,
         },
-        opacityRate: 10,
-        sizeRate: 10,
+        opacityRate: 25,
+        sizeRate: 5,
         velocityRate: 10,
       },
       destroy: {
