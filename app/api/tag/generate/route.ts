@@ -60,6 +60,13 @@ async function tintImage(imagePath: string, color: { r: number, g: number, b: nu
 export async function GET(req: Request) {
     try {
         const authHeader = req.headers.get("Authorization");
+
+        // --- DEBUGGING LOGS ---
+        console.log("Received Authorization Header:", authHeader);
+        console.log("Expected API Secret Key:", API_SECRET_KEY);
+        console.log("Expected Full Header:", `Bearer ${API_SECRET_KEY}`);
+        // --- END DEBUGGING LOGS ---
+
         if (authHeader !== `Bearer ${API_SECRET_KEY}`) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
