@@ -1,10 +1,10 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { toast } from "@/components/ui/use-toast";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
 
 interface Favourite {
   id: number;
@@ -22,6 +22,7 @@ interface Favourite {
 export default function FavouritesPage() {
   const [favourites, setFavourites] = useState<Favourite[]>([]);
   const router = useRouter();
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchFavourites = async () => {
@@ -38,13 +39,13 @@ export default function FavouritesPage() {
       }
     };
     fetchFavourites();
-  }, []);
+  }, [toast]);
 
   const loadFavourite = (fav: Favourite) => {
     const params = new URLSearchParams();
     Object.entries(fav).forEach(([key, value]) => {
       if (key !== "id" && key !== "name" && value) {
-        params.append(key, value);
+        params.append(key, String(value));
       }
     });
     router.push(`/dashboard?${params.toString()}`);
