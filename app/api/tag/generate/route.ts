@@ -1,34 +1,21 @@
 import { NextResponse } from "next/server";
-import { RANK_TAG_STYLES } from "@/lib/rank-tag-config";
+import { RANK_TAG_STYLES_SERVER } from "@/lib/rank-tag-config.server";
 import sharp from "sharp";
+import fs from "fs/promises";
+import path from "path";
 
 const API_SECRET_KEY = "a1b2c3d4-e5f6-7890-1234-567890abcdef"; // This should be in an environment variable
 
-// --- New URL Fetching Function ---
-async function fetchImageAsBuffer(url: string): Promise<Buffer> {
+// --- New Local File Reading Function ---
+async function readImageAsBuffer(filePath: string): Promise<Buffer> {
     try {
-        const response = await fetch(url, {
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-            }
-        });
-
-        if (!response.ok) {
-            throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`);
-        }
-
-        const contentType = response.headers.get('content-type');
-        if (!contentType || !contentType.startsWith('image/')) {
-            const responseText = await response.text();
-            console.error(`URL did not return an image. Content-Type: ${contentType}. Response text:`, responseText);
-            throw new Error(`URL did not return an image. Expected 'image/*' but got '${contentType}'.`);
-        }
-
-        const arrayBuffer = await response.arrayBuffer();
-        return Buffer.from(arrayBuffer);
+        // Resolve path relative to the project root
+        const absolutePath = path.resolve(process.cwd(), filePath);
+        const fileBuffer = await fs.readFile(absolutePath);
+        return fileBuffer;
     } catch (error: any) {
-        console.error(`Error fetching URL: ${url}`, error);
-        throw new Error(`Could not fetch image from ${url}. Error: ${error.message}`);
+        console.error(`Error reading file: ${filePath} at ${path.resolve(process.cwd(), filePath)}`, error);
+        throw new Error(`Could not read image from ${filePath}. Error: ${error.message}`);
     }
 }
 
@@ -48,8 +35,7 @@ const FONT_MAP: { [key: string]: { x: number; y: number } } = {
 const CHAR_WIDTH = 7;
 const CHAR_HEIGHT = 7;
 const ALLOWED_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-.+! ";
-// IMPORTANT: You need to upload font_sheet.png to your image host and put the public URL here.
-const FONT_SHEET_URL = "https://images.guns.lol/fac07446fa95e8dcfb1c9b5c45f47f31d1724fe9/vAC9Q9.png";
+const FONT_SHEET_PATH = "public/rank-tag-tiles/font_sheet.png";
 
 function hexToRgb(hex: string) {
     const r = parseInt(hex.slice(1, 3), 16);
@@ -114,16 +100,16 @@ export async function GET(req: Request) {
 
         const selectedRgb = hexToRgb(color);
 
-        const style = RANK_TAG_STYLES.find(s => s.id === styleId);
+        const style = RANK_TAG_STYLES_SERVER.find(s => s.id === styleId);
         if (!style) {
             return NextResponse.json({ error: `Style '${styleId}' not found.` }, { status: 400 });
         }
         
         const [leftImgBuffer, midImgBuffer, rightImgBuffer, fontSheetBuffer] = await Promise.all([
-            fetchImageAsBuffer(style.leftUrl),
-            fetchImageAsBuffer(style.middleUrl),
-            fetchImageAsBuffer(style.rightUrl),
-            fetchImageAsBuffer(FONT_SHEET_URL)
+            readImageAsBuffer(style.leftUrl),
+            readImageAsBuffer(style.middleUrl),
+            readImageAsBuffer(style.rightUrl),
+            readImageAsBuffer(FONT_SHEET_PATH)
         ]);
 
         const [leftTinted, midTinted, rightTinted] = await Promise.all([
