@@ -23,12 +23,12 @@ async function fetchImageFromS3(key: string): Promise<Buffer> {
 
     try {
         const response = await s3Client.send(command);
-        const stream = response.Body as require('stream').Readable;
-        const chunks: Buffer[] = [];
-        for await (const chunk of stream) {
-            chunks.push(chunk);
+        if (!response.Body) {
+            throw new Error(`S3 response body is empty for key: ${key}`);
         }
-        return Buffer.concat(chunks);
+        // Use the modern, correct way to get the buffer from the stream
+        const byteArray = await response.Body.transformToByteArray();
+        return Buffer.from(byteArray);
     } catch (error) {
         console.error(`Failed to fetch image from S3: ${key}`, error);
         throw new Error(`Failed to fetch image from S3: ${key}`);
