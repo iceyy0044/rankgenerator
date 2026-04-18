@@ -35,6 +35,16 @@ async function fetchImageFromS3(key: string): Promise<Buffer> {
     }
 }
 
+function getFilenameFromUrl(url: string): string {
+    try {
+        const pathname = new URL(url).pathname;
+        const parts = pathname.split('/');
+        return parts[parts.length - 1];
+    } catch (e) {
+        console.error(`Could not parse filename from URL: ${url}`, e);
+        return "";
+    }
+}
 
 // --- Bitmap Font Configuration ---
 const FONT_MAP: { [key: string]: { x: number; y: number } } = {
@@ -123,9 +133,9 @@ export async function GET(req: Request) {
         }
 
         const [leftImgBuffer, midImgBuffer, rightImgBuffer, fontSheetBuffer] = await Promise.all([
-            fetchImageFromS3(style.leftUrl),
-            fetchImageFromS3(style.middleUrl),
-            fetchImageFromS3(style.rightUrl),
+            fetchImageFromS3(getFilenameFromUrl(style.leftUrl)),
+            fetchImageFromS3(getFilenameFromUrl(style.middleUrl)),
+            fetchImageFromS3(getFilenameFromUrl(style.rightUrl)),
             fetchImageFromS3(FONT_SHEET_KEY)
         ]);
 
