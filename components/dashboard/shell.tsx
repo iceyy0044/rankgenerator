@@ -568,7 +568,7 @@ export default function DashboardShell({ user, children }: Props) {
         loop
         muted
         playsInline
-        className="hidden md:block fixed top-0 left-0 w-full h-full object-cover z-[-1]"
+        className="hidden md:block fixed top-0 left-0 w-full h-full object-cover z-0"
       >
         <source src="/videos/Grid_horizontal.webm" type="video/webm" />
       </video>
