@@ -2,8 +2,6 @@
 
 import { useRef, useEffect, useState, useCallback } from "react"
 import { RANK_TAG_STYLES, DEFAULT_STYLE_ID, type RankTagStyle } from "@/lib/rank-tag-config"
-import { useToast } from "@/components/ui/use-toast"
-import { useRouter } from "next/navigation"
 
 const FONT_URL =
   "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/5x5-font-monospaced-0fGxzkqEby3jzE6VeuPUC7wYMuj5oZ.ttf"
@@ -121,7 +119,10 @@ function tintImageData(
   ctx.putImageData(imageData, x, y)
 }
 
-export default function RankTagGenerator({ user }: Props) {
+export default function RankTagGenerator() {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const offscreenRef = useRef<HTMLCanvasElement | null>(null)
+
   const [text, setText] = useState("ADMIN")
   const [color, setColor] = useState("#fbbf24")
   const [styleId, setStyleId] = useState(DEFAULT_STYLE_ID)
@@ -131,11 +132,6 @@ export default function RankTagGenerator({ user }: Props) {
   const [downloading, setDownloading] = useState(false)
   const [copied, setCopied] = useState(false)
   const [snippetFormat, setSnippetFormat] = useState("vanilla")
-  const [background, setBackground] = useState("background1")
-  const [zoom, setZoom] = useState(4)
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  const { toast } = useToast()
-  const router = useRouter()
 
   const currentStyle = RANK_TAG_STYLES.find((s) => s.id === styleId) ?? RANK_TAG_STYLES[0]
 
@@ -322,58 +318,61 @@ export default function RankTagGenerator({ user }: Props) {
     if (!off) { setDownloading(false); return }
 
     const link = document.createElement("a")
-    link.download = "rank-tag.png"
+    link.download = `${text || "rank"}.png`
     link.href = off.toDataURL("image/png")
     link.click()
     setDownloading(false)
   }
 
-  const handleAddToFavourites = async () => {
-    try {
-      const response = await fetch("/api/favourites/add", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: text,
-          background,
-          text_color: textColor,
-          text_outline_color: textOutlineColor,
-          badge_left_color: badgeLeftColor,
-          badge_right_color: badgeRightColor,
-          badge_text: badgeText,
-          badge_text_color: badgeTextColor,
-          badge_text_outline_color: badgeTextOutlineColor,
-        }),
-      })
+  function generateJsonSnippet() {
+    const safeName = (text || "rank").toLowerCase().replace(/\s+/g, "_")
 
-      if (response.ok) {
-        toast({
-          title: "Favourite Saved",
-          description: "Your rank tag has been saved to your favourites.",
-        })
-        router.refresh()
-      } else {
-        const error = await response.json()
-        toast({
-          title: "Error",
-          description:
-            error.message || "There was an error saving your favourite.",
-          variant: "destructive",
-        })
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "There was an error saving your favourite.",
-        variant: "destructive",
-      })
+    switch (snippetFormat) {
+      case "nexo":
+        return `${safeName}:
+  texture: ${safeName}.png
+  height: 7
+  ascent: 7
+  permission: sams_rank.${safeName}`
+      case "itemsadder":
+        return `info:
+  namespace: "sams_ranks"
+font_images:
+  ${safeName}:
+    permission: "sams_rank.${safeName}"
+    show_in_gui: true
+    suggest_in_command: false
+    path: "${safeName}.png"
+    scale_ratio: 7
+    y_position: 7`
+      case "vanilla":
+      default:
+        return JSON.stringify(
+          {
+            providers: [
+              {
+                type: "bitmap",
+                file: `minecraft:font/${safeName}.png`,
+                ascent: 8,
+                height: 9,
+                chars: ["UNIQUE-CHARACTER-HERE"],
+              },
+            ],
+          },
+          null,
+          2
+        )
     }
   }
 
+  async function handleCopySnippet() {
+    await navigator.clipboard.writeText(generateJsonSnippet())
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
   return (
-    <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
+    <>
       <div className="flex flex-col gap-6 max-w-3xl mx-auto">
         {/* Header */}
         <div>
@@ -519,9 +518,6 @@ export default function RankTagGenerator({ user }: Props) {
             <span className="iconify w-4 h-4" data-icon="mdi:download" />
             {downloading ? "Exporting…" : "Download PNG"}
           </button>
-          <Button onClick={handleAddToFavourites} variant="outline">
-            <span className="iconify h-5 w-5" data-icon="fluent:star-24-regular" />
-          </Button>
         </div>
 
         {/* Resource Pack JSON Snippet */}
@@ -588,6 +584,6 @@ export default function RankTagGenerator({ user }: Props) {
           © {new Date().getFullYear()} Sam's Ranks. All Rights Reserved.
         </footer>
       </div>
-    </div>
+    </>
   )
 }
