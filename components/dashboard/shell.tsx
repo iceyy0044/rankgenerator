@@ -95,7 +95,7 @@ export default function DashboardShell({ user, children }: Props) {
     delay: 0,
     fullScreen: {
       enable: true,
-      zIndex: 0,
+      zIndex: -1,
     },
     detectRetina: true,
     duration: 0,
@@ -568,7 +568,7 @@ export default function DashboardShell({ user, children }: Props) {
         loop
         muted
         playsInline
-        className="hidden md:block fixed top-0 left-0 w-full h-full object-cover z-[-1]"
+        className="hidden md:block fixed top-0 left-0 w-full h-full object-cover z-[-2]"
       >
         <source src="/videos/Grid_horizontal.webm" type="video/webm" />
       </video>
