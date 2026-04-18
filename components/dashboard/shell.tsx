@@ -350,7 +350,7 @@ export default function DashboardShell({ user, children }: Props) {
           mode: "delete",
           value: 0,
         },
-        value: 800,
+        value: 1200,
       },
       opacity: {
         value: 0.8,
