@@ -23,7 +23,8 @@ export async function POST(req: NextRequest) {
     }
 
     const supabase = createAdminClient();
-    const ip = req.ip ?? "127.0.0.1";
+    const forwardedFor = req.headers.get("x-forwarded-for");
+    const ip = forwardedFor ? forwardedFor.split(",")[0].trim() : req.ip ?? "127.0.0.1";
 
     // Fetch the profile associated with the Discord username
     const { data: profileData, error: profileError } = await supabase
