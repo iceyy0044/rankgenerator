@@ -1,10 +1,10 @@
 import { createAdminClient } from "@/lib/supabase/server";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 // It's recommended to use an API key to protect this endpoint from abuse.
 // const API_SECRET_KEY = process.env.PLUGIN_API_SECRET;
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     // Uncomment the following lines to enable API key authentication
     // const authHeader = req.headers.get("Authorization");
@@ -23,6 +23,7 @@ export async function POST(req: Request) {
     }
 
     const supabase = createAdminClient();
+    const ip = req.ip ?? "127.0.0.1";
 
     // Fetch the profile associated with the Discord username
     const { data: profileData, error: profileError } = await supabase
@@ -44,6 +45,45 @@ export async function POST(req: Request) {
         { valid: false, error: "License key does not match the user's profile." },
         { status: 403 }
       );
+    }
+
+    // IP locking logic
+    const { data: ipData, error: ipError } = await supabase
+      .from("license_ips")
+      .select("ip_address")
+      .eq("license_key", license_key);
+
+    if (ipError) {
+      return NextResponse.json(
+        { valid: false, error: "Failed to retrieve IP data." },
+        { status: 500 }
+      );
+    }
+
+    const registeredIps = ipData.map((row) => row.ip_address);
+
+    if (!registeredIps.includes(ip)) {
+      if (registeredIps.length >= 3) {
+        return NextResponse.json(
+          {
+            valid: false,
+            error:
+              "You've reached the IP limit of 3, either make a ticket to reset ur IPs or request additional IP slots in case you are a bigger network.",
+          },
+          { status: 429 }
+        );
+      }
+
+      const { error: insertIpError } = await supabase
+        .from("license_ips")
+        .insert({ license_key, ip_address: ip });
+
+      if (insertIpError) {
+        return NextResponse.json(
+          { valid: false, error: "Failed to register new IP." },
+          { status: 500 }
+        );
+      }
     }
 
     // If all checks pass, the license is valid for this user.
