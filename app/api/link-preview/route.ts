@@ -2,27 +2,6 @@ import { NextResponse } from "next/server"
 
 const ALLOWED_HOSTS = new Set(["builtbybit.com", "www.builtbybit.com"])
 
-const KNOWN_BBB_IMAGE_BY_RESOURCE_ID: Record<string, string> = {
-  "102896": "https://builtbybit.com/attachments/beta-testing-1-png.1282637/?preset=fullr1",
-  "103383": "https://builtbybit.com/attachments/beta-testing-3-png.1291247/?preset=fullr1",
-  "103323": "https://builtbybit.com/attachments/beta-testing-png.1288382/?preset=fullr1",
-  "102606": "https://builtbybit.com/attachments/medieval-hotbar-png.1280053/?preset=fullr1",
-  "102310": "https://builtbybit.com/attachments/beta-testing-png.1277469/?preset=fullr1",
-  "70302": "https://builtbybit.com/attachments/firewebtemplate_preview_main-png.986445/?preset=fullr1",
-  "102490": "https://builtbybit.com/attachments/topazwebtemplate_banners-png.1284097/?preset=fullr1",
-  "70116": "https://builtbybit.com/attachments/bbb-banner-free-website-v1-png.984676/?preset=fullr1",
-}
-
-function extractResourceId(pathname: string): string | null {
-  const slugMatch = pathname.match(/\.(\d+)\/?$/)
-  if (slugMatch?.[1]) return slugMatch[1]
-
-  const idMatch = pathname.match(/\/resources\/(\d+)(?:\/|$)/)
-  if (idMatch?.[1]) return idMatch[1]
-
-  return null
-}
-
 function extractMetaContent(html: string, keys: string[]): string | null {
   for (const key of keys) {
     const propertyFirst = new RegExp(
@@ -65,19 +44,6 @@ export async function GET(req: Request) {
 
   if (targetUrl.protocol !== "http:" && targetUrl.protocol !== "https:") {
     return NextResponse.json({ error: "Invalid protocol." }, { status: 400 })
-  }
-
-  // BBB is protected by anti-bot checks server-side, so known resource IDs use
-  // curated preview images first for reliable rendering.
-  const resourceId = extractResourceId(targetUrl.pathname)
-  if (resourceId && KNOWN_BBB_IMAGE_BY_RESOURCE_ID[resourceId]) {
-    return NextResponse.json(
-      { imageUrl: KNOWN_BBB_IMAGE_BY_RESOURCE_ID[resourceId] },
-      {
-        status: 200,
-        headers: { "Cache-Control": "public, max-age=21600" },
-      }
-    )
   }
 
   try {
