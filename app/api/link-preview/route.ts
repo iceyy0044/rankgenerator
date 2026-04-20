@@ -7,8 +7,8 @@ const KNOWN_BBB_IMAGE_BY_RESOURCE_ID: Record<string, string> = {
   "103383": "https://builtbybit.com/attachments/beta-testing-3-png.1291247/?preset=fullr1",
   "103323": "https://builtbybit.com/attachments/beta-testing-png.1288382/?preset=fullr1",
   "102606": "https://builtbybit.com/attachments/medieval-hotbar-png.1280053/?preset=fullr1",
-  "102310": "https://builtbybit.com/attachments/build_info-png.1277546/?preset=fullr1",
-  "70302": "https://image.thum.io/get/width/1600/https://iceyy-fire-template-preview.vercel.app/",
+  "102310": "https://builtbybit.com/attachments/beta-testing-png.1277469/?preset=fullr1",
+  "70302": "https://builtbybit.com/attachments/firewebtemplate_preview_main-png.986445/?preset=fullr1",
   "102490": "https://builtbybit.com/attachments/topazwebtemplate_banners-png.1284097/?preset=fullr1",
   "70116": "https://builtbybit.com/attachments/bbb-banner-free-website-v1-png.984676/?preset=fullr1",
 }
