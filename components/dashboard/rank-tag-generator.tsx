@@ -295,9 +295,9 @@ export default function RankTagGenerator() {
       shadowCtx.fillStyle = 'rgba(0,0,0,0.55)'
       shadowCtx.fillRect(0, 0, CHAR_WIDTH, CHAR_HEIGHT)
 
-      // Draw shadow(colorMode === 'solid' ? selectedRgb.r : startRgb.r) * 0.2),
-        g: Math.round(baseRgb.g * 0.8 + (colorMode === 'solid' ? selectedRgb.g : startRgb.g) * 0.2),
-        b: Math.round(baseRgb.b * 0.8 + (colorMode === 'solid' ? selectedRgb.b : startRgb.b)
+      // Draw shadow
+      ctx.drawImage(shadowCtx.canvas, cx + 1, textY + 1)
+
       // Create a temporary canvas for the main glyph
       const glyphCtx = document.createElement('canvas').getContext('2d')!
       glyphCtx.canvas.width = CHAR_WIDTH
@@ -312,9 +312,9 @@ export default function RankTagGenerator() {
       // making it look more integrated with the tag.
       const baseRgb = { r: 205, g: 205, b: 205 } // #CDCDCD
       const mixedRgb = {
-        r: Math.round(baseRgb.r * 0.8 + selectedRgb.r * 0.2),
-        g: Math.round(baseRgb.g * 0.8 + selectedRgb.g * 0.2),
-        b: Math.round(baseRgb.b * 0.8 + selectedRgb.b * 0.2),
+        r: Math.round(baseRgb.r * 0.8 + (colorMode === 'solid' ? selectedRgb.r : startRgb.r) * 0.2),
+        g: Math.round(baseRgb.g * 0.8 + (colorMode === 'solid' ? selectedRgb.g : startRgb.g) * 0.2),
+        b: Math.round(baseRgb.b * 0.8 + (colorMode === 'solid' ? selectedRgb.b : startRgb.b) * 0.2),
       }
       glyphCtx.globalCompositeOperation = 'source-atop'
       glyphCtx.fillStyle = `rgba(${mixedRgb.r}, ${mixedRgb.g}, ${mixedRgb.b}, 0.4)` // Use background color with some transparency
