@@ -148,8 +148,6 @@ export default function RankTagGenerator() {
   const [fontSheet, setFontSheet] = useState<HTMLImageElement | null>(null)
   const [imagesLoaded, setImagesLoaded] = useState(false)
   const [downloading, setDownloading] = useState(false)
-  const [copied, setCopied] = useState(false)
-  const [snippetFormat, setSnippetFormat] = useState("vanilla")
 
   const currentStyle = RANK_TAG_STYLES.find((s) => s.id === styleId) ?? RANK_TAG_STYLES[0]
 
@@ -346,53 +344,6 @@ export default function RankTagGenerator() {
     link.href = off.toDataURL("image/png")
     link.click()
     setDownloading(false)
-  }
-
-  function generateJsonSnippet() {
-    const safeName = (text || "rank").toLowerCase().replace(/\s+/g, "_")
-
-    switch (snippetFormat) {
-      case "nexo":
-        return `${safeName}:
-  texture: ${safeName}.png
-  height: 7
-  ascent: 7
-  permission: sams_rank.${safeName}`
-      case "itemsadder":
-        return `info:
-  namespace: "sams_ranks"
-font_images:
-  ${safeName}:
-    permission: "sams_rank.${safeName}"
-    show_in_gui: true
-    suggest_in_command: false
-    path: "${safeName}.png"
-    scale_ratio: 7
-    y_position: 7`
-      case "vanilla":
-      default:
-        return JSON.stringify(
-          {
-            providers: [
-              {
-                type: "bitmap",
-                file: `minecraft:font/${safeName}.png`,
-                ascent: 8,
-                height: 9,
-                chars: ["UNIQUE-CHARACTER-HERE"],
-              },
-            ],
-          },
-          null,
-          2
-        )
-    }
-  }
-
-  async function handleCopySnippet() {
-    await navigator.clipboard.writeText(generateJsonSnippet())
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
   }
 
   return (
@@ -593,69 +544,6 @@ font_images:
             <span className="iconify w-4 h-4" data-icon="mdi:download" />
             {downloading ? "Exporting..." : "Download PNG"}
           </button>
-        </div>
-
-        <div className="glass rounded-2xl p-6 flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-[#e8d8a8] uppercase tracking-wider">
-                Resource Pack JSON Snippet
-              </label>
-              <div className="relative w-40 mt-1">
-                <select
-                  value={snippetFormat}
-                  onChange={(e) => setSnippetFormat(e.target.value)}
-                  className="w-full px-3 py-1.5 rounded-lg bg-[#1e1706] border border-[rgba(120,80,10,0.12)] text-[#e8eaf0]
-                    text-sm focus:outline-none focus:border-[#f59e0b] focus:ring-1 focus:ring-[rgba(245,158,11,0.14)]
-                    transition-all appearance-none cursor-pointer"
-                >
-                  <option value="vanilla">Vanilla</option>
-                  <option value="itemsadder">ItemsAdder</option>
-                  <option value="nexo">Nexo</option>
-                </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2">
-                  <span className="iconify text-[#7a869a]" data-icon="mdi:chevron-down" />
-                </div>
-              </div>
-            </div>
-            <button
-              onClick={handleCopySnippet}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-150
-                bg-[#1e1706] border border-[rgba(120,80,10,0.12)] text-[#e6d8a3] hover:bg-[#2a2108]"
-            >
-              {copied ? (
-                <>
-                  <span className="iconify w-3.5 h-3.5 text-[#22c55e]" data-icon="mdi:check" />
-                  Copied!
-                </>
-              ) : (
-                <>
-                  <span className="iconify w-3.5 h-3.5" data-icon="mdi:content-copy" />
-                  Copy Snippet
-                </>
-              )}
-            </button>
-          </div>
-
-          <pre className="rounded-xl bg-[#0a0d13] border border-[rgba(120,80,10,0.12)] p-4 text-xs font-mono text-[#7a869a] overflow-x-auto leading-relaxed">
-            {generateJsonSnippet()}
-          </pre>
-
-          {snippetFormat === "itemsadder" && (
-            <div className="mt-2 text-xs text-[#7a869a] bg-[#0a0d13] border border-[rgba(120,80,10,0.12)] rounded-lg p-3">
-              <p className="font-semibold text-[#e8d8a8]">Place this configuration in:</p>
-              <code className="block bg-black/20 px-2 py-1 rounded-md my-1">plugins/ItemsAdder/contents/[namespace]/configs/prefixes.yml</code>
-              <p>Do not forget to place the exported PNG image in the appropriate textures folder.</p>
-            </div>
-          )}
-
-          {snippetFormat === "nexo" && (
-            <div className="mt-2 text-xs text-[#7a869a] bg-[#0a0d13] border border-[rgba(120,80,10,0.12)] rounded-lg p-3">
-              <p className="font-semibold text-[#e8d8a8]">Place this configuration in:</p>
-              <code className="block bg-black/20 px-2 py-1 rounded-md my-1">plugins/Nexo/glyphs/[namespace]/configs/prefixes.yml</code>
-              <p>Do not forget to place the exported PNG image in the appropriate textures folder.</p>
-            </div>
-          )}
         </div>
 
         <footer className="text-center text-sm text-[#7a869a] py-4">
