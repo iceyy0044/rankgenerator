@@ -219,7 +219,8 @@ export default function RankTagGenerator() {
     const charCount = displayText.length
     // The total width is the sum of all its parts, with no rounding and no extra padding.
     const totalW = leftW + midW * charCount + rightW
-Create a temporary canvas for the background to apply gradient correctly
+
+    // Create a temporary canvas for the background to apply gradient correctly
     const bgCanvas = document.createElement("canvas")
     bgCanvas.width = totalW
     bgCanvas.height = tileH
