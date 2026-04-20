@@ -27,12 +27,37 @@ const SCALE = 1 // 1:1 final render size (12px high base)
 // No right padding — let the right tile render fully
 const RIGHT_SAFE_PAD = 0
 
-function hexToRgb(hex: string) {
+function hexToRgb(hex: string): { r: number; g: number; b: number } {
   const r = parseInt(hex.slice(1, 3), 16)
   const g = parseInt(hex.slice(3, 5), 16)
   const b = parseInt(hex.slice(5, 7), 16)
   return { r, g, b }
 }
+
+function applyGradient(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  colorStart: { r: number; g: number; b: number },
+  colorEnd: { r: number; g: number; b: number },
+  angle: number
+) {
+  const rad = (angle * Math.PI) / 180
+  const x1 = w * 0.5 + (w * 0.5) * Math.cos(rad)
+  const y1 = h * 0.5 + (h * 0.5) * Math.sin(rad)
+  const x2 = w * 0.5 - (w * 0.5) * Math.cos(rad)
+  const y2 = h * 0.5 - (h * 0.5) * Math.sin(rad)
+
+  const gradient = ctx.createLinearGradient(x1, y1, x2, y2)
+  gradient.addColorStop(0, `rgb(${colorStart.r}, ${colorStart.g}, ${colorStart.b})`)
+  gradient.addColorStop(1, `rgb(${colorEnd.r}, ${colorEnd.g}, ${colorEnd.b})`)
+
+  ctx.fillStyle = gradient
+  ctx.fillRect(x, y, w, h)
+}
+
 
 // Apply a subtle 45° diagonal (top-left → bottom-right) shading overlay to simulate Minecraft UI depth.
 // Final pass — run after background + text are both drawn.
@@ -124,7 +149,11 @@ export default function RankTagGenerator() {
   const offscreenRef = useRef<HTMLCanvasElement | null>(null)
 
   const [text, setText] = useState("ADMIN")
+  const [colorMode, setColorMode] = useState<"solid" | "gradient">("solid")
   const [color, setColor] = useState("#fbbf24")
+  const [gradientStart, setGradientStart] = useState("#0051FF")
+  const [gradientEnd, setGradientEnd] = useState("#FFFFFF")
+  const [gradientAngle, setGradientAngle] = useState(0)
   const [styleId, setStyleId] = useState(DEFAULT_STYLE_ID)
   const [fontLoaded, setFontLoaded] = useState(false)
   const [fontSheet, setFontSheet] = useState<HTMLImageElement | null>(null)
@@ -152,6 +181,8 @@ export default function RankTagGenerator() {
     fontFace.load().then((loaded) => {
       document.fonts.add(loaded)
       setFontLoaded(true)
+    const startRgb = hexToRgb(gradientStart)
+    const endRgb = hexToRgb(gradientEnd)
     }).catch(() => {
       setFontLoaded(true) // fallback: proceed anyway
     })
@@ -188,18 +219,33 @@ export default function RankTagGenerator() {
     const charCount = displayText.length
     // The total width is the sum of all its parts, with no rounding and no extra padding.
     const totalW = leftW + midW * charCount + rightW
+Create a temporary canvas for the background to apply gradient correctly
+    const bgCanvas = document.createElement("canvas")
+    bgCanvas.width = totalW
+    bgCanvas.height = tileH
+    const bgCtx = bgCanvas.getContext("2d", { willReadFrequently: true })
+    if (!bgCtx) return
+    bgCtx.imageSmoothingEnabled = false
 
-    // --- 2. Create or reuse offscreen canvas at native, unscaled resolution ---
-    if (!offscreenRef.current) {
-      offscreenRef.current = document.createElement("canvas")
+    // Draw tiles onto the temporary background canvas
+    bgCtx.drawImage(leftImg, 0, 0, leftW, tileH)
+    for (let i = 0; i < charCount; i++) {
+      const x = leftW + i * midW
+      bgCtx.drawImage(midImg, x, 0, midW, tileH)
     }
-    const off = offscreenRef.current
-    off.width = totalW
-    off.height = tileH
+    const rightXBg = leftW + charCount * midW
+    bgCtx.drawImage(rightImg, rightXBg, 0, rightW, tileH)
 
-    const ctx = off.getContext("2d", { willReadFrequently: true })
-    if (!ctx) return
-
+    // Now, apply color or gradient
+    if (colorMode === "solid") {
+      tintImageData(ctx, bgCanvas, 0, 0, totalW, tileH, selectedRgb)
+    } else {
+      // For gradient, we draw the shape from bgCanvas, then overlay with a gradient
+      ctx.drawImage(bgCanvas, 0, 0, totalW, tileH)
+      ctx.globalCompositeOperation = "source-in"
+      applyGradient(ctx, 0, 0, totalW, tileH, startRgb, endRgb, gradientAngle)
+      ctx.globalCompositeOperation = "source-over" // reset
+    }
     // Disable ALL smoothing for pixel-perfect rendering.
     ctx.imageSmoothingEnabled = false
 
@@ -248,9 +294,9 @@ export default function RankTagGenerator() {
       shadowCtx.fillStyle = 'rgba(0,0,0,0.55)'
       shadowCtx.fillRect(0, 0, CHAR_WIDTH, CHAR_HEIGHT)
 
-      // Draw shadow
-      ctx.drawImage(shadowCtx.canvas, cx + 1, textY + 1)
-
+      // Draw shadow(colorMode === 'solid' ? selectedRgb.r : startRgb.r) * 0.2),
+        g: Math.round(baseRgb.g * 0.8 + (colorMode === 'solid' ? selectedRgb.g : startRgb.g) * 0.2),
+        b: Math.round(baseRgb.b * 0.8 + (colorMode === 'solid' ? selectedRgb.b : startRgb.b)
       // Create a temporary canvas for the main glyph
       const glyphCtx = document.createElement('canvas').getContext('2d')!
       glyphCtx.canvas.width = CHAR_WIDTH
@@ -286,7 +332,7 @@ export default function RankTagGenerator() {
     // Set the actual size of the canvas element
     display.width = displayW
     display.height = displayH
-
+, colorMode, gradientStart, gradientEnd, gradientAngle
     // The CSS size can be different if needed, but for 1:1 pixel mapping, it should match
     display.style.width = `${displayW}px`
     display.style.height = `${displayH}px`
@@ -419,56 +465,119 @@ font_images:
                   className="w-full px-4 py-2.5 rounded-xl bg-[#1e1706] border border-[rgba(120,80,10,0.12)] text-[#e8eaf0]
           text-sm focus:outline-none focus:border-[#f59e0b] focus:ring-1 focus:ring-[rgba(245,158,11,0.14)]
                   transition-all appearance-none cursor-pointer"
+                >4">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-[#e8d8a8] uppercase tracking-wider">Color Mode</label>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setColorMode("solid")}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    colorMode === "solid"
+                      ? "bg-[#fbbf24] text-black"
+                      : "bg-[#1e1706] text-[#e8eaf0] hover:bg-[#2a2108]"
+                  }`}
                 >
-                  {RANK_TAG_STYLES.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}
-                    </option>
-                  ))}
-                </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3">
-                  <span className="iconify text-[#7a869a]" data-icon="mdi:chevron-down" />
-                </div>
+                  Solid
+                </button>
+                <button
+                  onClick={() => setColorMode("gradient")}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    colorMode === "gradient"
+                      ? "bg-[#fbbf24] text-black"
+                      : "bg-[#1e1706] text-[#e8eaf0] hover:bg-[#2a2108]"
+                  }`}
+                >
+                  Gradient
+                </button>
               </div>
             </div>
-          </div>
 
-          {/* Row 2: Color picker */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-[#e8d8a8] uppercase tracking-wider">Background Tint Color</label>
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="relative">
-                <input
-                  type="color"
-                  value={color}
-                  onChange={(e) => setColor(e.target.value)}
-                  className="w-10 h-10 rounded-lg cursor-pointer border border-[rgba(120,80,10,0.12)] bg-transparent p-0.5"
-                  title="Pick a color"
-                />
-              </div>
-              <input
-                type="text"
-                value={color}
-                onChange={(e) => {
-                  const val = e.target.value
-                  if (/^#[0-9a-fA-F]{0,6}$/.test(val)) setColor(val)
-                }}
-                className="px-3 py-2 rounded-lg bg-[#1e1706] border border-[rgba(120,80,10,0.12)] text-[#fff8e1]
-                  font-mono text-sm w-32 focus:outline-none focus:border-[#f59e0b] transition-all"
-                maxLength={7}
-              />
-              {/* Preset swatches */}
-              <div className="flex items-center gap-2 flex-wrap">
-                {["#e3e2a0", "#a1d59f", "#f7cfb1", "#DD3838", "#5E719E"].map((c) => (
-                  <button
-                    key={c}
-                    onClick={() => setColor(c)}
-                    title={c}
-                    className={`w-7 h-7 rounded-lg border-2 transition-all ${
-                      color === c ? "border-white scale-110" : "border-transparent hover:border-[rgba(255,255,255,0.3)]"
-                    }`}
-                    style={{ backgroundColor: c }}
+            {colorMode === "solid" ? (
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-[#e8d8a8] uppercase tracking-wider">Background Tint Color</label>
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="relative">
+                    <input
+                      type="color"
+                      value={color}
+                      onChange={(e) => setColor(e.target.value)}
+                      className="w-10 h-10 rounded-lg cursor-pointer border border-[rgba(120,80,10,0.12)] bg-transparent p-0.5"
+                      title="Pick a color"
+                    />
+                  </div>
+                  <input
+                    type="text"
+                    value={color}
+                    onChange={(e) => {
+                      const val = e.target.value
+                      if (/^#[0-9a-fA-F]{0,6}$/.test(val)) setColor(val)
+                    }}
+                    className="px-3 py-2 rounded-lg bg-[#1e1706] border border-[rgba(120,80,10,0.12)] text-[#fff8e1]
+                      font-mono text-sm w-32 focus:outline-none focus:border-[#f59e0b] transition-all"
+                    maxLength={7}
                   />
+                  {/* Preset swatches */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {["#e3e2a0", "#a1d59f", "#f7cfb1", "#DD3838", "#5E719E"].map((c) => (
+                      <button
+                        key={c}
+                        onClick={() => setColor(c)}
+                        title={c}
+                        className={`w-7 h-7 rounded-lg border-2 transition-all ${
+                          color === c ? "border-white scale-110" : "border-transparent hover:border-[rgba(255,255,255,0.3)]"
+                        }`}
+                        style={{ backgroundColor: c }}
+                      />
+                    ))}
+                    <button
+                      onClick={() => {
+                        const randomColor = "#" + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
+                        setColor(randomColor);
+                      }}
+                      title="Random Color"
+                      className="group relative w-7 h-7 rounded-lg border-2 border-transparent flex items-center justify-center
+                                 overflow-hidden transition-all duration-300 hover:border-yellow-400/50"
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-br from-yellow-400/20 via-yellow-600/20 to-yellow-800/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      <span className="iconify w-4 h-4 text-yellow-400/70 group-hover:text-white transition-colors duration-300 z-10" data-icon="ion:sparkles-sharp" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-semibold text-[#e8d8a8] uppercase tracking-wider">Gradient Colors</label>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="color"
+                      value={gradientStart}
+                      onChange={(e) => setGradientStart(e.target.value)}
+                      className="w-10 h-10 rounded-lg cursor-pointer border border-[rgba(120,80,10,0.12)] bg-transparent p-0.5"
+                      title="Gradient Start Color"
+                    />
+                    <input
+                      type="color"
+                      value={gradientEnd}
+                      onChange={(e) => setGradientEnd(e.target.value)}
+                      className="w-10 h-10 rounded-lg cursor-pointer border border-[rgba(120,80,10,0.12)] bg-transparent p-0.5"
+                      title="Gradient End Color"
+                    />
+                  </div>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-semibold text-[#e8d8a8] uppercase tracking-wider">Gradient Angle ({gradientAngle}°)</label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="360"
+                    value={gradientAngle}
+                    onChange={(e) => setGradientAngle(Number(e.target.value))}
+                    className="w-full h-2 bg-[#1e1706] rounded-lg appearance-none cursor-pointer"
+                  />
+                </div>
+              </div>
+            )}/>
                 ))}
                 <button
                   onClick={() => {
@@ -518,6 +627,67 @@ font_images:
             <span className="iconify w-4 h-4" data-icon="mdi:download" />
             {downloading ? "Exporting…" : "Download PNG"}
           </button>
+        </div>
+
+        {/* Resource Pack JSON Snippet */}
+        <div className="glass rounded-2xl p-6 flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-[#e8d8a8] uppercase tracking-wider">
+                Resource Pack JSON Snippet
+              </label>
+              <div className="relative w-40 mt-1">
+                <select
+                  value={snippetFormat}
+                  onChange={(e) => setSnippetFormat(e.target.value)}
+                  className="w-full px-3 py-1.5 rounded-lg bg-[#1e1706] border border-[rgba(120,80,10,0.12)] text-[#e8eaf0]
+          text-sm focus:outline-none focus:border-[#f59e0b] focus:ring-1 focus:ring-[rgba(245,158,11,0.14)]
+                  transition-all appearance-none cursor-pointer"
+                >
+                  <option value="vanilla">Vanilla</option>
+                  <option value="itemsadder">ItemsAdder</option>
+                  <option value="nexo">Nexo</option>
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2">
+                  <span className="iconify text-[#7a869a]" data-icon="mdi:chevron-down" />
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={handleCopySnippet}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-150
+              bg-[#1e1706] border border-[rgba(120,80,10,0.12)] text-[#e6d8a3] hover:bg-[#2a2108]"
+            >
+              {copied ? (
+                <>
+                  <span className="iconify w-3.5 h-3.5 text-[#22c55e]" data-icon="mdi:check" />
+                  Copied!
+                </>
+              ) : (
+                <>
+                  <span className="iconify w-3.5 h-3.5" data-icon="mdi:content-copy" />
+                  Copy Snippet
+                </>
+              )}
+            </button>
+          </div>
+          <pre className="rounded-xl bg-[#0a0d13] border border-[rgba(120,80,10,0.12)] p-4 text-xs font-mono text-[#7a869a] overflow-x-auto leading-relaxed">
+            {generateJsonSnippet()}
+          </pre>
+          {snippetFormat === "itemsadder" && (
+            <div className="mt-2 text-xs text-[#7a869a] bg-[#0a0d13] border border-[rgba(120,80,10,0.12)] rounded-lg p-3">
+              <p className="font-semibold text-[#e8d8a8]">Place this configuration in:</p>
+              <code className="block bg-black/20 px-2 py-1 rounded-md my-1">plugins/ItemsAdder/contents/[namespace]/configs/prefixes.yml</code>
+              <p>Don't forget to place the exported PNG image in the appropriate textures folder!</p>
+            </div>
+          )}
+          {snippetFormat === "nexo" && (
+            <div className="mt-2 text-xs text-[#7a869a] bg-[#0a0d13] border border-[rgba(120,80,10,0.12)] rounded-lg p-3">
+              <p className="font-semibold text-[#e8d8a8]">Place this configuration in:</p>
+              <code className="block bg-black/20 px-2 py-1 rounded-md my-1">plugins/Nexo/glyphs/[namespace]/configs/prefixes.yml</code>
+              <p>Don't forget to place the exported PNG image in the appropriate textures folder!</p>
+            </div>
+          )}
         </div>
         <footer className="text-center text-sm text-[#7a869a] py-4">
           © {new Date().getFullYear()} Sam's Ranks. All Rights Reserved.
