@@ -607,7 +607,7 @@ export default function RankTagGenerator() {
         <div className="glass rounded-2xl p-4 sm:p-6 flex flex-col gap-4">
           <div>
             <h2 className="text-lg font-semibold text-[#e8eaf0] tracking-tight">Explore Our Other Work</h2>
-            <p className="text-xs text-[#7a869a] mt-1">Eight featured BBB products in a 2x4 banner grid.</p>
+            <p className="text-xs text-[#7a869a] mt-1">Look at what everything else we have created including our amazing web templates and Plugin Configurations with Custom UIs.</p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
