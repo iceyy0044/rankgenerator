@@ -56,6 +56,59 @@ const FONT_MAP: { [key: string]: { x: number; y: number } } = {
 const CHAR_WIDTH = 5
 const CHAR_HEIGHT = 7
 
+type ProductBanner = {
+  id: string
+  title: string
+  href: string
+}
+
+const BBB_PRODUCT_BANNERS: ProductBanner[] = [
+  {
+    id: "bbb-product-1",
+    title: "Medieval ESC Menu",
+    href: "https://builtbybit.com/resources/medieval-esc-menu.102896/",
+  },
+  {
+    id: "bbb-product-2",
+    title: "Medieval Config: PlayerAuction",
+    href: "https://builtbybit.com/resources/medieval-config-playerauction.103383/",
+  },
+  {
+    id: "bbb-product-3",
+    title: "Medieval Config: AxTrade",
+    href: "https://builtbybit.com/resources/medieval-config-axtrade.103323/",
+  },
+  {
+    id: "bbb-product-4",
+    title: "Medieval HUD: BetterHUD",
+    href: "https://builtbybit.com/resources/medieval-hud-betterhud.102606/",
+  },
+  {
+    id: "bbb-product-5",
+    title: "Spawn Medieval Skyblock 457x464",
+    href: "https://builtbybit.com/resources/spawn-medieval-skyblock-457x464-size.102310/",
+  },
+  {
+    id: "bbb-product-6",
+    title: "Premium Fire Website Template",
+    href: "https://builtbybit.com/resources/premium-fire-website-template.70302/",
+  },
+  {
+    id: "bbb-product-7",
+    title: "Topaz Minecraft Web Template",
+    href: "https://builtbybit.com/resources/topaz-minecraft-web-template.102490/",
+  },
+  {
+    id: "bbb-product-8",
+    title: "Free Premium Minecraft Web Template",
+    href: "https://builtbybit.com/resources/free-premium-minecraft-web-template.70116/",
+  },
+]
+
+function getBannerPlaceholderUrl(title: string): string {
+  return `https://placehold.co/1600x900/0f172a/e2e8f0?text=${encodeURIComponent(title)}`
+}
+
 function hexToRgb(hex: string): { r: number; g: number; b: number } {
   const r = parseInt(hex.slice(1, 3), 16)
   const g = parseInt(hex.slice(3, 5), 16)
@@ -148,6 +201,7 @@ export default function RankTagGenerator() {
   const [fontSheet, setFontSheet] = useState<HTMLImageElement | null>(null)
   const [imagesLoaded, setImagesLoaded] = useState(false)
   const [downloading, setDownloading] = useState(false)
+  const [bannerImages, setBannerImages] = useState<Record<string, string>>({})
 
   const currentStyle = RANK_TAG_STYLES.find((s) => s.id === styleId) ?? RANK_TAG_STYLES[0]
 
@@ -186,6 +240,39 @@ export default function RankTagGenerator() {
       getCachedImage(currentStyle.rightUrl),
     ]).then(() => setImagesLoaded(true))
   }, [currentStyle])
+
+  useEffect(() => {
+    let isMounted = true
+
+    async function loadBannerPreviews() {
+      const resolvedEntries = await Promise.all(
+        BBB_PRODUCT_BANNERS.map(async (banner) => {
+          try {
+            const response = await fetch(`/api/link-preview?url=${encodeURIComponent(banner.href)}`)
+            if (!response.ok) return null
+            const data = (await response.json()) as { imageUrl?: string | null }
+            if (!data.imageUrl) return null
+            return [banner.id, data.imageUrl] as const
+          } catch {
+            return null
+          }
+        })
+      )
+
+      if (!isMounted) return
+
+      const resolved = Object.fromEntries(
+        resolvedEntries.filter((entry): entry is readonly [string, string] => entry !== null)
+      )
+      setBannerImages(resolved)
+    }
+
+    loadBannerPreviews()
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
 
   const renderTag = useCallback(async () => {
     if (!fontLoaded || !imagesLoaded || !fontSheet || !canvasRef.current) return
@@ -544,6 +631,38 @@ export default function RankTagGenerator() {
             <span className="iconify w-4 h-4" data-icon="mdi:download" />
             {downloading ? "Exporting..." : "Download PNG"}
           </button>
+        </div>
+
+        <div className="glass rounded-2xl p-4 sm:p-6 flex flex-col gap-4">
+          <div>
+            <h2 className="text-lg font-semibold text-[#e8eaf0] tracking-tight">Explore Our Other Work</h2>
+            <p className="text-xs text-[#7a869a] mt-1">Eight featured BBB products in a 2x4 banner grid.</p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {BBB_PRODUCT_BANNERS.map((banner) => (
+              <a
+                key={banner.id}
+                href={banner.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group relative overflow-hidden rounded-xl border border-[rgba(120,80,10,0.2)] bg-[#0e1117]"
+              >
+                <div className="relative w-full" style={{ aspectRatio: "16 / 9" }}>
+                  <img
+                    src={bannerImages[banner.id] ?? getBannerPlaceholderUrl(banner.title)}
+                    alt={banner.title}
+                    loading="lazy"
+                    className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/20 to-transparent" />
+                  <div className="absolute inset-x-0 bottom-0 p-2">
+                    <p className="text-xs font-semibold text-white drop-shadow-sm">{banner.title}</p>
+                  </div>
+                </div>
+              </a>
+            ))}
+          </div>
         </div>
 
         <footer className="text-center text-sm text-[#7a869a] py-4">
