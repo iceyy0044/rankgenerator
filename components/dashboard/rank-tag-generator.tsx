@@ -92,7 +92,7 @@ const BBB_PRODUCT_BANNERS: ProductBanner[] = [
     id: "bbb-product-5",
     title: "Spawn Medieval Skyblock 457x464",
     href: "https://builtbybit.com/resources/spawn-medieval-skyblock-457x464-size.102310/",
-    imageUrl: "https://builtbybit.com/attachments/build_info-png.1277546/?preset=fullr1",
+    imageUrl: "https://builtbybit.com/attachments/beta-testing-png.1277469/?preset=fullr1",
   },
   {
     id: "bbb-product-6",
