@@ -60,6 +60,7 @@ type ProductBanner = {
   id: string
   title: string
   href: string
+  imageUrl: string
 }
 
 const BBB_PRODUCT_BANNERS: ProductBanner[] = [
@@ -67,47 +68,51 @@ const BBB_PRODUCT_BANNERS: ProductBanner[] = [
     id: "bbb-product-1",
     title: "Medieval ESC Menu",
     href: "https://builtbybit.com/resources/medieval-esc-menu.102896/",
+    imageUrl: "https://builtbybit.com/attachments/beta-testing-1-png.1282637/?preset=fullr1",
   },
   {
     id: "bbb-product-2",
     title: "Medieval Config: PlayerAuction",
     href: "https://builtbybit.com/resources/medieval-config-playerauction.103383/",
+    imageUrl: "https://builtbybit.com/attachments/beta-testing-3-png.1291247/?preset=fullr1",
   },
   {
     id: "bbb-product-3",
     title: "Medieval Config: AxTrade",
     href: "https://builtbybit.com/resources/medieval-config-axtrade.103323/",
+    imageUrl: "https://builtbybit.com/attachments/beta-testing-png.1288382/?preset=fullr1",
   },
   {
     id: "bbb-product-4",
     title: "Medieval HUD: BetterHUD",
     href: "https://builtbybit.com/resources/medieval-hud-betterhud.102606/",
+    imageUrl: "https://builtbybit.com/attachments/medieval-hotbar-png.1280053/?preset=fullr1",
   },
   {
     id: "bbb-product-5",
     title: "Spawn Medieval Skyblock 457x464",
     href: "https://builtbybit.com/resources/spawn-medieval-skyblock-457x464-size.102310/",
+    imageUrl: "https://builtbybit.com/attachments/build_info-png.1277546/?preset=fullr1",
   },
   {
     id: "bbb-product-6",
     title: "Premium Fire Website Template",
     href: "https://builtbybit.com/resources/premium-fire-website-template.70302/",
+    imageUrl: "https://builtbybit.com/attachments/firewebtemplate_preview_main-png.986445/?preset=fullr1",
   },
   {
     id: "bbb-product-7",
     title: "Topaz Minecraft Web Template",
     href: "https://builtbybit.com/resources/topaz-minecraft-web-template.102490/",
+    imageUrl: "https://builtbybit.com/attachments/topazwebtemplate_banners-png.1284097/?preset=fullr1",
   },
   {
     id: "bbb-product-8",
     title: "Free Premium Minecraft Web Template",
     href: "https://builtbybit.com/resources/free-premium-minecraft-web-template.70116/",
+    imageUrl: "https://builtbybit.com/attachments/bbb-banner-free-website-v1-png.984676/?preset=fullr1",
   },
 ]
-
-function getBannerPlaceholderUrl(title: string): string {
-  return `https://placehold.co/1600x900/0f172a/e2e8f0?text=${encodeURIComponent(title)}`
-}
 
 function hexToRgb(hex: string): { r: number; g: number; b: number } {
   const r = parseInt(hex.slice(1, 3), 16)
@@ -201,7 +206,6 @@ export default function RankTagGenerator() {
   const [fontSheet, setFontSheet] = useState<HTMLImageElement | null>(null)
   const [imagesLoaded, setImagesLoaded] = useState(false)
   const [downloading, setDownloading] = useState(false)
-  const [bannerImages, setBannerImages] = useState<Record<string, string>>({})
 
   const currentStyle = RANK_TAG_STYLES.find((s) => s.id === styleId) ?? RANK_TAG_STYLES[0]
 
@@ -240,39 +244,6 @@ export default function RankTagGenerator() {
       getCachedImage(currentStyle.rightUrl),
     ]).then(() => setImagesLoaded(true))
   }, [currentStyle])
-
-  useEffect(() => {
-    let isMounted = true
-
-    async function loadBannerPreviews() {
-      const resolvedEntries = await Promise.all(
-        BBB_PRODUCT_BANNERS.map(async (banner) => {
-          try {
-            const response = await fetch(`/api/link-preview?url=${encodeURIComponent(banner.href)}`)
-            if (!response.ok) return null
-            const data = (await response.json()) as { imageUrl?: string | null }
-            if (!data.imageUrl) return null
-            return [banner.id, data.imageUrl] as const
-          } catch {
-            return null
-          }
-        })
-      )
-
-      if (!isMounted) return
-
-      const resolved = Object.fromEntries(
-        resolvedEntries.filter((entry): entry is readonly [string, string] => entry !== null)
-      )
-      setBannerImages(resolved)
-    }
-
-    loadBannerPreviews()
-
-    return () => {
-      isMounted = false
-    }
-  }, [])
 
   const renderTag = useCallback(async () => {
     if (!fontLoaded || !imagesLoaded || !fontSheet || !canvasRef.current) return
@@ -650,7 +621,7 @@ export default function RankTagGenerator() {
               >
                 <div className="relative w-full" style={{ aspectRatio: "16 / 9" }}>
                   <img
-                    src={bannerImages[banner.id] ?? getBannerPlaceholderUrl(banner.title)}
+                    src={banner.imageUrl}
                     alt={banner.title}
                     loading="lazy"
                     className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
