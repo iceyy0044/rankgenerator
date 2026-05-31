@@ -229,7 +229,7 @@ function drawIconGlyph(
 
   const w = entry.w
   const h = entry.h
-  const drawX = prefixX + Math.floor((prefixW - w) / 2)
+  const drawX = prefixX + Math.floor((prefixW - w) / 2) + 1
   const drawY = y + Math.floor((tileH - h) / 2)
 
   const shadowCtx = document.createElement("canvas").getContext("2d")
