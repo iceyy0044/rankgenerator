@@ -8,8 +8,8 @@ export interface TagConfiguration {
   gradientStart: string
   gradientEnd: string
   gradientAngle: number
-  iconEnabled: boolean
-  iconUrl: string | null
+  /** Prefix icon id from icon sheet — separate from rank text, never typed in the text field. */
+  iconId: string | null
 }
 
 export interface TagHistoryEntry extends TagConfiguration {
@@ -32,8 +32,7 @@ export function tagConfigFromEntry(entry: TagConfiguration): TagConfiguration {
     gradientStart: entry.gradientStart,
     gradientEnd: entry.gradientEnd,
     gradientAngle: entry.gradientAngle,
-    iconEnabled: entry.iconEnabled,
-    iconUrl: entry.iconUrl,
+    iconId: entry.iconId,
   }
 }
 
@@ -46,7 +45,6 @@ export function configsEqual(a: TagConfiguration, b: TagConfiguration): boolean 
     a.gradientStart === b.gradientStart &&
     a.gradientEnd === b.gradientEnd &&
     a.gradientAngle === b.gradientAngle &&
-    a.iconEnabled === b.iconEnabled &&
-    a.iconUrl === b.iconUrl
+    a.iconId === b.iconId
   )
 }

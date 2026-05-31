@@ -1,5 +1,6 @@
 import type { TagConfiguration } from "@/lib/tag-config-types"
 import type { RankTagStyle } from "@/lib/rank-tag-config"
+import { getIconEntry, ICON_CELL_SIZE } from "@/lib/icon-sheet-config"
 
 export const FONT_SHEET_URL = "/font_sheet.png"
 
@@ -174,23 +175,65 @@ function drawTintedSegment(
   ctx.globalCompositeOperation = "source-over"
 }
 
-function drawIconInMiddle(
+function drawTintedIconPrefix(
   ctx: CanvasRenderingContext2D,
-  iconImg: HTMLImageElement,
+  leftImg: HTMLImageElement,
+  rightImg: HTMLImageElement,
   x: number,
   y: number,
-  midW: number,
+  style: RankTagStyle,
+  config: TagConfiguration
+) {
+  const { leftWidth: leftW, rightWidth: rightW, tileHeight: tileH } = style
+  const segmentW = leftW + rightW
+  const selectedRgb = hexToRgb(config.color)
+  const startRgb = hexToRgb(config.gradientStart)
+  const endRgb = hexToRgb(config.gradientEnd)
+
+  if (config.colorMode === "solid") {
+    tintImageData(ctx, leftImg, x, y, leftW, tileH, selectedRgb)
+    tintImageData(ctx, rightImg, x + leftW, y, rightW, tileH, selectedRgb)
+    return
+  }
+
+  const maskCanvas = document.createElement("canvas")
+  maskCanvas.width = segmentW
+  maskCanvas.height = tileH
+  const maskCtx = maskCanvas.getContext("2d")
+  if (!maskCtx) return
+
+  maskCtx.imageSmoothingEnabled = false
+  maskCtx.drawImage(leftImg, 0, 0, leftW, tileH)
+  maskCtx.drawImage(rightImg, leftW, 0, rightW, tileH)
+
+  ctx.drawImage(maskCanvas, x, y)
+  ctx.globalCompositeOperation = "multiply"
+  applyGradient(ctx, x, y, segmentW, tileH, startRgb, endRgb, config.gradientAngle)
+  ctx.globalCompositeOperation = "destination-in"
+  ctx.drawImage(maskCanvas, x, y)
+  ctx.globalCompositeOperation = "source-over"
+}
+
+function drawIconFromSheet(
+  ctx: CanvasRenderingContext2D,
+  iconSheet: HTMLImageElement,
+  iconId: string,
+  x: number,
+  y: number,
+  prefixW: number,
   tileH: number
 ) {
-  const maxSize = Math.min(midW - 1, tileH - 2)
-  const scale = Math.min(maxSize / iconImg.width, maxSize / iconImg.height)
-  const drawW = Math.max(1, Math.floor(iconImg.width * scale))
-  const drawH = Math.max(1, Math.floor(iconImg.height * scale))
-  const drawX = x + Math.floor((midW - drawW) / 2)
+  const entry = getIconEntry(iconId)
+  if (!entry) return
+
+  const maxSize = Math.min(prefixW - 2, tileH - 2)
+  const drawW = Math.min(maxSize, ICON_CELL_SIZE)
+  const drawH = Math.min(maxSize, ICON_CELL_SIZE)
+  const drawX = x + Math.floor((prefixW - drawW) / 2)
   const drawY = y + Math.floor((tileH - drawH) / 2)
 
   ctx.imageSmoothingEnabled = false
-  ctx.drawImage(iconImg, drawX, drawY, drawW, drawH)
+  ctx.drawImage(iconSheet, entry.x, entry.y, ICON_CELL_SIZE, ICON_CELL_SIZE, drawX, drawY, drawW, drawH)
 }
 
 function drawTextGlyphs(
@@ -250,11 +293,12 @@ export interface RenderTagOptions {
   config: TagConfiguration
   style: RankTagStyle
   fontSheet: HTMLImageElement
+  iconSheet: HTMLImageElement | null
 }
 
 export async function renderRankTag(
   canvas: HTMLCanvasElement,
-  { config, style, fontSheet }: RenderTagOptions
+  { config, style, fontSheet, iconSheet }: RenderTagOptions
 ): Promise<void> {
   const displayText = config.text || " "
   const tileH = style.tileHeight
@@ -264,8 +308,8 @@ export async function renderRankTag(
   const charCount = displayText.length
   const mainW = leftW + midW * charCount + rightW
 
-  const hasIcon = config.iconEnabled && config.iconUrl
-  const iconPrefixW = hasIcon ? leftW + midW + rightW : 0
+  const hasIcon = Boolean(config.iconId && iconSheet && getIconEntry(config.iconId))
+  const iconPrefixW = hasIcon ? leftW + rightW : 0
   const totalW = iconPrefixW + mainW
 
   canvas.width = totalW
@@ -295,10 +339,9 @@ export async function renderRankTag(
 
   let mainX = 0
 
-  if (hasIcon && config.iconUrl) {
-    drawTintedSegment(ctx, leftImg, midImg, rightImg, 0, 0, style, 1, config)
-    const iconImg = await getCachedImage(config.iconUrl)
-    drawIconInMiddle(ctx, iconImg, leftW, 0, midW, tileH)
+  if (hasIcon && config.iconId && iconSheet) {
+    drawTintedIconPrefix(ctx, leftImg, rightImg, 0, 0, style, config)
+    drawIconFromSheet(ctx, iconSheet, config.iconId, 0, 0, iconPrefixW, tileH)
     mainX = iconPrefixW
   }
 
@@ -316,12 +359,13 @@ export function configToDbRow(config: TagConfiguration, userId: string) {
     gradient_start: config.gradientStart,
     gradient_end: config.gradientEnd,
     gradient_angle: config.gradientAngle,
-    icon_enabled: config.iconEnabled,
-    icon_url: config.iconUrl,
+    icon_id: config.iconId,
   }
 }
 
 export function rowToConfig(row: Record<string, unknown>): TagConfiguration {
+  const rawIconId = row.icon_id ? String(row.icon_id) : null
+
   return {
     text: String(row.text ?? ""),
     styleId: String(row.style_id ?? "rounded"),
@@ -330,8 +374,7 @@ export function rowToConfig(row: Record<string, unknown>): TagConfiguration {
     gradientStart: String(row.gradient_start ?? "#0051FF"),
     gradientEnd: String(row.gradient_end ?? "#FFFFFF"),
     gradientAngle: Number(row.gradient_angle ?? 0),
-    iconEnabled: Boolean(row.icon_enabled),
-    iconUrl: row.icon_url ? String(row.icon_url) : null,
+    iconId: rawIconId && getIconEntry(rawIconId) ? rawIconId : null,
   }
 }
 

@@ -4,7 +4,7 @@ import { useRef, useEffect, useState, useCallback } from "react"
 import { RANK_TAG_STYLES, DEFAULT_STYLE_ID } from "@/lib/rank-tag-config"
 import { FONT_SHEET_URL, getCachedImage, loadImage, renderRankTag } from "@/lib/rank-tag-render"
 import type { TagConfiguration } from "@/lib/tag-config-types"
-import { ICON_PRESETS, iconifyToDataUrl, readFileAsDataUrl } from "@/lib/tag-icon-presets"
+import { ICON_OPTIONS, ICON_SHEET_URL } from "@/lib/icon-sheet-config"
 import TagSavedPanel, { saveTagToHistory } from "@/components/dashboard/tag-saved-panel"
 
 const FONT_URL =
@@ -84,14 +84,12 @@ export default function RankTagGenerator() {
   const [gradientEnd, setGradientEnd] = useState("#FFFFFF")
   const [gradientAngle, setGradientAngle] = useState(0)
   const [styleId, setStyleId] = useState(DEFAULT_STYLE_ID)
-  const [iconEnabled, setIconEnabled] = useState(false)
-  const [iconUrl, setIconUrl] = useState<string | null>(null)
-  const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null)
+  const [iconId, setIconId] = useState<string | null>(null)
   const [fontLoaded, setFontLoaded] = useState(false)
   const [fontSheet, setFontSheet] = useState<HTMLImageElement | null>(null)
+  const [iconSheet, setIconSheet] = useState<HTMLImageElement | null>(null)
   const [imagesLoaded, setImagesLoaded] = useState(false)
   const [downloading, setDownloading] = useState(false)
-  const [iconifyReady, setIconifyReady] = useState(false)
   const [historyRefreshKey, setHistoryRefreshKey] = useState(0)
 
   const currentStyle = RANK_TAG_STYLES.find((s) => s.id === styleId) ?? RANK_TAG_STYLES[0]
@@ -104,20 +102,15 @@ export default function RankTagGenerator() {
     gradientStart,
     gradientEnd,
     gradientAngle,
-    iconEnabled,
-    iconUrl,
+    iconId,
   }
 
   useEffect(() => {
     if (typeof window === "undefined") return
-    if ((window as Window & { Iconify?: unknown }).Iconify) {
-      setIconifyReady(true)
-      return
-    }
+    if ((window as Window & { Iconify?: unknown }).Iconify) return
     const script = document.createElement("script")
     script.src = "https://code.iconify.design/2/2.2.1/iconify.min.js"
     script.async = true
-    script.onload = () => setIconifyReady(true)
     document.head.appendChild(script)
     return () => {
       document.head.removeChild(script)
@@ -137,6 +130,9 @@ export default function RankTagGenerator() {
       })
 
     loadImageFromUrl(FONT_SHEET_URL).then(setFontSheet)
+    loadImageFromUrl(ICON_SHEET_URL)
+      .then(setIconSheet)
+      .catch(() => setIconSheet(null))
   }, [])
 
   useEffect(() => {
@@ -148,12 +144,6 @@ export default function RankTagGenerator() {
     ]).then(() => setImagesLoaded(true))
   }, [currentStyle])
 
-  useEffect(() => {
-    if (iconUrl) {
-      getCachedImage(iconUrl).catch(() => setIconUrl(null))
-    }
-  }, [iconUrl])
-
   const loadConfig = useCallback((config: TagConfiguration) => {
     setText(config.text)
     setStyleId(config.styleId)
@@ -162,29 +152,8 @@ export default function RankTagGenerator() {
     setGradientStart(config.gradientStart)
     setGradientEnd(config.gradientEnd)
     setGradientAngle(config.gradientAngle)
-    setIconEnabled(config.iconEnabled)
-    setIconUrl(config.iconUrl)
-    setSelectedPresetId(null)
+    setIconId(config.iconId)
   }, [])
-
-  async function handlePresetIcon(presetId: string, iconifyId: string) {
-    const dataUrl = await iconifyToDataUrl(iconifyId, 16)
-    if (dataUrl) {
-      setSelectedPresetId(presetId)
-      setIconUrl(dataUrl)
-      setIconEnabled(true)
-    }
-  }
-
-  async function handleCustomIconUpload(file: File | null) {
-    if (!file) return
-    if (!file.type.startsWith("image/")) return
-    if (file.size > 100_000) return
-    const dataUrl = await readFileAsDataUrl(file)
-    setSelectedPresetId(null)
-    setIconUrl(dataUrl)
-    setIconEnabled(true)
-  }
 
   const renderTag = useCallback(async () => {
     if (!fontLoaded || !imagesLoaded || !fontSheet || !canvasRef.current) return
@@ -198,6 +167,7 @@ export default function RankTagGenerator() {
       config: currentConfig,
       style: currentStyle,
       fontSheet,
+      iconSheet,
     })
 
     const display = canvasRef.current
@@ -214,7 +184,7 @@ export default function RankTagGenerator() {
     if (!dCtx) return
     dCtx.imageSmoothingEnabled = false
     dCtx.drawImage(off, 0, 0, displayW, displayH)
-  }, [color, colorMode, currentConfig, currentStyle, fontLoaded, fontSheet, imagesLoaded])
+  }, [color, colorMode, currentConfig, currentStyle, fontLoaded, fontSheet, iconSheet, imagesLoaded])
 
   useEffect(() => {
     renderTag()
@@ -298,72 +268,31 @@ export default function RankTagGenerator() {
             </div>
           </div>
 
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center justify-between gap-3">
-              <label className="text-xs font-semibold text-[#e8d8a8] uppercase tracking-wider">Prefix Icon</label>
-              <button
-                onClick={() => {
-                  if (iconEnabled) {
-                    setIconEnabled(false)
-                  } else if (iconUrl) {
-                    setIconEnabled(true)
-                  }
-                }}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                  iconEnabled
-                    ? "bg-[#fbbf24] text-black"
-                    : "bg-[#1e1706] text-[#e8eaf0] hover:bg-[#2a2108]"
-                }`}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-[#e8d8a8] uppercase tracking-wider">Prefix Icon</label>
+            <div className="relative">
+              <select
+                value={iconId ?? ""}
+                onChange={(e) => setIconId(e.target.value || null)}
+                className="w-full px-4 py-2.5 rounded-xl bg-[#1e1706] border border-[rgba(120,80,10,0.12)] text-[#e8eaf0]
+                  text-sm focus:outline-none focus:border-[#f59e0b] focus:ring-1 focus:ring-[rgba(245,158,11,0.14)]
+                  transition-all appearance-none cursor-pointer"
               >
-                {iconEnabled ? "Enabled" : "Disabled"}
-              </button>
+                <option value="">None</option>
+                {ICON_OPTIONS.map((icon) => (
+                  <option key={icon.id} value={icon.id}>
+                    {icon.name}
+                  </option>
+                ))}
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3">
+                <span className="iconify text-[#7a869a]" data-icon="mdi:chevron-down" />
+              </div>
             </div>
             <p className="text-xs text-[#7a869a]">
-              Renders a mini tag (left · icon · right) in front of the main rank text, using the same style and colors.
+              Icons are drawn from the icon sheet only — they cannot be typed in the rank text field.
+              Renders left and right cap pieces with the icon centered between them.
             </p>
-
-            <div className="flex flex-wrap items-center gap-2">
-              {ICON_PRESETS.map((preset) => (
-                <button
-                  key={preset.id}
-                  onClick={() => handlePresetIcon(preset.id, preset.iconifyId)}
-                  disabled={!iconifyReady}
-                  title={preset.label}
-                  className={`w-9 h-9 rounded-lg border-2 flex items-center justify-center transition-all ${
-                    selectedPresetId === preset.id && iconEnabled
-                      ? "border-[#fbbf24] bg-[#2a2108]"
-                      : "border-[rgba(120,80,10,0.2)] bg-[#1e1706] hover:border-[rgba(245,158,11,0.4)]"
-                  } disabled:opacity-50`}
-                >
-                  <span className="iconify w-5 h-5 text-[#e8eaf0]" data-icon={preset.iconifyId} />
-                </button>
-              ))}
-              <label
-                className="w-9 h-9 rounded-lg border-2 border-dashed border-[rgba(120,80,10,0.3)] bg-[#1e1706]
-                  flex items-center justify-center cursor-pointer hover:border-[#fbbf24] transition-all"
-                title="Upload custom icon"
-              >
-                <span className="iconify w-5 h-5 text-[#7a869a]" data-icon="mdi:upload" />
-                <input
-                  type="file"
-                  accept="image/png,image/jpeg,image/gif,image/webp"
-                  className="hidden"
-                  onChange={(e) => handleCustomIconUpload(e.target.files?.[0] ?? null)}
-                />
-              </label>
-              {iconUrl && (
-                <button
-                  onClick={() => {
-                    setIconUrl(null)
-                    setIconEnabled(false)
-                    setSelectedPresetId(null)
-                  }}
-                  className="px-3 py-1.5 rounded-lg text-xs text-[#7a869a] hover:text-red-400 transition-colors"
-                >
-                  Clear icon
-                </button>
-              )}
-            </div>
           </div>
 
           <div className="flex flex-col gap-4">

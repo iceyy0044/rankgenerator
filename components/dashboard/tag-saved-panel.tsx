@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
+import { getIconDisplayName } from "@/lib/icon-sheet-config"
 import type { TagConfiguration, TagFavouriteEntry, TagHistoryEntry } from "@/lib/tag-config-types"
 
 type Tab = "history" | "favourites"
@@ -22,7 +23,8 @@ function formatDate(iso: string) {
 
 function entryLabel(entry: TagConfiguration) {
   const parts = [entry.text || "(empty)"]
-  if (entry.iconEnabled) parts.push("+ icon")
+  const iconName = getIconDisplayName(entry.iconId)
+  if (iconName) parts.push(`+ ${iconName}`)
   return parts.join(" ")
 }
 
