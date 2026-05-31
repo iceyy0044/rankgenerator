@@ -21,33 +21,33 @@ type ProductBanner = {
 const BBB_PRODUCT_BANNERS: ProductBanner[] = [
   {
     id: "bbb-product-1",
-    title: "Medieval ESC Menu",
-    href: "https://builtbybit.com/resources/medieval-esc-menu.102896/",
-    imageUrl: "https://builtbybit.com/attachments/beta-testing-1-png.1282637/?preset=fullr1",
+    title: "Medieval Hud - BetterHud",
+    href: "https://builtbybit.com/resources/medieval-hud-betterhud.108562/",
+    imageUrl: "https://builtbybit.com/attachments/medievalhud-png.1336314/?preset=fullr1",
   },
   {
     id: "bbb-product-2",
-    title: "Medieval Config: PlayerAuction",
-    href: "https://builtbybit.com/resources/medieval-config-playerauction.103383/",
-    imageUrl: "https://builtbybit.com/attachments/beta-testing-3-png.1291247/?preset=fullr1",
+    title: "Tavern Hud - BetterHud",
+    href: "https://builtbybit.com/resources/tavern-hud-betterhud.102606/",
+    imageUrl: "https://builtbybit.com/attachments/tavernbetterhud-png.1333954/?preset=fullr1",
   },
   {
     id: "bbb-product-3",
-    title: "Medieval Config: AxTrade",
-    href: "https://builtbybit.com/resources/medieval-config-axtrade.103323/",
-    imageUrl: "https://builtbybit.com/attachments/beta-testing-png.1288382/?preset=fullr1",
+    title: "Medieval Config - ShopGuiPlus",
+    href: "https://builtbybit.com/resources/medieval-config-shopguiplus.109127/",
+    imageUrl: "https://builtbybit.com/attachments/medieval-shop-png.1341732/?preset=fullr1",
   },
   {
     id: "bbb-product-4",
-    title: "Medieval HUD: BetterHUD",
-    href: "https://builtbybit.com/resources/medieval-hud-betterhud.102606/",
-    imageUrl: "https://builtbybit.com/attachments/medieval-hotbar-png.1280053/?preset=fullr1",
+    title: "Medieval Config - Rewards",
+    href: "https://builtbybit.com/resources/medieval-config-rewards.107205/",
+    imageUrl: "https://builtbybit.com/attachments/rewards-png.1333882/?preset=fullr1",
   },
   {
     id: "bbb-product-5",
-    title: "Spawn Medieval Skyblock 457x464",
-    href: "https://builtbybit.com/resources/spawn-medieval-skyblock-457x464-size.102310/",
-    imageUrl: "https://builtbybit.com/attachments/beta-testing-png.1277469/?preset=fullr1",
+    title: "Tavern Config - Scoreboard",
+    href: "https://builtbybit.com/resources/tavern-config-scoreboard.107883/",
+    imageUrl: "https://builtbybit.com/attachments/tavernscoraboard-png.1333982/?preset=fullr1",
   },
   {
     id: "bbb-product-6",
@@ -296,10 +296,6 @@ export default function RankTagGenerator() {
                 <span className="iconify text-[#7a869a]" data-icon="mdi:chevron-down" />
               </div>
             </div>
-            <p className="text-xs text-[#7a869a]">
-              Icons are drawn from the icon sheet only — they cannot be typed in the rank text field.
-              Renders left and right cap pieces with the icon centered between them.
-            </p>
           </div>
 
           <div className="flex flex-col gap-4">
@@ -479,7 +475,7 @@ export default function RankTagGenerator() {
         </div>
 
         <footer className="text-center text-sm text-[#7a869a] py-4">
-          Copyright {new Date().getFullYear()} Sam&apos;s Ranks. All Rights Reserved.
+          Copyright {new Date().getFullYear()}  Sam&apos;s Ranks. All Rights Reserved.
         </footer>
       </div>
     </>
