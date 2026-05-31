@@ -3,6 +3,9 @@ export const ICON_SHEET_URL = "/icon_sheet.png"
 
 export const ICON_CELL_SIZE = 8
 
+/** Gap between the icon prefix box and the main rank tag (px). */
+export const ICON_TAG_GAP = 3
+
 export interface IconSheetEntry {
   id: string
   name: string
