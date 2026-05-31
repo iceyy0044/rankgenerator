@@ -6,6 +6,9 @@ export const ICON_CELL_SIZE = 8
 /** Gap between the icon prefix box and the main rank tag (px). */
 export const ICON_TAG_GAP = 3
 
+/** Extra horizontal offset when drawing icons (+1 px right of font glyph alignment). */
+export const ICON_X_OFFSET = 2
+
 export interface IconSheetEntry {
   id: string
   name: string

@@ -1,6 +1,6 @@
 import type { TagConfiguration } from "@/lib/tag-config-types"
 import type { RankTagStyle } from "@/lib/rank-tag-config"
-import { getIconEntry, ICON_SHEET_URL, ICON_TAG_GAP } from "@/lib/icon-sheet-config"
+import { getIconEntry, ICON_SHEET_URL, ICON_TAG_GAP, ICON_X_OFFSET } from "@/lib/icon-sheet-config"
 
 export const FONT_SHEET_URL = "/font_sheet.png"
 
@@ -229,7 +229,7 @@ function drawIconGlyph(
 
   const w = entry.w
   const h = entry.h
-  const drawX = prefixX + Math.floor((prefixW - w) / 2) + 1
+  const drawX = prefixX + Math.floor((prefixW - w) / 2) + ICON_X_OFFSET
   const drawY = y + Math.floor((tileH - h) / 2)
 
   const shadowCtx = document.createElement("canvas").getContext("2d")
@@ -240,7 +240,7 @@ function drawIconGlyph(
   shadowCtx.globalCompositeOperation = "source-in"
   shadowCtx.fillStyle = "rgba(0,0,0,0.55)"
   shadowCtx.fillRect(0, 0, w, h)
-  ctx.drawImage(shadowCtx.canvas, drawX + 1, drawY + 1)
+  ctx.drawImage(shadowCtx.canvas, drawX, drawY + 1)
 
   const glyphCtx = document.createElement("canvas").getContext("2d")
   if (!glyphCtx) return
@@ -261,7 +261,7 @@ function drawIconGlyph(
   glyphCtx.fillStyle = `rgba(${mixedRgb.r}, ${mixedRgb.g}, ${mixedRgb.b}, 0.4)`
   glyphCtx.fillRect(0, h - 3, w, 3)
 
-  ctx.drawImage(glyphCtx.canvas, drawX + 1, drawY)
+  ctx.drawImage(glyphCtx.canvas, drawX, drawY)
 }
 
 function drawTextGlyphs(
