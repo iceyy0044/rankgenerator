@@ -33,19 +33,19 @@ const BBB_PRODUCT_BANNERS: ProductBanner[] = [
   },
   {
     id: "bbb-product-3",
-    title: "Medieval Config - ShopGuiPlus",
+    title: "Medieval Config - ShopGUI+",
     href: "https://builtbybit.com/resources/medieval-config-shopguiplus.109127/",
     imageUrl: "https://builtbybit.com/attachments/medieval-shop-png.1341732/?preset=fullr1",
   },
   {
     id: "bbb-product-4",
-    title: "Medieval Config - Rewards",
+    title: "Medieval Config - DeluxeMenu Rewards",
     href: "https://builtbybit.com/resources/medieval-config-rewards.107205/",
     imageUrl: "https://builtbybit.com/attachments/rewards-png.1333882/?preset=fullr1",
   },
   {
     id: "bbb-product-5",
-    title: "Tavern Config - Scoreboard",
+    title: "Tavern Config - TAB Scoreboard",
     href: "https://builtbybit.com/resources/tavern-config-scoreboard.107883/",
     imageUrl: "https://builtbybit.com/attachments/tavernscoraboard-png.1333982/?preset=fullr1",
   },
