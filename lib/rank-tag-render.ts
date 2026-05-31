@@ -1,6 +1,6 @@
 import type { TagConfiguration } from "@/lib/tag-config-types"
 import type { RankTagStyle } from "@/lib/rank-tag-config"
-import { getIconEntry, ICON_CELL_SIZE } from "@/lib/icon-sheet-config"
+import { getIconEntry, ICON_SHEET_URL } from "@/lib/icon-sheet-config"
 
 export const FONT_SHEET_URL = "/font_sheet.png"
 
@@ -184,15 +184,15 @@ function drawTintedIconPrefix(
   style: RankTagStyle,
   config: TagConfiguration
 ) {
-  const { leftWidth: leftW, rightWidth: rightW, tileHeight: tileH } = style
-  const segmentW = leftW + rightW
+  const { leftWidth: leftW, rightWidth: rightW, middleWidth: iconSlotW, tileHeight: tileH } = style
+  const segmentW = leftW + iconSlotW + rightW
   const selectedRgb = hexToRgb(config.color)
   const startRgb = hexToRgb(config.gradientStart)
   const endRgb = hexToRgb(config.gradientEnd)
 
   if (config.colorMode === "solid") {
     tintImageData(ctx, leftImg, x, y, leftW, tileH, selectedRgb)
-    tintImageData(ctx, rightImg, x + leftW, y, rightW, tileH, selectedRgb)
+    tintImageData(ctx, rightImg, x + leftW + iconSlotW, y, rightW, tileH, selectedRgb)
     return
   }
 
@@ -204,7 +204,7 @@ function drawTintedIconPrefix(
 
   maskCtx.imageSmoothingEnabled = false
   maskCtx.drawImage(leftImg, 0, 0, leftW, tileH)
-  maskCtx.drawImage(rightImg, leftW, 0, rightW, tileH)
+  maskCtx.drawImage(rightImg, leftW + iconSlotW, 0, rightW, tileH)
 
   ctx.drawImage(maskCanvas, x, y)
   ctx.globalCompositeOperation = "multiply"
@@ -218,22 +218,23 @@ function drawIconFromSheet(
   ctx: CanvasRenderingContext2D,
   iconSheet: HTMLImageElement,
   iconId: string,
-  x: number,
+  slotX: number,
   y: number,
-  prefixW: number,
+  slotW: number,
   tileH: number
 ) {
   const entry = getIconEntry(iconId)
   if (!entry) return
 
-  const maxSize = Math.min(prefixW - 2, tileH - 2)
-  const drawW = Math.min(maxSize, ICON_CELL_SIZE)
-  const drawH = Math.min(maxSize, ICON_CELL_SIZE)
-  const drawX = x + Math.floor((prefixW - drawW) / 2)
+  const maxSize = Math.min(slotW - 1, tileH - 2)
+  const scale = Math.min(maxSize / entry.w, maxSize / entry.h)
+  const drawW = Math.max(1, Math.floor(entry.w * scale))
+  const drawH = Math.max(1, Math.floor(entry.h * scale))
+  const drawX = slotX + Math.floor((slotW - drawW) / 2)
   const drawY = y + Math.floor((tileH - drawH) / 2)
 
   ctx.imageSmoothingEnabled = false
-  ctx.drawImage(iconSheet, entry.x, entry.y, ICON_CELL_SIZE, ICON_CELL_SIZE, drawX, drawY, drawW, drawH)
+  ctx.drawImage(iconSheet, entry.x, entry.y, entry.w, entry.h, drawX, drawY, drawW, drawH)
 }
 
 function drawTextGlyphs(
@@ -308,8 +309,9 @@ export async function renderRankTag(
   const charCount = displayText.length
   const mainW = leftW + midW * charCount + rightW
 
-  const hasIcon = Boolean(config.iconId && iconSheet && getIconEntry(config.iconId))
-  const iconPrefixW = hasIcon ? leftW + rightW : 0
+  const iconEntry = config.iconId ? getIconEntry(config.iconId) : null
+  const hasIconPrefix = Boolean(iconEntry)
+  const iconPrefixW = hasIconPrefix ? leftW + midW + rightW : 0
   const totalW = iconPrefixW + mainW
 
   canvas.width = totalW
@@ -339,9 +341,20 @@ export async function renderRankTag(
 
   let mainX = 0
 
-  if (hasIcon && config.iconId && iconSheet) {
+  let resolvedIconSheet = iconSheet
+  if (hasIconPrefix && !resolvedIconSheet) {
+    try {
+      resolvedIconSheet = await getCachedImage(ICON_SHEET_URL)
+    } catch {
+      resolvedIconSheet = null
+    }
+  }
+
+  if (hasIconPrefix && config.iconId) {
     drawTintedIconPrefix(ctx, leftImg, rightImg, 0, 0, style, config)
-    drawIconFromSheet(ctx, iconSheet, config.iconId, 0, 0, iconPrefixW, tileH)
+    if (resolvedIconSheet) {
+      drawIconFromSheet(ctx, resolvedIconSheet, config.iconId, leftW, 0, midW, tileH)
+    }
     mainX = iconPrefixW
   }
 

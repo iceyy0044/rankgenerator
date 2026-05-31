@@ -88,6 +88,7 @@ export default function RankTagGenerator() {
   const [fontLoaded, setFontLoaded] = useState(false)
   const [fontSheet, setFontSheet] = useState<HTMLImageElement | null>(null)
   const [iconSheet, setIconSheet] = useState<HTMLImageElement | null>(null)
+  const [iconSheetLoaded, setIconSheetLoaded] = useState(false)
   const [imagesLoaded, setImagesLoaded] = useState(false)
   const [downloading, setDownloading] = useState(false)
   const [historyRefreshKey, setHistoryRefreshKey] = useState(0)
@@ -131,8 +132,14 @@ export default function RankTagGenerator() {
 
     loadImageFromUrl(FONT_SHEET_URL).then(setFontSheet)
     loadImageFromUrl(ICON_SHEET_URL)
-      .then(setIconSheet)
-      .catch(() => setIconSheet(null))
+      .then((img) => {
+        setIconSheet(img)
+        setIconSheetLoaded(true)
+      })
+      .catch(() => {
+        setIconSheet(null)
+        setIconSheetLoaded(true)
+      })
   }, [])
 
   useEffect(() => {
@@ -184,7 +191,7 @@ export default function RankTagGenerator() {
     if (!dCtx) return
     dCtx.imageSmoothingEnabled = false
     dCtx.drawImage(off, 0, 0, displayW, displayH)
-  }, [color, colorMode, currentConfig, currentStyle, fontLoaded, fontSheet, iconSheet, imagesLoaded])
+  }, [color, colorMode, currentConfig, currentStyle, fontLoaded, fontSheet, iconId, iconSheet, iconSheetLoaded, imagesLoaded])
 
   useEffect(() => {
     renderTag()
