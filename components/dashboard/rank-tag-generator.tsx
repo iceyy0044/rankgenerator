@@ -475,7 +475,7 @@ export default function RankTagGenerator() {
         </div>
 
         <footer className="text-center text-sm text-[#7a869a] py-4">
-          Copyright {new Date().getFullYear()}  Sam&apos;s Ranks. All Rights Reserved.
+          Copyright {new Date().getFullYear()}<p> </p> Sam&apos;s Ranks. All Rights Reserved.
         </footer>
       </div>
     </>
