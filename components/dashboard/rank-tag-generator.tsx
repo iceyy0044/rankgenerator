@@ -6,6 +6,7 @@ import { FONT_SHEET_URL, getCachedImage, loadImage, renderRankTag } from "@/lib/
 import type { TagConfiguration } from "@/lib/tag-config-types"
 import { ICON_OPTIONS, ICON_SHEET_URL } from "@/lib/icon-sheet-config"
 import TagSavedPanel, { saveTagToHistory } from "@/components/dashboard/tag-saved-panel"
+import TagColorControls from "@/components/dashboard/tag-color-controls"
 
 const FONT_URL =
   "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/5x5-font-monospaced-0fGxzkqEby3jzE6VeuPUC7wYMuj5oZ.ttf"
@@ -87,6 +88,12 @@ export default function RankTagGenerator() {
   const [iconId, setIconId] = useState<string | null>(null)
   const [iconBgSync, setIconBgSync] = useState(true)
   const [iconStyleId, setIconStyleId] = useState("rounded")
+  const [iconColorSync, setIconColorSync] = useState(true)
+  const [iconColorMode, setIconColorMode] = useState<"solid" | "gradient">("solid")
+  const [iconColor, setIconColor] = useState("#fbbf24")
+  const [iconGradientStart, setIconGradientStart] = useState("#0051FF")
+  const [iconGradientEnd, setIconGradientEnd] = useState("#FFFFFF")
+  const [iconGradientAngle, setIconGradientAngle] = useState(0)
   const [fontLoaded, setFontLoaded] = useState(false)
   const [fontSheet, setFontSheet] = useState<HTMLImageElement | null>(null)
   const [iconSheet, setIconSheet] = useState<HTMLImageElement | null>(null)
@@ -108,6 +115,12 @@ export default function RankTagGenerator() {
     iconId,
     iconBgSync,
     iconStyleId,
+    iconColorSync,
+    iconColorMode,
+    iconColor,
+    iconGradientStart,
+    iconGradientEnd,
+    iconGradientAngle,
   }
 
   const resolvedIconStyleId = iconBgSync ? styleId : iconStyleId
@@ -171,6 +184,12 @@ export default function RankTagGenerator() {
     setIconId(config.iconId)
     setIconBgSync(config.iconBgSync)
     setIconStyleId(config.iconStyleId)
+    setIconColorSync(config.iconColorSync)
+    setIconColorMode(config.iconColorMode)
+    setIconColor(config.iconColor)
+    setIconGradientStart(config.iconGradientStart)
+    setIconGradientEnd(config.iconGradientEnd)
+    setIconGradientAngle(config.iconGradientAngle)
   }, [])
 
   const renderTag = useCallback(async () => {
@@ -202,7 +221,7 @@ export default function RankTagGenerator() {
     if (!dCtx) return
     dCtx.imageSmoothingEnabled = false
     dCtx.drawImage(off, 0, 0, displayW, displayH)
-  }, [color, colorMode, currentConfig, currentStyle, fontLoaded, fontSheet, iconBgSync, iconId, iconSheet, iconSheetLoaded, iconStyleId, imagesLoaded, resolvedIconStyleId])
+  }, [color, colorMode, currentConfig, currentStyle, fontLoaded, fontSheet, gradientAngle, gradientEnd, gradientStart, iconBgSync, iconColor, iconColorMode, iconColorSync, iconGradientAngle, iconGradientEnd, iconGradientStart, iconId, iconSheet, iconSheetLoaded, iconStyleId, imagesLoaded, resolvedIconStyleId])
 
   useEffect(() => {
     renderTag()
@@ -357,122 +376,60 @@ export default function RankTagGenerator() {
                     </div>
                   </div>
                 )}
+
+                <div className="flex items-center justify-between gap-3">
+                  <label className="text-xs font-semibold text-[#e8d8a8] uppercase tracking-wider">
+                    Sync Icon Colors
+                  </label>
+                  <button
+                    onClick={() => setIconColorSync((v) => !v)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                      iconColorSync
+                        ? "bg-[#fbbf24] text-black"
+                        : "bg-[#1e1706] text-[#e8eaf0] hover:bg-[#2a2108]"
+                    }`}
+                  >
+                    {iconColorSync ? "Synced" : "Independent"}
+                  </button>
+                </div>
+                <p className="text-xs text-[#7a869a]">
+                  {iconColorSync
+                    ? "Icon background uses the same colors as the rank tag."
+                    : "Set separate colors for the icon background below."}
+                </p>
+                {!iconColorSync && (
+                  <TagColorControls
+                    colorMode={iconColorMode}
+                    color={iconColor}
+                    gradientStart={iconGradientStart}
+                    gradientEnd={iconGradientEnd}
+                    gradientAngle={iconGradientAngle}
+                    onColorModeChange={setIconColorMode}
+                    onColorChange={setIconColor}
+                    onGradientStartChange={setIconGradientStart}
+                    onGradientEndChange={setIconGradientEnd}
+                    onGradientAngleChange={setIconGradientAngle}
+                    solidLabel="Icon Background Tint"
+                  />
+                )}
               </div>
             )}
           </div>
 
           <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-[#e8d8a8] uppercase tracking-wider">Color Mode</label>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setColorMode("solid")}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                    colorMode === "solid"
-                      ? "bg-[#fbbf24] text-black"
-                      : "bg-[#1e1706] text-[#e8eaf0] hover:bg-[#2a2108]"
-                  }`}
-                >
-                  Solid
-                </button>
-                <button
-                  onClick={() => setColorMode("gradient")}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                    colorMode === "gradient"
-                      ? "bg-[#fbbf24] text-black"
-                      : "bg-[#1e1706] text-[#e8eaf0] hover:bg-[#2a2108]"
-                  }`}
-                >
-                  Gradient
-                </button>
-              </div>
-            </div>
-
-            {colorMode === "solid" ? (
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-[#e8d8a8] uppercase tracking-wider">Background Tint Color</label>
-                <div className="flex flex-wrap items-center gap-3">
-                  <input
-                    type="color"
-                    value={color}
-                    onChange={(e) => setColor(e.target.value)}
-                    className="w-10 h-10 rounded-lg cursor-pointer border border-[rgba(120,80,10,0.12)] bg-transparent p-0.5"
-                    title="Pick a color"
-                  />
-                  <input
-                    type="text"
-                    value={color}
-                    onChange={(e) => {
-                      const val = e.target.value
-                      if (/^#[0-9a-fA-F]{0,6}$/.test(val)) setColor(val)
-                    }}
-                    className="px-3 py-2 rounded-lg bg-[#1e1706] border border-[rgba(120,80,10,0.12)] text-[#fff8e1]
-                      font-mono text-sm w-32 focus:outline-none focus:border-[#f59e0b] transition-all"
-                    maxLength={7}
-                  />
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {["#e3e2a0", "#a1d59f", "#f7cfb1", "#DD3838", "#5E719E"].map((preset) => (
-                      <button
-                        key={preset}
-                        onClick={() => setColor(preset)}
-                        title={preset}
-                        className={`w-7 h-7 rounded-lg border-2 transition-all ${
-                          color === preset ? "border-white scale-110" : "border-transparent hover:border-[rgba(255,255,255,0.3)]"
-                        }`}
-                        style={{ backgroundColor: preset }}
-                      />
-                    ))}
-                    <button
-                      onClick={() => {
-                        const randomColor = `#${Math.floor(Math.random() * 16777215)
-                          .toString(16)
-                          .padStart(6, "0")}`
-                        setColor(randomColor)
-                      }}
-                      title="Random Color"
-                      className="group relative w-7 h-7 rounded-lg border-2 border-transparent flex items-center justify-center
-                        overflow-hidden transition-all duration-300 hover:border-yellow-400/50"
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-br from-yellow-400/20 via-yellow-600/20 to-yellow-800/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                      <span className="iconify w-4 h-4 text-yellow-400/70 group-hover:text-white transition-colors duration-300 z-10" data-icon="ion:sparkles-sharp" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-[#e8d8a8] uppercase tracking-wider">Gradient Colors</label>
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="color"
-                      value={gradientStart}
-                      onChange={(e) => setGradientStart(e.target.value)}
-                      className="w-10 h-10 rounded-lg cursor-pointer border border-[rgba(120,80,10,0.12)] bg-transparent p-0.5"
-                      title="Gradient Start Color"
-                    />
-                    <input
-                      type="color"
-                      value={gradientEnd}
-                      onChange={(e) => setGradientEnd(e.target.value)}
-                      className="w-10 h-10 rounded-lg cursor-pointer border border-[rgba(120,80,10,0.12)] bg-transparent p-0.5"
-                      title="Gradient End Color"
-                    />
-                  </div>
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-[#e8d8a8] uppercase tracking-wider">Gradient Angle ({gradientAngle}deg)</label>
-                  <input
-                    type="range"
-                    min="0"
-                    max="360"
-                    value={gradientAngle}
-                    onChange={(e) => setGradientAngle(Number(e.target.value))}
-                    className="w-full h-2 bg-[#1e1706] rounded-lg appearance-none cursor-pointer"
-                  />
-                </div>
-              </div>
-            )}
+            <label className="text-xs font-semibold text-[#e8d8a8] uppercase tracking-wider">Rank Tag Colors</label>
+            <TagColorControls
+              colorMode={colorMode}
+              color={color}
+              gradientStart={gradientStart}
+              gradientEnd={gradientEnd}
+              gradientAngle={gradientAngle}
+              onColorModeChange={setColorMode}
+              onColorChange={setColor}
+              onGradientStartChange={setGradientStart}
+              onGradientEndChange={setGradientEnd}
+              onGradientAngleChange={setGradientAngle}
+            />
           </div>
 
           <div className="h-px bg-[rgba(120,80,10,0.15)]" />

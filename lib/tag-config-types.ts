@@ -1,5 +1,13 @@
 export type ColorMode = "solid" | "gradient"
 
+export interface ColorSettings {
+  colorMode: ColorMode
+  color: string
+  gradientStart: string
+  gradientEnd: string
+  gradientAngle: number
+}
+
 export interface TagConfiguration {
   text: string
   styleId: string
@@ -8,12 +16,15 @@ export interface TagConfiguration {
   gradientStart: string
   gradientEnd: string
   gradientAngle: number
-  /** Prefix icon id from icon sheet — separate from rank text, never typed in the text field. */
   iconId: string | null
-  /** When true, icon background style follows the main rank tag style. */
   iconBgSync: boolean
-  /** Icon background style when iconBgSync is false. */
   iconStyleId: string
+  iconColorSync: boolean
+  iconColorMode: ColorMode
+  iconColor: string
+  iconGradientStart: string
+  iconGradientEnd: string
+  iconGradientAngle: number
 }
 
 export interface TagHistoryEntry extends TagConfiguration {
@@ -27,19 +38,29 @@ export interface TagFavouriteEntry extends TagConfiguration {
   created_at: string
 }
 
-export function tagConfigFromEntry(entry: TagConfiguration): TagConfiguration {
+export function getTagColorSettings(config: TagConfiguration): ColorSettings {
   return {
-    text: entry.text,
-    styleId: entry.styleId,
-    colorMode: entry.colorMode,
-    color: entry.color,
-    gradientStart: entry.gradientStart,
-    gradientEnd: entry.gradientEnd,
-    gradientAngle: entry.gradientAngle,
-    iconId: entry.iconId,
-    iconBgSync: entry.iconBgSync,
-    iconStyleId: entry.iconStyleId,
+    colorMode: config.colorMode,
+    color: config.color,
+    gradientStart: config.gradientStart,
+    gradientEnd: config.gradientEnd,
+    gradientAngle: config.gradientAngle,
   }
+}
+
+export function getIconColorSettings(config: TagConfiguration): ColorSettings {
+  if (config.iconColorSync) return getTagColorSettings(config)
+  return {
+    colorMode: config.iconColorMode,
+    color: config.iconColor,
+    gradientStart: config.iconGradientStart,
+    gradientEnd: config.iconGradientEnd,
+    gradientAngle: config.iconGradientAngle,
+  }
+}
+
+export function tagConfigFromEntry(entry: TagConfiguration): TagConfiguration {
+  return { ...entry }
 }
 
 export function configsEqual(a: TagConfiguration, b: TagConfiguration): boolean {
@@ -53,6 +74,12 @@ export function configsEqual(a: TagConfiguration, b: TagConfiguration): boolean 
     a.gradientAngle === b.gradientAngle &&
     a.iconId === b.iconId &&
     a.iconBgSync === b.iconBgSync &&
-    a.iconStyleId === b.iconStyleId
+    a.iconStyleId === b.iconStyleId &&
+    a.iconColorSync === b.iconColorSync &&
+    a.iconColorMode === b.iconColorMode &&
+    a.iconColor === b.iconColor &&
+    a.iconGradientStart === b.iconGradientStart &&
+    a.iconGradientEnd === b.iconGradientEnd &&
+    a.iconGradientAngle === b.iconGradientAngle
   )
 }

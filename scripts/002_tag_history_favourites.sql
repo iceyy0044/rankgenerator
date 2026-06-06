@@ -20,6 +20,12 @@ CREATE TABLE public.tag_history (
   icon_id TEXT,
   icon_bg_sync BOOLEAN NOT NULL DEFAULT TRUE,
   icon_style_id TEXT NOT NULL DEFAULT 'rounded',
+  icon_color_sync BOOLEAN NOT NULL DEFAULT TRUE,
+  icon_color_mode TEXT NOT NULL DEFAULT 'solid',
+  icon_color TEXT NOT NULL DEFAULT '#fbbf24',
+  icon_gradient_start TEXT NOT NULL DEFAULT '#0051FF',
+  icon_gradient_end TEXT NOT NULL DEFAULT '#FFFFFF',
+  icon_gradient_angle INTEGER NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -41,6 +47,12 @@ CREATE TABLE public.tag_favourites (
   icon_id TEXT,
   icon_bg_sync BOOLEAN NOT NULL DEFAULT TRUE,
   icon_style_id TEXT NOT NULL DEFAULT 'rounded',
+  icon_color_sync BOOLEAN NOT NULL DEFAULT TRUE,
+  icon_color_mode TEXT NOT NULL DEFAULT 'solid',
+  icon_color TEXT NOT NULL DEFAULT '#fbbf24',
+  icon_gradient_start TEXT NOT NULL DEFAULT '#0051FF',
+  icon_gradient_end TEXT NOT NULL DEFAULT '#FFFFFF',
+  icon_gradient_angle INTEGER NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
