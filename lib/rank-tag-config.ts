@@ -15,6 +15,24 @@ export interface RankTagStyle {
   middleWidth: number
 }
 
+export const ICON_BACKGROUND_WIDTH = 11
+export const ICON_BACKGROUND_HEIGHT = 12
+
+export const ICON_BACKGROUNDS: Record<string, string> = {
+  rounded: "/rank-tag-tiles/round_icon.png",
+  squared: "/rank-tag-tiles/squire_icon.png",
+  "extra-rounded": "/rank-tag-tiles/extra_round_icon.png",
+  medieval: "/rank-tag-tiles/medieval_icon.png",
+}
+
+export function getIconBackgroundUrl(styleId: string): string {
+  return ICON_BACKGROUNDS[styleId] ?? ICON_BACKGROUNDS.rounded
+}
+
+export function resolveIconStyleId(styleId: string, iconBgSync: boolean, iconStyleId: string): string {
+  return iconBgSync ? styleId : iconStyleId
+}
+
 export const RANK_TAG_STYLES: RankTagStyle[] = [
   {
     id: "rounded",

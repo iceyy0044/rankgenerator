@@ -1,5 +1,11 @@
 import type { TagConfiguration } from "@/lib/tag-config-types"
 import type { RankTagStyle } from "@/lib/rank-tag-config"
+import {
+  getIconBackgroundUrl,
+  ICON_BACKGROUND_HEIGHT,
+  ICON_BACKGROUND_WIDTH,
+  resolveIconStyleId,
+} from "@/lib/rank-tag-config"
 import { getIconEntry, ICON_SHEET_URL, ICON_TAG_GAP, ICON_X_OFFSET } from "@/lib/icon-sheet-config"
 
 export const FONT_SHEET_URL = "/font_sheet.png"
@@ -175,40 +181,36 @@ function drawTintedSegment(
   ctx.globalCompositeOperation = "source-over"
 }
 
-function drawTintedIconPrefix(
+function drawTintedIconBackground(
   ctx: CanvasRenderingContext2D,
-  leftImg: HTMLImageElement,
-  rightImg: HTMLImageElement,
+  bgImg: HTMLImageElement,
   x: number,
   y: number,
-  style: RankTagStyle,
   config: TagConfiguration
 ) {
-  const { leftWidth: leftW, rightWidth: rightW, tileHeight: tileH } = style
-  const segmentW = leftW + rightW
+  const w = ICON_BACKGROUND_WIDTH
+  const h = ICON_BACKGROUND_HEIGHT
   const selectedRgb = hexToRgb(config.color)
   const startRgb = hexToRgb(config.gradientStart)
   const endRgb = hexToRgb(config.gradientEnd)
 
   if (config.colorMode === "solid") {
-    tintImageData(ctx, leftImg, x, y, leftW, tileH, selectedRgb)
-    tintImageData(ctx, rightImg, x + leftW, y, rightW, tileH, selectedRgb)
+    tintImageData(ctx, bgImg, x, y, w, h, selectedRgb)
     return
   }
 
   const maskCanvas = document.createElement("canvas")
-  maskCanvas.width = segmentW
-  maskCanvas.height = tileH
+  maskCanvas.width = w
+  maskCanvas.height = h
   const maskCtx = maskCanvas.getContext("2d")
   if (!maskCtx) return
 
   maskCtx.imageSmoothingEnabled = false
-  maskCtx.drawImage(leftImg, 0, 0, leftW, tileH)
-  maskCtx.drawImage(rightImg, leftW, 0, rightW, tileH)
+  maskCtx.drawImage(bgImg, 0, 0, w, h)
 
   ctx.drawImage(maskCanvas, x, y)
   ctx.globalCompositeOperation = "multiply"
-  applyGradient(ctx, x, y, segmentW, tileH, startRgb, endRgb, config.gradientAngle)
+  applyGradient(ctx, x, y, w, h, startRgb, endRgb, config.gradientAngle)
   ctx.globalCompositeOperation = "destination-in"
   ctx.drawImage(maskCanvas, x, y)
   ctx.globalCompositeOperation = "source-over"
@@ -338,7 +340,7 @@ export async function renderRankTag(
 
   const iconEntry = config.iconId ? getIconEntry(config.iconId) : null
   const hasIconPrefix = Boolean(iconEntry)
-  const iconPrefixW = hasIconPrefix ? leftW + rightW : 0
+  const iconPrefixW = hasIconPrefix ? ICON_BACKGROUND_WIDTH : 0
   const iconGap = hasIconPrefix ? ICON_TAG_GAP : 0
   const totalW = iconPrefixW + iconGap + mainW
 
@@ -379,9 +381,20 @@ export async function renderRankTag(
   }
 
   if (hasIconPrefix && config.iconId) {
-    drawTintedIconPrefix(ctx, leftImg, rightImg, 0, 0, style, config)
+    const iconStyleId = resolveIconStyleId(config.styleId, config.iconBgSync, config.iconStyleId)
+    const iconBgImg = await getCachedImage(getIconBackgroundUrl(iconStyleId))
+    drawTintedIconBackground(ctx, iconBgImg, 0, 0, config)
     if (resolvedIconSheet) {
-      drawIconGlyph(ctx, resolvedIconSheet, config.iconId, 0, iconPrefixW, 0, tileH, textTintRgb)
+      drawIconGlyph(
+        ctx,
+        resolvedIconSheet,
+        config.iconId,
+        0,
+        ICON_BACKGROUND_WIDTH,
+        0,
+        ICON_BACKGROUND_HEIGHT,
+        textTintRgb
+      )
     }
     mainX = iconPrefixW + iconGap
   }
@@ -401,6 +414,8 @@ export function configToDbRow(config: TagConfiguration, userId: string) {
     gradient_end: config.gradientEnd,
     gradient_angle: config.gradientAngle,
     icon_id: config.iconId,
+    icon_bg_sync: config.iconBgSync,
+    icon_style_id: config.iconStyleId,
   }
 }
 
@@ -416,6 +431,8 @@ export function rowToConfig(row: Record<string, unknown>): TagConfiguration {
     gradientEnd: String(row.gradient_end ?? "#FFFFFF"),
     gradientAngle: Number(row.gradient_angle ?? 0),
     iconId: rawIconId && getIconEntry(rawIconId) ? rawIconId : null,
+    iconBgSync: row.icon_bg_sync !== undefined ? Boolean(row.icon_bg_sync) : true,
+    iconStyleId: String(row.icon_style_id ?? "rounded"),
   }
 }
 

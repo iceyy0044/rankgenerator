@@ -10,6 +10,10 @@ export interface TagConfiguration {
   gradientAngle: number
   /** Prefix icon id from icon sheet — separate from rank text, never typed in the text field. */
   iconId: string | null
+  /** When true, icon background style follows the main rank tag style. */
+  iconBgSync: boolean
+  /** Icon background style when iconBgSync is false. */
+  iconStyleId: string
 }
 
 export interface TagHistoryEntry extends TagConfiguration {
@@ -33,6 +37,8 @@ export function tagConfigFromEntry(entry: TagConfiguration): TagConfiguration {
     gradientEnd: entry.gradientEnd,
     gradientAngle: entry.gradientAngle,
     iconId: entry.iconId,
+    iconBgSync: entry.iconBgSync,
+    iconStyleId: entry.iconStyleId,
   }
 }
 
@@ -45,6 +51,8 @@ export function configsEqual(a: TagConfiguration, b: TagConfiguration): boolean 
     a.gradientStart === b.gradientStart &&
     a.gradientEnd === b.gradientEnd &&
     a.gradientAngle === b.gradientAngle &&
-    a.iconId === b.iconId
+    a.iconId === b.iconId &&
+    a.iconBgSync === b.iconBgSync &&
+    a.iconStyleId === b.iconStyleId
   )
 }

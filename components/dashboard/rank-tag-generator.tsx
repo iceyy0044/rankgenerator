@@ -1,7 +1,7 @@
 "use client"
 
 import { useRef, useEffect, useState, useCallback } from "react"
-import { RANK_TAG_STYLES, DEFAULT_STYLE_ID } from "@/lib/rank-tag-config"
+import { RANK_TAG_STYLES, DEFAULT_STYLE_ID, getIconBackgroundUrl } from "@/lib/rank-tag-config"
 import { FONT_SHEET_URL, getCachedImage, loadImage, renderRankTag } from "@/lib/rank-tag-render"
 import type { TagConfiguration } from "@/lib/tag-config-types"
 import { ICON_OPTIONS, ICON_SHEET_URL } from "@/lib/icon-sheet-config"
@@ -85,6 +85,8 @@ export default function RankTagGenerator() {
   const [gradientAngle, setGradientAngle] = useState(0)
   const [styleId, setStyleId] = useState(DEFAULT_STYLE_ID)
   const [iconId, setIconId] = useState<string | null>(null)
+  const [iconBgSync, setIconBgSync] = useState(true)
+  const [iconStyleId, setIconStyleId] = useState("rounded")
   const [fontLoaded, setFontLoaded] = useState(false)
   const [fontSheet, setFontSheet] = useState<HTMLImageElement | null>(null)
   const [iconSheet, setIconSheet] = useState<HTMLImageElement | null>(null)
@@ -104,7 +106,11 @@ export default function RankTagGenerator() {
     gradientEnd,
     gradientAngle,
     iconId,
+    iconBgSync,
+    iconStyleId,
   }
+
+  const resolvedIconStyleId = iconBgSync ? styleId : iconStyleId
 
   useEffect(() => {
     if (typeof window === "undefined") return
@@ -144,12 +150,15 @@ export default function RankTagGenerator() {
 
   useEffect(() => {
     setImagesLoaded(false)
-    Promise.all([
+    const iconBgUrl = iconId ? getIconBackgroundUrl(resolvedIconStyleId) : null
+    const loads = [
       getCachedImage(currentStyle.leftUrl),
       getCachedImage(currentStyle.middleUrl),
       getCachedImage(currentStyle.rightUrl),
-    ]).then(() => setImagesLoaded(true))
-  }, [currentStyle])
+    ]
+    if (iconBgUrl) loads.push(getCachedImage(iconBgUrl))
+    Promise.all(loads).then(() => setImagesLoaded(true))
+  }, [currentStyle, iconId, resolvedIconStyleId])
 
   const loadConfig = useCallback((config: TagConfiguration) => {
     setText(config.text)
@@ -160,6 +169,8 @@ export default function RankTagGenerator() {
     setGradientEnd(config.gradientEnd)
     setGradientAngle(config.gradientAngle)
     setIconId(config.iconId)
+    setIconBgSync(config.iconBgSync)
+    setIconStyleId(config.iconStyleId)
   }, [])
 
   const renderTag = useCallback(async () => {
@@ -191,7 +202,7 @@ export default function RankTagGenerator() {
     if (!dCtx) return
     dCtx.imageSmoothingEnabled = false
     dCtx.drawImage(off, 0, 0, displayW, displayH)
-  }, [color, colorMode, currentConfig, currentStyle, fontLoaded, fontSheet, iconId, iconSheet, iconSheetLoaded, imagesLoaded])
+  }, [color, colorMode, currentConfig, currentStyle, fontLoaded, fontSheet, iconBgSync, iconId, iconSheet, iconSheetLoaded, iconStyleId, imagesLoaded, resolvedIconStyleId])
 
   useEffect(() => {
     renderTag()
@@ -275,27 +286,79 @@ export default function RankTagGenerator() {
             </div>
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-[#e8d8a8] uppercase tracking-wider">Prefix Icon</label>
-            <div className="relative">
-              <select
-                value={iconId ?? ""}
-                onChange={(e) => setIconId(e.target.value || null)}
-                className="w-full px-4 py-2.5 rounded-xl bg-[#1e1706] border border-[rgba(120,80,10,0.12)] text-[#e8eaf0]
-                  text-sm focus:outline-none focus:border-[#f59e0b] focus:ring-1 focus:ring-[rgba(245,158,11,0.14)]
-                  transition-all appearance-none cursor-pointer"
-              >
-                <option value="">None</option>
-                {ICON_OPTIONS.map((icon) => (
-                  <option key={icon.id} value={icon.id}>
-                    {icon.name}
-                  </option>
-                ))}
-              </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3">
-                <span className="iconify text-[#7a869a]" data-icon="mdi:chevron-down" />
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-[#e8d8a8] uppercase tracking-wider">Prefix Icon</label>
+              <div className="relative">
+                <select
+                  value={iconId ?? ""}
+                  onChange={(e) => setIconId(e.target.value || null)}
+                  className="w-full px-4 py-2.5 rounded-xl bg-[#1e1706] border border-[rgba(120,80,10,0.12)] text-[#e8eaf0]
+                    text-sm focus:outline-none focus:border-[#f59e0b] focus:ring-1 focus:ring-[rgba(245,158,11,0.14)]
+                    transition-all appearance-none cursor-pointer"
+                >
+                  <option value="">None</option>
+                  {ICON_OPTIONS.map((icon) => (
+                    <option key={icon.id} value={icon.id}>
+                      {icon.name}
+                    </option>
+                  ))}
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3">
+                  <span className="iconify text-[#7a869a]" data-icon="mdi:chevron-down" />
+                </div>
               </div>
             </div>
+
+            {iconId && (
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center justify-between gap-3">
+                  <label className="text-xs font-semibold text-[#e8d8a8] uppercase tracking-wider">
+                    Sync Icon Background
+                  </label>
+                  <button
+                    onClick={() => setIconBgSync((v) => !v)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                      iconBgSync
+                        ? "bg-[#fbbf24] text-black"
+                        : "bg-[#1e1706] text-[#e8eaf0] hover:bg-[#2a2108]"
+                    }`}
+                  >
+                    {iconBgSync ? "Synced" : "Independent"}
+                  </button>
+                </div>
+                <p className="text-xs text-[#7a869a]">
+                  {iconBgSync
+                    ? "Icon background matches the rank tag template style."
+                    : "Choose a separate background style for the icon box."}
+                </p>
+                {!iconBgSync && (
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-semibold text-[#e8d8a8] uppercase tracking-wider">
+                      Icon Background Style
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={iconStyleId}
+                        onChange={(e) => setIconStyleId(e.target.value)}
+                        className="w-full px-4 py-2.5 rounded-xl bg-[#1e1706] border border-[rgba(120,80,10,0.12)] text-[#e8eaf0]
+                          text-sm focus:outline-none focus:border-[#f59e0b] focus:ring-1 focus:ring-[rgba(245,158,11,0.14)]
+                          transition-all appearance-none cursor-pointer"
+                      >
+                        {RANK_TAG_STYLES.map((s) => (
+                          <option key={s.id} value={s.id}>
+                            {s.name}
+                          </option>
+                        ))}
+                      </select>
+                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3">
+                        <span className="iconify text-[#7a869a]" data-icon="mdi:chevron-down" />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="flex flex-col gap-4">

@@ -18,6 +18,8 @@ CREATE TABLE public.tag_history (
   gradient_end TEXT NOT NULL DEFAULT '#FFFFFF',
   gradient_angle INTEGER NOT NULL DEFAULT 0,
   icon_id TEXT,
+  icon_bg_sync BOOLEAN NOT NULL DEFAULT TRUE,
+  icon_style_id TEXT NOT NULL DEFAULT 'rounded',
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -37,6 +39,8 @@ CREATE TABLE public.tag_favourites (
   gradient_end TEXT NOT NULL DEFAULT '#FFFFFF',
   gradient_angle INTEGER NOT NULL DEFAULT 0,
   icon_id TEXT,
+  icon_bg_sync BOOLEAN NOT NULL DEFAULT TRUE,
+  icon_style_id TEXT NOT NULL DEFAULT 'rounded',
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
