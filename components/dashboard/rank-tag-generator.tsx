@@ -7,6 +7,7 @@ import type { TagConfiguration } from "@/lib/tag-config-types"
 import { ICON_OPTIONS, ICON_SHEET_URL } from "@/lib/icon-sheet-config"
 import TagSavedPanel, { saveTagToHistory } from "@/components/dashboard/tag-saved-panel"
 import TagColorControls from "@/components/dashboard/tag-color-controls"
+import SyncToggle from "@/components/dashboard/sync-toggle"
 
 const FONT_URL =
   "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/5x5-font-monospaced-0fGxzkqEby3jzE6VeuPUC7wYMuj5oZ.ttf"
@@ -331,26 +332,16 @@ export default function RankTagGenerator() {
 
             {iconId && (
               <div className="flex flex-col gap-3">
-                <div className="flex items-center justify-between gap-3">
-                  <label className="text-xs font-semibold text-[#e8d8a8] uppercase tracking-wider">
-                    Sync Icon Background
-                  </label>
-                  <button
-                    onClick={() => setIconBgSync((v) => !v)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                      iconBgSync
-                        ? "bg-[#fbbf24] text-black"
-                        : "bg-[#1e1706] text-[#e8eaf0] hover:bg-[#2a2108]"
-                    }`}
-                  >
-                    {iconBgSync ? "Synced" : "Independent"}
-                  </button>
-                </div>
-                <p className="text-xs text-[#7a869a]">
-                  {iconBgSync
-                    ? "Icon background matches the rank tag template style."
-                    : "Choose a separate background style for the icon box."}
-                </p>
+                <SyncToggle
+                  label="Sync Icon Background"
+                  checked={iconBgSync}
+                  onChange={setIconBgSync}
+                  description={
+                    iconBgSync
+                      ? "Icon background matches the rank tag template style."
+                      : "Choose a separate background style for the icon box."
+                  }
+                />
                 {!iconBgSync && (
                   <div className="flex flex-col gap-1.5">
                     <label className="text-xs font-semibold text-[#e8d8a8] uppercase tracking-wider">
@@ -377,26 +368,16 @@ export default function RankTagGenerator() {
                   </div>
                 )}
 
-                <div className="flex items-center justify-between gap-3">
-                  <label className="text-xs font-semibold text-[#e8d8a8] uppercase tracking-wider">
-                    Sync Icon Colors
-                  </label>
-                  <button
-                    onClick={() => setIconColorSync((v) => !v)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                      iconColorSync
-                        ? "bg-[#fbbf24] text-black"
-                        : "bg-[#1e1706] text-[#e8eaf0] hover:bg-[#2a2108]"
-                    }`}
-                  >
-                    {iconColorSync ? "Synced" : "Independent"}
-                  </button>
-                </div>
-                <p className="text-xs text-[#7a869a]">
-                  {iconColorSync
-                    ? "Icon background uses the same colors as the rank tag."
-                    : "Set separate colors for the icon background below."}
-                </p>
+                <SyncToggle
+                  label="Sync Icon Colors"
+                  checked={iconColorSync}
+                  onChange={setIconColorSync}
+                  description={
+                    iconColorSync
+                      ? "Icon background uses the same colors as the rank tag."
+                      : "Set separate colors for the icon background below."
+                  }
+                />
                 {!iconColorSync && (
                   <TagColorControls
                     colorMode={iconColorMode}
