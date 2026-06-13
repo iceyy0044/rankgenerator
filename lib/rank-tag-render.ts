@@ -144,15 +144,15 @@ function drawTintedSegment(
   y: number,
   style: RankTagStyle,
   midCount: number,
-  config: TagConfiguration
+  colors: ColorSettings
 ) {
   const { leftWidth: leftW, middleWidth: midW, rightWidth: rightW, tileHeight: tileH } = style
-  const selectedRgb = hexToRgb(config.color)
-  const startRgb = hexToRgb(config.gradientStart)
-  const endRgb = hexToRgb(config.gradientEnd)
+  const selectedRgb = hexToRgb(colors.color)
+  const startRgb = hexToRgb(colors.gradientStart)
+  const endRgb = hexToRgb(colors.gradientEnd)
   const segmentW = leftW + midW * midCount + rightW
 
-  if (config.colorMode === "solid") {
+  if (colors.colorMode === "solid") {
     tintImageData(ctx, leftImg, x, y, leftW, tileH, selectedRgb)
     for (let i = 0; i < midCount; i++) {
       tintImageData(ctx, midImg, x + leftW + i * midW, y, midW, tileH, selectedRgb)
@@ -174,12 +174,21 @@ function drawTintedSegment(
   }
   maskCtx.drawImage(rightImg, leftW + midCount * midW, 0, rightW, tileH)
 
-  ctx.drawImage(maskCanvas, x, y)
-  ctx.globalCompositeOperation = "multiply"
-  applyGradient(ctx, x, y, segmentW, tileH, startRgb, endRgb, config.gradientAngle)
-  ctx.globalCompositeOperation = "destination-in"
-  ctx.drawImage(maskCanvas, x, y)
-  ctx.globalCompositeOperation = "source-over"
+  const segCanvas = document.createElement("canvas")
+  segCanvas.width = segmentW
+  segCanvas.height = tileH
+  const segCtx = segCanvas.getContext("2d")
+  if (!segCtx) return
+
+  segCtx.imageSmoothingEnabled = false
+  segCtx.drawImage(maskCanvas, 0, 0)
+  segCtx.globalCompositeOperation = "multiply"
+  applyGradient(segCtx, 0, 0, segmentW, tileH, startRgb, endRgb, colors.gradientAngle)
+  segCtx.globalCompositeOperation = "destination-in"
+  segCtx.drawImage(maskCanvas, 0, 0)
+  segCtx.globalCompositeOperation = "source-over"
+
+  ctx.drawImage(segCanvas, x, y)
 }
 
 function getTintRgb(colors: ColorSettings): { r: number; g: number; b: number } {
@@ -220,12 +229,21 @@ function drawTintedIconBackground(
   maskCtx.imageSmoothingEnabled = false
   maskCtx.drawImage(bgImg, 0, 0, w, h)
 
-  ctx.drawImage(maskCanvas, x, y)
-  ctx.globalCompositeOperation = "multiply"
-  applyGradient(ctx, x, y, w, h, startRgb, endRgb, colors.gradientAngle)
-  ctx.globalCompositeOperation = "destination-in"
-  ctx.drawImage(maskCanvas, x, y)
-  ctx.globalCompositeOperation = "source-over"
+  const bgCanvas = document.createElement("canvas")
+  bgCanvas.width = w
+  bgCanvas.height = h
+  const bgCtx = bgCanvas.getContext("2d")
+  if (!bgCtx) return
+
+  bgCtx.imageSmoothingEnabled = false
+  bgCtx.drawImage(maskCanvas, 0, 0)
+  bgCtx.globalCompositeOperation = "multiply"
+  applyGradient(bgCtx, 0, 0, w, h, startRgb, endRgb, colors.gradientAngle)
+  bgCtx.globalCompositeOperation = "destination-in"
+  bgCtx.drawImage(maskCanvas, 0, 0)
+  bgCtx.globalCompositeOperation = "source-over"
+
+  ctx.drawImage(bgCanvas, x, y)
 }
 
 function drawIconGlyph(
@@ -406,7 +424,7 @@ export async function renderRankTag(
     mainX = iconPrefixW + iconGap
   }
 
-  drawTintedSegment(ctx, leftImg, midImg, rightImg, mainX, 0, style, charCount, config)
+  drawTintedSegment(ctx, leftImg, midImg, rightImg, mainX, 0, style, charCount, tagColors)
   drawTextGlyphs(ctx, fontSheet, displayText, mainX, 0, style, textTintRgb)
 }
 
