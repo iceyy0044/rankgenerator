@@ -589,12 +589,12 @@ export default function DashboardShell({ user, children }: Props) {
         loop
         muted
         playsInline
-        className="hidden md:dark:block fixed top-0 left-0 w-full h-full object-cover z-0 opacity-40 dark:opacity-100"
+        className="hidden md:block fixed top-0 left-0 w-full h-full object-cover z-0 opacity-50 dark:opacity-100"
       >
         <source src="/videos/Grid_horizontal.webm" type="video/webm" />
       </video>
       {init && (
-        <div className="hidden dark:block">
+        <div className="opacity-70 dark:opacity-100">
           <Particles
             id="tsparticles"
             particlesLoaded={particlesLoaded}
