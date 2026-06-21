@@ -194,13 +194,6 @@ export default function TagColorControls({
                 </div>
               ))}
             </div>
-
-            <div
-              className="h-3 rounded-md border border-[rgba(120,80,10,0.2)]"
-              style={{
-                background: `linear-gradient(${gradientAngle}deg, ${stops.join(", ")})`,
-              }}
-            />
           </div>
 
           <div className="flex flex-col gap-1.5">
