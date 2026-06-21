@@ -252,10 +252,42 @@ export default function RankTagGenerator() {
           <p className="text-sm text-[#7a869a] mt-1">Customize your rank tag in real-time and export as PNG.</p>
         </div>
 
-        <div className="glass rounded-2xl p-4 sm:p-6">
-          <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_min(100%,320px)] gap-6 xl:gap-8">
-            {/* Controls */}
-            <div className="flex flex-col gap-4 min-w-0 order-2 xl:order-1">
+        <div className="glass rounded-2xl p-4 sm:p-6 flex flex-col gap-6">
+          {/* Full-width preview — rank tags are wide & short, not suited to a side column */}
+          <div className="rounded-xl border border-[rgba(120,80,10,0.12)] bg-[#0e1117]/40 p-4 sm:p-5">
+            <div className="flex flex-col lg:flex-row lg:items-stretch gap-4">
+              <div className="flex flex-col gap-3 min-w-0 flex-1">
+                <div>
+                  <h3 className="text-sm font-semibold text-[#e8eaf0] tracking-tight">Live preview</h3>
+                  <p className="text-xs text-[#7a869a] mt-0.5">Updates as you change settings.</p>
+                </div>
+                <div className="flex flex-1 items-center justify-center rounded-xl bg-[#0e1117] border border-[rgba(120,80,10,0.12)] py-4 px-4 overflow-x-auto min-h-0">
+                  {!fontLoaded || !imagesLoaded || !fontSheet ? (
+                    <div className="flex items-center gap-2 text-[#e6d8a3] text-sm py-2">
+                      <span className="iconify w-4 h-4 animate-spin text-[#fbbf24]" data-icon="mdi:loading" />
+                      Loading assets...
+                    </div>
+                  ) : (
+                    <canvas ref={canvasRef} className="rounded-sm max-w-full h-auto block" style={{ imageRendering: "pixelated" }} />
+                  )}
+                </div>
+              </div>
+              <div className="flex flex-col justify-end shrink-0 lg:w-44">
+                <button
+                  onClick={handleDownload}
+                  disabled={downloading || !fontLoaded || !imagesLoaded}
+                  className="flex items-center justify-center gap-2 w-full px-5 py-3 rounded-xl font-semibold text-black
+                    bg-[#fbbf24] hover:bg-[#ffd454] disabled:opacity-50 disabled:cursor-not-allowed
+                    transition-all duration-150 shadow-[0_6px_18px_rgba(245,158,11,0.22)] active:scale-[0.98]"
+                >
+                  <span className="iconify w-4 h-4" data-icon="mdi:download" />
+                  {downloading ? "Exporting..." : "Download PNG"}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-4 min-w-0">
               <GeneratorSection
                 title="Tag basics"
                 description="Text and template style for your rank tag."
@@ -418,37 +450,6 @@ export default function RankTagGenerator() {
                   </div>
                 )}
               </GeneratorSection>
-            </div>
-
-            {/* Preview sidebar */}
-            <div className="flex flex-col gap-4 order-1 xl:order-2 xl:sticky xl:top-6 xl:self-start">
-              <div className="rounded-xl border border-[rgba(120,80,10,0.12)] bg-[#0e1117]/40 p-4 sm:p-5 flex flex-col gap-4">
-                <div>
-                  <h3 className="text-sm font-semibold text-[#e8eaf0] tracking-tight">Live preview</h3>
-                  <p className="text-xs text-[#7a869a] mt-0.5">Updates as you change settings.</p>
-                </div>
-                <div className="flex items-center justify-center rounded-xl bg-[#0e1117] border border-[rgba(120,80,10,0.12)] min-h-[88px] p-4 sm:p-6 overflow-x-auto">
-                  {!fontLoaded || !imagesLoaded || !fontSheet ? (
-                    <div className="flex items-center gap-2 text-[#e6d8a3] text-sm">
-                      <span className="iconify w-4 h-4 animate-spin text-[#fbbf24]" data-icon="mdi:loading" />
-                      Loading assets...
-                    </div>
-                  ) : (
-                    <canvas ref={canvasRef} className="rounded-sm max-w-full" style={{ imageRendering: "pixelated" }} />
-                  )}
-                </div>
-                <button
-                  onClick={handleDownload}
-                  disabled={downloading || !fontLoaded || !imagesLoaded}
-                  className="flex items-center justify-center gap-2 w-full px-5 py-3 rounded-xl font-semibold text-black
-                    bg-[#fbbf24] hover:bg-[#ffd454] disabled:opacity-50 disabled:cursor-not-allowed
-                    transition-all duration-150 shadow-[0_6px_18px_rgba(245,158,11,0.22)] active:scale-[0.98]"
-                >
-                  <span className="iconify w-4 h-4" data-icon="mdi:download" />
-                  {downloading ? "Exporting..." : "Download PNG"}
-                </button>
-              </div>
-            </div>
           </div>
         </div>
 
