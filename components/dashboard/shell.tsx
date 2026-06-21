@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation"
 import { useState, useEffect, useCallback } from "react"
 import Particles, { initParticlesEngine } from "@tsparticles/react"
 import { loadSlim } from "@tsparticles/slim"
+import ThemeToggle from "@/components/dashboard/theme-toggle"
 
 interface User {
   id: string
@@ -37,6 +38,15 @@ export default function DashboardShell({ user, children }: Props) {
     })
   }, [])
 
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    if ((window as Window & { Iconify?: unknown }).Iconify) return
+    const script = document.createElement("script")
+    script.src = "https://code.iconify.design/2/2.2.1/iconify.min.js"
+    script.async = true
+    document.head.appendChild(script)
+  }, [])
+
   const particlesLoaded = useCallback(async (container: any) => {
     await console.log(container)
   }, [])
@@ -53,6 +63,7 @@ export default function DashboardShell({ user, children }: Props) {
     {
       href: "/dashboard",
       label: "Generator",
+      exact: true,
       icon: (
         <span
           className="iconify w-5 h-5"
@@ -61,12 +72,22 @@ export default function DashboardShell({ user, children }: Props) {
       ),
     },
     {
+      href: "/dashboard/history",
+      label: "History",
+      icon: <span className="iconify w-5 h-5" data-icon="mdi:history" />,
+    },
+    {
       href: "/dashboard/admin",
       label: "Admin",
       icon: <span className="iconify w-5 h-5" data-icon="la:user-shield" />,
       adminOnly: true,
     },
   ].filter((item) => !item.adminOnly || user.role === "admin")
+
+  function isNavActive(href: string, exact?: boolean) {
+    if (exact) return pathname === href
+    return pathname === href || pathname.startsWith(`${href}/`)
+  }
 
   const particleOptions = {
     autoPlay: true,
@@ -568,22 +589,24 @@ export default function DashboardShell({ user, children }: Props) {
         loop
         muted
         playsInline
-        className="hidden md:block fixed top-0 left-0 w-full h-full object-cover z-0"
+        className="hidden md:dark:block fixed top-0 left-0 w-full h-full object-cover z-0 opacity-40 dark:opacity-100"
       >
         <source src="/videos/Grid_horizontal.webm" type="video/webm" />
       </video>
       {init && (
-        <Particles
-          id="tsparticles"
-          particlesLoaded={particlesLoaded}
-          options={particleOptions as any}
-        />
+        <div className="hidden dark:block">
+          <Particles
+            id="tsparticles"
+            particlesLoaded={particlesLoaded}
+            options={particleOptions as any}
+          />
+        </div>
       )}
       <div className="relative z-10 flex flex-col min-h-screen">
-        <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-[rgba(120,80,10,0.15)] bg-[#0a0d13]/50 px-4 backdrop-blur-sm sm:px-6">
+        <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-[var(--app-border)] bg-[var(--app-header-bg)] px-4 backdrop-blur-sm sm:px-6">
           <div className="flex items-center gap-4">
             <button
-              className="md:hidden"
+              className="md:hidden text-[var(--app-text)]"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
             >
               <span
@@ -593,13 +616,14 @@ export default function DashboardShell({ user, children }: Props) {
             </button>
             <Link href="/dashboard" className="flex items-center gap-2">
               <img src="/logo.png" alt="Sam's Ranks Logo" className="h-8 w-8" />
-              <span className="hidden font-bold text-lg text-[#e8d8a8] sm:inline">
+              <span className="hidden font-bold text-lg text-[var(--app-text-gold)] sm:inline">
                 Sam's Ranks
               </span>
             </Link>
           </div>
 
           <div className="flex items-center gap-2 sm:gap-4">
+            <ThemeToggle />
             <div className="flex items-center gap-2">
               <img
                 src={user.avatar ?? "/placeholder-user.jpg"}
@@ -607,14 +631,14 @@ export default function DashboardShell({ user, children }: Props) {
                 className="h-8 w-8 rounded-full"
               />
               <div className="hidden flex-col text-sm sm:flex">
-                <span className="font-semibold">{user.name}</span>
-                <span className="text-xs text-[#7a869a]">{user.email}</span>
+                <span className="font-semibold text-[var(--app-text)]">{user.name}</span>
+                <span className="text-xs text-[var(--app-text-muted)]">{user.email}</span>
               </div>
             </div>
             <button
               onClick={handleSignOut}
               disabled={signingOut}
-              className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-[#e8eaf0] transition-colors hover:bg-[rgba(245,158,11,0.1)]"
+              className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-[var(--app-text)] transition-colors hover:bg-[var(--app-nav-hover-bg)]"
               title="Sign Out"
             >
               {signingOut ? (
@@ -631,7 +655,7 @@ export default function DashboardShell({ user, children }: Props) {
 
         <div className="flex flex-1">
           <aside
-            className={`fixed top-16 z-20 h-[calc(100vh-4rem)] w-56 border-r border-[rgba(120,80,10,0.15)] bg-[#0a0d13]/80 p-4 backdrop-blur-sm transition-transform md:relative md:top-0 md:h-auto md:translate-x-0 ${
+            className={`fixed top-16 z-20 h-[calc(100vh-4rem)] w-56 border-r border-[var(--app-border)] bg-[var(--app-sidebar-bg)] p-4 backdrop-blur-sm transition-transform md:relative md:top-0 md:h-auto md:translate-x-0 ${
               isMenuOpen ? "translate-x-0" : "-translate-x-full"
             }`}
           >
@@ -642,9 +666,9 @@ export default function DashboardShell({ user, children }: Props) {
                   href={item.href}
                   onClick={() => setIsMenuOpen(false)}
                   className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                    pathname === item.href
-                      ? "bg-[rgba(245,158,11,0.1)] text-[#fbbf24]"
-                      : "text-[#e8eaf0] hover:bg-[rgba(245,158,11,0.05)]"
+                    isNavActive(item.href, item.exact)
+                      ? "bg-[var(--app-nav-active-bg)] text-[var(--app-text-gold)]"
+                      : "text-[var(--app-text)] hover:bg-[var(--app-nav-hover-bg)]"
                   }`}
                 >
                   {item.icon}
@@ -653,7 +677,7 @@ export default function DashboardShell({ user, children }: Props) {
               ))}
             </nav>
           </aside>
-          <main className="flex-1 bg-[#0a0d13]/60 p-4 backdrop-blur-sm sm:p-6 w-full overflow-x-auto">
+          <main className="flex-1 bg-[var(--app-main-bg)] p-4 backdrop-blur-sm sm:p-6 w-full overflow-x-auto">
             {children}
           </main>
         </div>

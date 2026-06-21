@@ -48,17 +48,16 @@ const ICON_SHEET_ICONS: IconSheetEntry[] = [
   cell(14, 0, "shield3", "Shield3"),
 
   cell(0, 1, "chestplate", "Chestplate"),
-  cell(1, 1, "chestplate2", "Chestplate2"),
+  cell(1, 1, "chestplate2", "Crate 3"),
   cell(2, 1, "crate", "Crate"),
   cell(3, 1, "crate2", "Crate2"),
-  cell(4, 1, "crate3", "Crate3"),
-  cell(5, 1, "circle", "Circle"),
-  cell(6, 1, "house", "House"),
-  cell(7, 1, "heart", "Heart"),
-  cell(8, 1, "question_mark", "Question Mark"),
-  cell(9, 1, "skull", "Skull"),
-  cell(10, 1, "compass", "Compass"),
-  cell(11, 1, "gear", "Gear"),
+  cell(4, 1, "crate3", "Circle"),
+  cell(5, 1, "circle", "Star"),
+  cell(6, 1, "house", "Heart"),
+  cell(7, 1, "heart", "Question Mark"),
+  cell(8, 1, "question_mark", "Skull"),
+  cell(9, 1, "skull", "Compass"),
+  cell(10, 1, "compass", "Gear"),
 ]
 
 /** Maps legacy icon ids from saved tags to current ids (same sheet position). */

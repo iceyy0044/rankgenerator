@@ -8,7 +8,8 @@ import { ICON_OPTIONS, ICON_SHEET_URL, normalizeIconId } from "@/lib/icon-sheet-
 import { DEFAULT_GRADIENT_COLORS } from "@/lib/gradient-utils"
 import TagColorControls from "@/components/dashboard/tag-color-controls"
 import SyncToggle from "@/components/dashboard/sync-toggle"
-import TagSavedPanel, { saveTagToHistory, saveTagToFavourites } from "@/components/dashboard/tag-saved-panel"
+import { saveTagToHistory, saveTagToFavourites } from "@/components/dashboard/tag-saved-panel"
+import { consumeStashedTagConfig } from "@/lib/tag-config-storage"
 import GeneratorSection, { fieldLabelClass, inputClass, selectClass } from "@/components/dashboard/generator-section"
 
 const FONT_URL =
@@ -102,7 +103,6 @@ export default function RankTagGenerator() {
   const [imagesLoaded, setImagesLoaded] = useState(false)
   const [downloading, setDownloading] = useState(false)
   const [savingFav, setSavingFav] = useState(false)
-  const [historyRefreshKey, setHistoryRefreshKey] = useState(0)
 
   const currentStyle = RANK_TAG_STYLES.find((s) => s.id === styleId) ?? RANK_TAG_STYLES[0]
 
@@ -190,6 +190,11 @@ export default function RankTagGenerator() {
     setIconGradientAngle(config.iconGradientAngle)
   }, [])
 
+  useEffect(() => {
+    const stashed = consumeStashedTagConfig()
+    if (stashed) loadConfig(stashed)
+  }, [loadConfig])
+
   const renderTag = useCallback(async () => {
     if (!fontLoaded || !imagesLoaded || !fontSheet || !canvasRef.current) return
 
@@ -241,7 +246,6 @@ export default function RankTagGenerator() {
     link.click()
 
     await saveTagToHistory(currentConfig)
-    setHistoryRefreshKey((k) => k + 1)
     setDownloading(false)
   }
 
@@ -249,7 +253,6 @@ export default function RankTagGenerator() {
     setSavingFav(true)
     try {
       await saveTagToFavourites(currentConfig)
-      setHistoryRefreshKey((k) => k + 1)
     } catch {
       // Non-blocking
     } finally {
@@ -261,23 +264,23 @@ export default function RankTagGenerator() {
     <>
       <div className="flex flex-col gap-6 w-full">
         <div>
-          <h1 className="text-2xl font-bold text-[#e8eaf0] tracking-tight">Sam&apos;s Ranks</h1>
-          <p className="text-sm text-[#7a869a] mt-1">Customize your rank tag in real-time and export as PNG.</p>
+          <h1 className="text-2xl font-bold text-[var(--app-text)] tracking-tight">Sam&apos;s Ranks</h1>
+          <p className="text-sm text-[var(--app-text-muted)] mt-1">Customize your rank tag in real-time and export as PNG.</p>
         </div>
 
         <div className="glass rounded-2xl p-4 sm:p-6 flex flex-col gap-6">
           {/* Full-width preview — rank tags are wide & short, not suited to a side column */}
-          <div className="rounded-xl border border-[rgba(120,80,10,0.12)] bg-[#0e1117]/40 p-4 sm:p-5">
+          <div className="rounded-xl border border-[var(--app-border)] bg-[var(--app-section-bg)] p-4 sm:p-5">
             <div className="flex flex-col gap-3">
               <div>
-                <h3 className="text-sm font-semibold text-[#e8eaf0] tracking-tight">Live preview</h3>
-                <p className="text-xs text-[#7a869a] mt-0.5">Updates as you change settings.</p>
+                <h3 className="text-sm font-semibold text-[var(--app-text)] tracking-tight">Live preview</h3>
+                <p className="text-xs text-[var(--app-text-muted)] mt-0.5">Updates as you change settings.</p>
               </div>
               <div className="flex flex-col items-center gap-3">
-                <div className="w-full flex items-center justify-center rounded-xl bg-[#0e1117] border border-[rgba(120,80,10,0.12)] py-4 px-4 overflow-x-auto">
+                <div className="w-full flex items-center justify-center rounded-xl bg-[var(--app-preview-bg)] border border-[var(--app-border)] py-4 px-4 overflow-x-auto">
                   {!fontLoaded || !imagesLoaded || !fontSheet ? (
-                    <div className="flex items-center gap-2 text-[#e6d8a3] text-sm py-2">
-                      <span className="iconify w-4 h-4 animate-spin text-[#fbbf24]" data-icon="mdi:loading" />
+                    <div className="flex items-center gap-2 text-[var(--app-text-cream)] text-sm py-2">
+                      <span className="iconify w-4 h-4 animate-spin text-[var(--app-brand)]" data-icon="mdi:loading" />
                       Loading assets...
                     </div>
                   ) : (
@@ -289,7 +292,7 @@ export default function RankTagGenerator() {
                     onClick={handleDownload}
                     disabled={downloading || !fontLoaded || !imagesLoaded}
                     className="flex items-center justify-center gap-2 min-w-[8.5rem] px-5 py-2.5 rounded-xl text-sm font-semibold text-black
-                      bg-[#fbbf24] hover:bg-[#ffd454] disabled:opacity-50 disabled:cursor-not-allowed
+                      bg-[var(--app-brand)] hover:bg-[var(--app-brand-hover)] disabled:opacity-50 disabled:cursor-not-allowed
                       transition-all duration-150 shadow-[0_4px_14px_rgba(245,158,11,0.2)] active:scale-[0.98]"
                   >
                     <span className="iconify w-4 h-4" data-icon="mdi:download" />
@@ -299,7 +302,7 @@ export default function RankTagGenerator() {
                     onClick={handleSaveFavourite}
                     disabled={savingFav}
                     className="flex items-center justify-center gap-2 min-w-[8.5rem] px-5 py-2.5 rounded-xl text-sm font-semibold
-                      bg-[#1e1706] text-[#fbbf24] border border-[rgba(245,158,11,0.3)] hover:bg-[#2a2108]
+                      bg-[var(--app-input-bg)] text-[var(--app-text-gold)] border border-[rgba(245,158,11,0.3)] hover:bg-[var(--app-surface-2)]
                       disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98]"
                   >
                     <span className="iconify w-4 h-4" data-icon="mdi:star" />
@@ -332,10 +335,10 @@ export default function RankTagGenerator() {
                         maxLength={15}
                       />
                       <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
-                        <span className="text-xs text-[#7a869a]">{text.length}/15</span>
+                        <span className="text-xs text-[var(--app-text-muted)]">{text.length}/15</span>
                       </div>
                     </div>
-                    <p className="text-[11px] text-[#7a869a] leading-snug">
+                    <p className="text-[11px] text-[var(--app-text-muted)] leading-snug">
                       A–Z, 0–9, _-.+! and space
                     </p>
                   </div>
@@ -351,7 +354,7 @@ export default function RankTagGenerator() {
                         ))}
                       </select>
                       <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3">
-                        <span className="iconify text-[#7a869a]" data-icon="mdi:chevron-down" />
+                        <span className="iconify text-[var(--app-text-muted)]" data-icon="mdi:chevron-down" />
                       </div>
                     </div>
                   </div>
@@ -400,7 +403,7 @@ export default function RankTagGenerator() {
                       ))}
                     </select>
                     <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3">
-                      <span className="iconify text-[#7a869a]" data-icon="mdi:chevron-down" />
+                      <span className="iconify text-[var(--app-text-muted)]" data-icon="mdi:chevron-down" />
                     </div>
                   </div>
                 </div>
@@ -446,14 +449,14 @@ export default function RankTagGenerator() {
                             ))}
                           </select>
                           <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3">
-                            <span className="iconify text-[#7a869a]" data-icon="mdi:chevron-down" />
+                            <span className="iconify text-[var(--app-text-muted)]" data-icon="mdi:chevron-down" />
                           </div>
                         </div>
                       </div>
                     )}
 
                     {!iconColorSync && (
-                      <div className="rounded-lg border border-[rgba(120,80,10,0.1)] bg-[#1e1706]/50 p-4">
+                      <div className="rounded-lg border border-[var(--app-border)] bg-[var(--app-input-bg)]/50 p-4">
                         <p className={fieldLabelClass}>Icon colors</p>
                         <div className="mt-3">
                           <TagColorControls
@@ -476,12 +479,10 @@ export default function RankTagGenerator() {
           </div>
         </div>
 
-        <TagSavedPanel currentConfig={currentConfig} onLoadConfig={loadConfig} refreshKey={historyRefreshKey} />
-
         <div className="glass rounded-2xl p-4 sm:p-6 flex flex-col gap-4">
           <div>
-            <h2 className="text-lg font-semibold text-[#e8eaf0] tracking-tight">Explore Our Other Work</h2>
-            <p className="text-xs text-[#7a869a] mt-1">Look at what everything else we have created including our amazing web templates and Plugin Configurations with Custom UIs.</p>
+            <h2 className="text-lg font-semibold text-[var(--app-text)] tracking-tight">Explore Our Other Work</h2>
+            <p className="text-xs text-[var(--app-text-muted)] mt-1">Look at what everything else we have created including our amazing web templates and Plugin Configurations with Custom UIs.</p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -491,7 +492,7 @@ export default function RankTagGenerator() {
                 href={banner.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group relative overflow-hidden rounded-xl border border-[rgba(120,80,10,0.2)] bg-[#0e1117]"
+                className="group relative overflow-hidden rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)]"
               >
                 <div className="relative w-full" style={{ aspectRatio: "16 / 9" }}>
                   <img
@@ -510,7 +511,7 @@ export default function RankTagGenerator() {
           </div>
         </div>
 
-        <footer className="text-center text-sm text-[#7a869a] py-4">
+        <footer className="text-center text-sm text-[var(--app-text-muted)] py-4">
           Copyright {new Date().getFullYear()}© Sam&apos;s Ranks. All Rights Reserved.
         </footer>
       </div>

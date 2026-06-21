@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Poppins } from 'next/font/google'
+import { ThemeProvider } from '@/components/theme-provider'
 import './globals.css'
 
 const poppins = Poppins({
@@ -20,9 +21,11 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className="bg-[#0e1117]">
+    <html lang="en" suppressHydrationWarning>
       <body className={`${poppins.variable} font-sans antialiased bg-background text-foreground`}>
-        {children}
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} storageKey="sams-ranks-theme">
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   )

@@ -69,14 +69,14 @@ export default function TagColorControls({
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-semibold text-[#e8d8a8] uppercase tracking-wider">Color Mode</label>
-        <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-[#1e1706] border border-[rgba(120,80,10,0.12)] w-fit">
+        <label className="text-xs font-semibold text-[var(--app-text-label)] uppercase tracking-wider">Color Mode</label>
+        <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-[var(--app-input-bg)] border border-[var(--app-border)] w-fit">
           <button
             onClick={() => onColorModeChange("solid")}
             className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
               colorMode === "solid"
-                ? "bg-[#fbbf24] text-black shadow-sm"
-                : "text-[#e8eaf0] hover:bg-[#2a2108]"
+                ? "bg-[var(--app-brand)] text-black shadow-sm"
+                : "text-[var(--app-text)] hover:bg-[var(--app-surface-2)]"
             }`}
           >
             Solid
@@ -85,8 +85,8 @@ export default function TagColorControls({
             onClick={() => onColorModeChange("gradient")}
             className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
               colorMode === "gradient"
-                ? "bg-[#fbbf24] text-black shadow-sm"
-                : "text-[#e8eaf0] hover:bg-[#2a2108]"
+                ? "bg-[var(--app-brand)] text-black shadow-sm"
+                : "text-[var(--app-text)] hover:bg-[var(--app-surface-2)]"
             }`}
           >
             Gradient
@@ -96,7 +96,7 @@ export default function TagColorControls({
 
       {colorMode === "solid" ? (
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-semibold text-[#e8d8a8] uppercase tracking-wider">{solidLabel}</label>
+          <label className="text-xs font-semibold text-[var(--app-text-label)] uppercase tracking-wider">{solidLabel}</label>
           <div className="flex flex-wrap items-center gap-3">
             <input
               type="color"
@@ -112,7 +112,7 @@ export default function TagColorControls({
                 const val = e.target.value
                 if (/^#[0-9a-fA-F]{0,6}$/.test(val)) onColorChange(val)
               }}
-              className="px-3 py-2 rounded-lg bg-[#1e1706] border border-[rgba(120,80,10,0.12)] text-[#fff8e1]
+              className="px-3 py-2 rounded-lg bg-[var(--app-input-bg)] border border-[var(--app-border)] text-[var(--app-text)]
                 font-mono text-sm w-32 focus:outline-none focus:border-[#f59e0b] transition-all"
               maxLength={7}
             />
@@ -136,7 +136,7 @@ export default function TagColorControls({
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <label className="text-xs font-semibold text-[#e8d8a8] uppercase tracking-wider">
+              <label className="text-xs font-semibold text-[var(--app-text-label)] uppercase tracking-wider">
                 Gradient Colors ({stops.length}/{MAX_GRADIENT_COLORS})
               </label>
               <div className="flex items-center gap-2">
@@ -147,8 +147,8 @@ export default function TagColorControls({
                 {stops.length < MAX_GRADIENT_COLORS && (
                   <button
                     onClick={addStop}
-                    className="px-2.5 py-1 rounded-lg text-xs font-medium bg-[#1e1706] text-[#fbbf24]
-                      border border-[rgba(245,158,11,0.3)] hover:bg-[#2a2108] transition-all"
+                    className="px-2.5 py-1 rounded-lg text-xs font-medium bg-[var(--app-input-bg)] text-[var(--app-text-gold)]
+                      border border-[rgba(245,158,11,0.3)] hover:bg-[var(--app-surface-2)] transition-all"
                   >
                     + Add
                   </button>
@@ -158,8 +158,8 @@ export default function TagColorControls({
 
             <div className="flex flex-col gap-1.5 max-h-[220px] overflow-y-auto pr-1">
               {stops.map((stopColor, index) => (
-                <div key={index} className="flex items-center gap-2 rounded-lg bg-[#1e1706]/60 px-2 py-1.5">
-                  <span className="text-[10px] text-[#7a869a] w-4 shrink-0">{index + 1}</span>
+                <div key={index} className="flex items-center gap-2 rounded-lg bg-[var(--app-input-bg)]/60 px-2 py-1.5">
+                  <span className="text-[10px] text-[var(--app-text-muted)] w-4 shrink-0">{index + 1}</span>
                   <input
                     type="color"
                     value={stopColor}
@@ -174,7 +174,7 @@ export default function TagColorControls({
                       const val = e.target.value
                       if (/^#[0-9a-fA-F]{0,6}$/.test(val)) updateStop(index, val)
                     }}
-                    className="flex-1 min-w-0 px-2 py-1.5 rounded-lg bg-[#1e1706] border border-[rgba(120,80,10,0.12)] text-[#fff8e1]
+                    className="flex-1 min-w-0 px-2 py-1.5 rounded-lg bg-[var(--app-input-bg)] border border-[var(--app-border)] text-[var(--app-text)]
                       font-mono text-xs focus:outline-none focus:border-[#f59e0b] transition-all"
                     maxLength={7}
                   />
@@ -186,7 +186,7 @@ export default function TagColorControls({
                     <button
                       onClick={() => removeStop(index)}
                       title="Remove color"
-                      className="p-1.5 rounded-lg text-[#7a869a] hover:text-red-400 hover:bg-[#1e1706] transition-all shrink-0"
+                      className="p-1.5 rounded-lg text-[var(--app-text-muted)] hover:text-red-400 hover:bg-[var(--app-input-bg)] transition-all shrink-0"
                     >
                       <span className="iconify w-4 h-4" data-icon="mdi:close" />
                     </button>
@@ -206,7 +206,7 @@ export default function TagColorControls({
               max="360"
               value={gradientAngle}
               onChange={(e) => onGradientAngleChange(Number(e.target.value))}
-              className="w-full h-2 bg-[#1e1706] rounded-lg appearance-none cursor-pointer"
+              className="w-full h-2 bg-[var(--app-input-bg)] rounded-lg appearance-none cursor-pointer"
             />
           </div>
         </div>

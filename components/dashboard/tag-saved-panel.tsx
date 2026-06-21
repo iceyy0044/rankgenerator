@@ -7,9 +7,9 @@ import type { TagConfiguration, TagFavouriteEntry, TagHistoryEntry } from "@/lib
 type Tab = "history" | "favourites"
 
 interface TagSavedPanelProps {
-  currentConfig: TagConfiguration
   onLoadConfig: (config: TagConfiguration) => void
   refreshKey?: number
+  fullPage?: boolean
 }
 
 function formatDate(iso: string) {
@@ -28,7 +28,7 @@ function entryLabel(entry: TagConfiguration) {
   return parts.join(" ")
 }
 
-export default function TagSavedPanel({ currentConfig, onLoadConfig, refreshKey = 0 }: TagSavedPanelProps) {
+export default function TagSavedPanel({ onLoadConfig, refreshKey = 0, fullPage = false }: TagSavedPanelProps) {
   const [tab, setTab] = useState<Tab>("history")
   const [history, setHistory] = useState<TagHistoryEntry[]>([])
   const [favourites, setFavourites] = useState<TagFavouriteEntry[]>([])
@@ -93,20 +93,22 @@ export default function TagSavedPanel({ currentConfig, onLoadConfig, refreshKey 
 
   return (
     <div className="glass rounded-2xl p-4 sm:p-6 flex flex-col gap-4">
-      <div>
-        <h2 className="text-lg font-semibold text-[#e8eaf0] tracking-tight">History & Favourites</h2>
-        <p className="text-xs text-[#7a869a] mt-1">
-          Downloads are saved to history. Star tags you want to keep.
-        </p>
-      </div>
+      {!fullPage && (
+        <div>
+          <h2 className="text-lg font-semibold text-[var(--app-text)] tracking-tight">History & Favourites</h2>
+          <p className="text-xs text-[var(--app-text-muted)] mt-1">
+            Downloads are saved to history. Star tags you want to keep.
+          </p>
+        </div>
+      )}
 
       <div className="flex items-center gap-2">
         <button
           onClick={() => setTab("history")}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
             tab === "history"
-              ? "bg-[#fbbf24] text-black"
-              : "bg-[#1e1706] text-[#e8eaf0] hover:bg-[#2a2108]"
+              ? "bg-[var(--app-brand)] text-black"
+              : "bg-[var(--app-input-bg)] text-[var(--app-text)] hover:bg-[var(--app-surface-2)]"
           }`}
         >
           History
@@ -115,8 +117,8 @@ export default function TagSavedPanel({ currentConfig, onLoadConfig, refreshKey 
           onClick={() => setTab("favourites")}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
             tab === "favourites"
-              ? "bg-[#fbbf24] text-black"
-              : "bg-[#1e1706] text-[#e8eaf0] hover:bg-[#2a2108]"
+              ? "bg-[var(--app-brand)] text-black"
+              : "bg-[var(--app-input-bg)] text-[var(--app-text)] hover:bg-[var(--app-surface-2)]"
           }`}
         >
           Favourites
@@ -126,40 +128,40 @@ export default function TagSavedPanel({ currentConfig, onLoadConfig, refreshKey 
       {error && <p className="text-xs text-red-400">{error}</p>}
 
       {loading ? (
-        <div className="flex items-center gap-2 text-[#e6d8a3] text-sm py-4">
-          <span className="iconify w-4 h-4 animate-spin text-[#fbbf24]" data-icon="mdi:loading" />
+        <div className="flex items-center gap-2 text-[var(--app-text-cream)] text-sm py-4">
+          <span className="iconify w-4 h-4 animate-spin text-[var(--app-brand)]" data-icon="mdi:loading" />
           Loading...
         </div>
       ) : tab === "history" ? (
         history.length === 0 ? (
-          <p className="text-sm text-[#7a869a] py-4">No history yet. Download a tag to save it here.</p>
+          <p className="text-sm text-[var(--app-text-muted)] py-4">No history yet. Download a tag to save it here.</p>
         ) : (
-          <ul className="flex flex-col gap-2 max-h-64 overflow-y-auto">
+          <ul className={`flex flex-col gap-2 overflow-y-auto ${fullPage ? "max-h-[calc(100vh-18rem)]" : "max-h-64"}`}>
             {history.map((item) => (
               <li
                 key={item.id}
-                className="flex items-center gap-2 rounded-xl bg-[#0e1117] border border-[rgba(120,80,10,0.12)] p-3"
+                className="flex items-center gap-2 rounded-xl bg-[var(--app-surface)] border border-[var(--app-border)] p-3"
               >
                 <button
                   onClick={() => onLoadConfig(item)}
                   className="flex-1 text-left min-w-0 hover:opacity-80 transition-opacity"
                 >
-                  <p className="text-sm font-medium text-[#e8eaf0] truncate">{entryLabel(item)}</p>
-                  <p className="text-xs text-[#7a869a] mt-0.5">
+                  <p className="text-sm font-medium text-[var(--app-text)] truncate">{entryLabel(item)}</p>
+                  <p className="text-xs text-[var(--app-text-muted)] mt-0.5">
                     {item.styleId} · {formatDate(item.created_at)}
                   </p>
                 </button>
                 <button
                   onClick={() => saveFavourite(item)}
                   title="Add to favourites"
-                  className="p-2 rounded-lg text-[#7a869a] hover:text-[#fbbf24] hover:bg-[#1e1706] transition-all"
+                  className="p-2 rounded-lg text-[var(--app-text-muted)] hover:text-[var(--app-brand)] hover:bg-[var(--app-input-bg)] transition-all"
                 >
                   <span className="iconify w-4 h-4" data-icon="mdi:star-outline" />
                 </button>
                 <button
                   onClick={() => deleteHistory(item.id)}
                   title="Remove from history"
-                  className="p-2 rounded-lg text-[#7a869a] hover:text-red-400 hover:bg-[#1e1706] transition-all"
+                  className="p-2 rounded-lg text-[var(--app-text-muted)] hover:text-red-400 hover:bg-[var(--app-input-bg)] transition-all"
                 >
                   <span className="iconify w-4 h-4" data-icon="mdi:close" />
                 </button>
@@ -168,29 +170,29 @@ export default function TagSavedPanel({ currentConfig, onLoadConfig, refreshKey 
           </ul>
         )
       ) : favourites.length === 0 ? (
-        <p className="text-sm text-[#7a869a] py-4">No favourites yet. Star a tag to save it here.</p>
+        <p className="text-sm text-[var(--app-text-muted)] py-4">No favourites yet. Star a tag to save it here.</p>
       ) : (
-        <ul className="flex flex-col gap-2 max-h-64 overflow-y-auto">
+        <ul className={`flex flex-col gap-2 overflow-y-auto ${fullPage ? "max-h-[calc(100vh-18rem)]" : "max-h-64"}`}>
           {favourites.map((item) => (
             <li
               key={item.id}
-              className="flex items-center gap-2 rounded-xl bg-[#0e1117] border border-[rgba(120,80,10,0.12)] p-3"
+              className="flex items-center gap-2 rounded-xl bg-[var(--app-surface)] border border-[var(--app-border)] p-3"
             >
               <button
                 onClick={() => onLoadConfig(item)}
                 className="flex-1 text-left min-w-0 hover:opacity-80 transition-opacity"
               >
-                <p className="text-sm font-medium text-[#e8eaf0] truncate">
+                <p className="text-sm font-medium text-[var(--app-text)] truncate">
                   {item.name || entryLabel(item)}
                 </p>
-                <p className="text-xs text-[#7a869a] mt-0.5">
+                <p className="text-xs text-[var(--app-text-muted)] mt-0.5">
                   {item.text} · {item.styleId}
                 </p>
               </button>
               <button
                 onClick={() => deleteFavourite(item.id)}
                 title="Remove favourite"
-                className="p-2 rounded-lg text-[#7a869a] hover:text-red-400 hover:bg-[#1e1706] transition-all"
+                className="p-2 rounded-lg text-[var(--app-text-muted)] hover:text-red-400 hover:bg-[var(--app-input-bg)] transition-all"
               >
                 <span className="iconify w-4 h-4" data-icon="mdi:close" />
               </button>

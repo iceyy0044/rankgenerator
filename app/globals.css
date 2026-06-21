@@ -4,6 +4,62 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
+  --background: #eef1f6;
+  --foreground: #1a1d24;
+  --card: #ffffff;
+  --card-foreground: #1a1d24;
+  --popover: #ffffff;
+  --popover-foreground: #1a1d24;
+  --primary: #4f8ef7;
+  --primary-foreground: #ffffff;
+  --secondary: #e8eaef;
+  --secondary-foreground: #1a1d24;
+  --muted: #e8eaef;
+  --muted-foreground: #64748b;
+  --accent: #4f8ef7;
+  --accent-foreground: #ffffff;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: rgba(120, 80, 10, 0.14);
+  --input: #f4f5f8;
+  --ring: #f59e0b;
+  --radius: 0.75rem;
+  --surface: #ffffff;
+  --surface-2: #f4f5f8;
+  --accent-muted: rgba(245, 158, 11, 0.12);
+  --accent-glow: rgba(245, 158, 11, 0.2);
+  --success: #059669;
+  --warning: #d97706;
+
+  --html-bg: #eef1f6;
+  --app-text: #1a1d24;
+  --app-text-muted: #64748b;
+  --app-text-gold: #b45309;
+  --app-text-label: #92400e;
+  --app-text-cream: #78350f;
+  --app-header-bg: rgba(255, 255, 255, 0.88);
+  --app-sidebar-bg: rgba(255, 255, 255, 0.92);
+  --app-main-bg: rgba(238, 241, 246, 0.94);
+  --app-border: rgba(120, 80, 10, 0.14);
+  --app-surface: #ffffff;
+  --app-surface-2: #f4f5f8;
+  --app-surface-3: #e8eaef;
+  --app-input-bg: #f8f9fb;
+  --app-preview-bg: #e8eaef;
+  --app-glass-bg: rgba(255, 255, 255, 0.82);
+  --app-glass-border: rgba(120, 80, 10, 0.14);
+  --app-glass-shadow: 0 8px 32px rgba(15, 23, 42, 0.08);
+  --app-brand: #fbbf24;
+  --app-brand-hover: #f59e0b;
+  --app-nav-active-bg: rgba(245, 158, 11, 0.14);
+  --app-nav-hover-bg: rgba(245, 158, 11, 0.08);
+  --app-section-bg: rgba(255, 255, 255, 0.65);
+  --app-scrollbar-track: #eef1f6;
+  --app-scrollbar-thumb: #cbd5e1;
+  --app-scrollbar-thumb-hover: #94a3b8;
+}
+
+.dark {
   --background: #0e1117;
   --foreground: #e8eaf0;
   --card: #161b27;
@@ -23,13 +79,39 @@
   --border: rgba(99, 120, 180, 0.18);
   --input: #1e2435;
   --ring: #4f8ef7;
-  --radius: 0.75rem;
   --surface: #161b27;
   --surface-2: #1e2435;
   --accent-muted: rgba(79, 142, 247, 0.15);
   --accent-glow: rgba(79, 142, 247, 0.25);
   --success: #34d399;
   --warning: #fbbf24;
+
+  --html-bg: #0e1117;
+  --app-text: #e8eaf0;
+  --app-text-muted: #7a869a;
+  --app-text-gold: #fbbf24;
+  --app-text-label: #e8d8a8;
+  --app-text-cream: #e6d8a3;
+  --app-header-bg: rgba(10, 13, 19, 0.5);
+  --app-sidebar-bg: rgba(10, 13, 19, 0.8);
+  --app-main-bg: rgba(10, 13, 19, 0.6);
+  --app-border: rgba(120, 80, 10, 0.15);
+  --app-surface: #0e1117;
+  --app-surface-2: #1e1706;
+  --app-surface-3: #1e1706;
+  --app-input-bg: #1e1706;
+  --app-preview-bg: #0e1117;
+  --app-glass-bg: rgba(22, 27, 39, 0.75);
+  --app-glass-border: rgba(99, 120, 180, 0.18);
+  --app-glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+  --app-brand: #fbbf24;
+  --app-brand-hover: #ffd454;
+  --app-nav-active-bg: rgba(245, 158, 11, 0.1);
+  --app-nav-hover-bg: rgba(245, 158, 11, 0.05);
+  --app-section-bg: rgba(14, 17, 23, 0.4);
+  --app-scrollbar-track: #0e1117;
+  --app-scrollbar-thumb: #2a3045;
+  --app-scrollbar-thumb-hover: #3a4060;
 }
 
 @theme inline {
@@ -66,7 +148,7 @@
     box-sizing: border-box;
   }
   html {
-    background-color: #0e1117;
+    background-color: var(--html-bg);
   }
   body {
     @apply bg-background text-foreground;
@@ -74,14 +156,13 @@
   }
 }
 
-/* Glassmorphism */
 .glass {
-  background: rgba(22, 27, 39, 0.75);
-  border: 1px solid rgba(99, 120, 180, 0.18);
+  background: var(--app-glass-bg);
+  border: 1px solid var(--app-glass-border);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.45),
+    var(--app-glass-shadow),
     inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
@@ -89,15 +170,14 @@
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 .glass-hover:hover {
-  border-color: rgba(79, 142, 247, 0.35);
+  border-color: rgba(245, 158, 11, 0.35);
   box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.45),
-    0 0 0 1px rgba(79, 142, 247, 0.12),
+    var(--app-glass-shadow),
+    0 0 0 1px rgba(245, 158, 11, 0.12),
     inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
-/* Scrollbar */
 ::-webkit-scrollbar { width: 5px; height: 5px; }
-::-webkit-scrollbar-track { background: #0e1117; }
-::-webkit-scrollbar-thumb { background: #2a3045; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #3a4060; }
+::-webkit-scrollbar-track { background: var(--app-scrollbar-track); }
+::-webkit-scrollbar-thumb { background: var(--app-scrollbar-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--app-scrollbar-thumb-hover); }
