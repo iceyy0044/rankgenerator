@@ -93,23 +93,11 @@ export default function TagSavedPanel({ currentConfig, onLoadConfig, refreshKey 
 
   return (
     <div className="glass rounded-2xl p-4 sm:p-6 flex flex-col gap-4">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-semibold text-[#e8eaf0] tracking-tight">History & Favourites</h2>
-          <p className="text-xs text-[#7a869a] mt-1">
-            Downloads are saved to history. Star tags you want to keep.
-          </p>
-        </div>
-        <button
-          onClick={() => saveFavourite(currentConfig)}
-          disabled={savingFav}
-          className="flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold
-            bg-[#1e1706] text-[#fbbf24] border border-[rgba(245,158,11,0.3)] hover:bg-[#2a2108]
-            disabled:opacity-50 transition-all shrink-0"
-        >
-          <span className="iconify w-4 h-4" data-icon="mdi:star" />
-          {savingFav ? "Saving..." : "Save Current"}
-        </button>
+      <div>
+        <h2 className="text-lg font-semibold text-[#e8eaf0] tracking-tight">History & Favourites</h2>
+        <p className="text-xs text-[#7a869a] mt-1">
+          Downloads are saved to history. Star tags you want to keep.
+        </p>
       </div>
 
       <div className="flex items-center gap-2">
@@ -224,4 +212,15 @@ export async function saveTagToHistory(config: TagConfiguration) {
   } catch {
     // Non-blocking
   }
+}
+
+export async function saveTagToFavourites(config: TagConfiguration, name?: string) {
+  const res = await fetch("/api/tag/favourites", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ...config, name }),
+  })
+  if (!res.ok) throw new Error("Failed to save favourite")
+  const data = await res.json()
+  return data.item as TagFavouriteEntry
 }
