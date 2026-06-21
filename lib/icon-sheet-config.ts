@@ -29,45 +29,82 @@ function cell(col: number, row: number, id: string, name: string): IconSheetEntr
   }
 }
 
-/** Row 0 (y=0) left-to-right, then row 1 (y=8). Matches the provided icon sheet layout. */
-export const ICON_MAP: Record<string, IconSheetEntry> = {
-  dots: cell(0, 0, "dots", "Dots"),
-  crown: cell(1, 0, "crown", "Crown"),
-  royal: cell(2, 0, "royal", "Royal"),
-  info: cell(3, 0, "info", "Info"),
-  monitor: cell(4, 0, "monitor", "Monitor"),
-  hammer: cell(5, 0, "hammer", "Hammer"),
-  diamond: cell(6, 0, "diamond", "Diamond"),
-  cloud: cell(7, 0, "cloud", "Cloud"),
-  duo: cell(8, 0, "duo", "Duo"),
-  play: cell(9, 0, "play", "Play"),
-  shield: cell(10, 0, "shield", "Shield"),
-  user: cell(11, 0, "user", "User"),
-  cup: cell(12, 0, "cup", "Cup"),
-  chest: cell(13, 0, "chest", "Chest"),
-  wings: cell(14, 0, "wings", "Wings"),
+/** Row 0 left-to-right, then row 1 — matches icon sheet layout. */
+const ICON_SHEET_ICONS: IconSheetEntry[] = [
+  cell(0, 0, "squires", "Squires"),
+  cell(1, 0, "crown", "Crown"),
+  cell(2, 0, "crown2", "Crown2"),
+  cell(3, 0, "information_mark", "Information Mark"),
+  cell(4, 0, "computer", "Computer"),
+  cell(5, 0, "hammer", "Hammer"),
+  cell(6, 0, "crystal", "Crystal"),
+  cell(7, 0, "bubble", "Bubble"),
+  cell(8, 0, "star", "Star"),
+  cell(9, 0, "play_button", "Play Button"),
+  cell(10, 0, "shield", "Shield"),
+  cell(11, 0, "user", "User"),
+  cell(12, 0, "cup", "Cup"),
+  cell(13, 0, "shield2", "Shield2"),
+  cell(14, 0, "shield3", "Shield3"),
 
-  wings_down: cell(0, 1, "wings_down", "Wings Down"),
-  shield_alt: cell(1, 1, "shield_alt", "Shield Alt"),
-  castle: cell(2, 1, "castle", "Castle"),
-  hourglass: cell(3, 1, "hourglass", "Hourglass"),
-  trident: cell(4, 1, "trident", "Trident"),
-  sun: cell(5, 1, "sun", "Sun"),
-  legs: cell(6, 1, "legs", "Legs"),
-  heart: cell(7, 1, "heart", "Heart"),
-  question: cell(8, 1, "question", "Question"),
-  skull: cell(9, 1, "skull", "Skull"),
-  gem: cell(10, 1, "gem", "Gem"),
-  target: cell(11, 1, "target", "Target"),
+  cell(0, 1, "chestplate", "Chestplate"),
+  cell(1, 1, "chestplate2", "Chestplate2"),
+  cell(2, 1, "crate", "Crate"),
+  cell(3, 1, "crate2", "Crate2"),
+  cell(4, 1, "crate3", "Crate3"),
+  cell(5, 1, "circle", "Circle"),
+  cell(6, 1, "house", "House"),
+  cell(7, 1, "heart", "Heart"),
+  cell(8, 1, "question_mark", "Question Mark"),
+  cell(9, 1, "skull", "Skull"),
+  cell(10, 1, "compass", "Compass"),
+  cell(11, 1, "gear", "Gear"),
+]
+
+/** Maps legacy icon ids from saved tags to current ids (same sheet position). */
+const LEGACY_ICON_IDS: Record<string, string> = {
+  dots: "squires",
+  royal: "crown2",
+  info: "information_mark",
+  monitor: "computer",
+  diamond: "crystal",
+  cloud: "bubble",
+  duo: "star",
+  play: "play_button",
+  chest: "shield2",
+  wings: "shield3",
+  wings_down: "chestplate",
+  shield_alt: "chestplate2",
+  castle: "crate",
+  hourglass: "crate2",
+  trident: "crate3",
+  sun: "circle",
+  legs: "house",
+  question: "question_mark",
+  gem: "compass",
+  target: "gear",
 }
 
-export const ICON_OPTIONS = Object.values(ICON_MAP).sort((a, b) =>
-  a.name.localeCompare(b.name)
+export const ICON_MAP: Record<string, IconSheetEntry> = Object.fromEntries(
+  ICON_SHEET_ICONS.map((entry) => [entry.id, entry])
 )
+
+/** Dropdown order: left-to-right on the sheet (row 0, then row 1). */
+export const ICON_OPTIONS = ICON_SHEET_ICONS
+
+function resolveIconId(iconId: string): string {
+  return LEGACY_ICON_IDS[iconId] ?? iconId
+}
+
+export function normalizeIconId(iconId: string | null | undefined): string | null {
+  if (!iconId) return null
+  const resolved = resolveIconId(iconId)
+  return ICON_MAP[resolved] ? resolved : null
+}
 
 export function getIconEntry(iconId: string | null | undefined): IconSheetEntry | null {
   if (!iconId) return null
-  return ICON_MAP[iconId] ?? null
+  return ICON_MAP[resolveIconId(iconId)] ?? null
 }
 
 export function getIconDisplayName(iconId: string | null | undefined): string | null {

@@ -4,7 +4,7 @@ import { useRef, useEffect, useState, useCallback } from "react"
 import { RANK_TAG_STYLES, DEFAULT_STYLE_ID, getIconBackgroundUrl } from "@/lib/rank-tag-config"
 import { FONT_SHEET_URL, getCachedImage, loadImage, renderRankTag } from "@/lib/rank-tag-render"
 import type { TagConfiguration } from "@/lib/tag-config-types"
-import { ICON_OPTIONS, ICON_SHEET_URL } from "@/lib/icon-sheet-config"
+import { ICON_OPTIONS, ICON_SHEET_URL, normalizeIconId } from "@/lib/icon-sheet-config"
 import { DEFAULT_GRADIENT_COLORS } from "@/lib/gradient-utils"
 import TagColorControls from "@/components/dashboard/tag-color-controls"
 import SyncToggle from "@/components/dashboard/sync-toggle"
@@ -180,7 +180,7 @@ export default function RankTagGenerator() {
     setColor(config.color)
     setGradientColors([...config.gradientColors])
     setGradientAngle(config.gradientAngle)
-    setIconId(config.iconId)
+    setIconId(normalizeIconId(config.iconId))
     setIconBgSync(config.iconBgSync)
     setIconStyleId(config.iconStyleId)
     setIconColorSync(config.iconColorSync)

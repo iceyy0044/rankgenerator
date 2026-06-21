@@ -8,7 +8,7 @@ import {
   ICON_BACKGROUND_WIDTH,
   resolveIconStyleId,
 } from "@/lib/rank-tag-config"
-import { getIconEntry, ICON_SHEET_URL, ICON_TAG_GAP, ICON_X_OFFSET } from "@/lib/icon-sheet-config"
+import { getIconEntry, ICON_SHEET_URL, ICON_TAG_GAP, ICON_X_OFFSET, normalizeIconId } from "@/lib/icon-sheet-config"
 
 export const FONT_SHEET_URL = "/font_sheet.png"
 
@@ -447,7 +447,7 @@ export function rowToConfig(row: Record<string, unknown>): TagConfiguration {
     color: String(row.color ?? "#fbbf24"),
     gradientColors: tagGradient,
     gradientAngle: Number(row.gradient_angle ?? 0),
-    iconId: rawIconId && getIconEntry(rawIconId) ? rawIconId : null,
+    iconId: normalizeIconId(rawIconId),
     iconBgSync: row.icon_bg_sync !== undefined ? Boolean(row.icon_bg_sync) : true,
     iconStyleId: String(row.icon_style_id ?? "rounded"),
     iconColorSync: row.icon_color_sync !== undefined ? Boolean(row.icon_color_sync) : true,
