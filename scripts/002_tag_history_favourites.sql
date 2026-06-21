@@ -16,6 +16,7 @@ CREATE TABLE public.tag_history (
   color TEXT NOT NULL DEFAULT '#fbbf24',
   gradient_start TEXT NOT NULL DEFAULT '#0051FF',
   gradient_end TEXT NOT NULL DEFAULT '#FFFFFF',
+  gradient_colors TEXT NOT NULL DEFAULT '["#0051FF","#FFFFFF"]',
   gradient_angle INTEGER NOT NULL DEFAULT 0,
   icon_id TEXT,
   icon_bg_sync BOOLEAN NOT NULL DEFAULT TRUE,
@@ -25,6 +26,7 @@ CREATE TABLE public.tag_history (
   icon_color TEXT NOT NULL DEFAULT '#fbbf24',
   icon_gradient_start TEXT NOT NULL DEFAULT '#0051FF',
   icon_gradient_end TEXT NOT NULL DEFAULT '#FFFFFF',
+  icon_gradient_colors TEXT NOT NULL DEFAULT '["#0051FF","#FFFFFF"]',
   icon_gradient_angle INTEGER NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -43,6 +45,7 @@ CREATE TABLE public.tag_favourites (
   color TEXT NOT NULL DEFAULT '#fbbf24',
   gradient_start TEXT NOT NULL DEFAULT '#0051FF',
   gradient_end TEXT NOT NULL DEFAULT '#FFFFFF',
+  gradient_colors TEXT NOT NULL DEFAULT '["#0051FF","#FFFFFF"]',
   gradient_angle INTEGER NOT NULL DEFAULT 0,
   icon_id TEXT,
   icon_bg_sync BOOLEAN NOT NULL DEFAULT TRUE,
@@ -52,6 +55,7 @@ CREATE TABLE public.tag_favourites (
   icon_color TEXT NOT NULL DEFAULT '#fbbf24',
   icon_gradient_start TEXT NOT NULL DEFAULT '#0051FF',
   icon_gradient_end TEXT NOT NULL DEFAULT '#FFFFFF',
+  icon_gradient_colors TEXT NOT NULL DEFAULT '["#0051FF","#FFFFFF"]',
   icon_gradient_angle INTEGER NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

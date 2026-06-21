@@ -1,10 +1,11 @@
+import { normalizeGradientColors } from "@/lib/gradient-utils"
+
 export type ColorMode = "solid" | "gradient"
 
 export interface ColorSettings {
   colorMode: ColorMode
   color: string
-  gradientStart: string
-  gradientEnd: string
+  gradientColors: string[]
   gradientAngle: number
 }
 
@@ -13,8 +14,7 @@ export interface TagConfiguration {
   styleId: string
   colorMode: ColorMode
   color: string
-  gradientStart: string
-  gradientEnd: string
+  gradientColors: string[]
   gradientAngle: number
   iconId: string | null
   iconBgSync: boolean
@@ -22,8 +22,7 @@ export interface TagConfiguration {
   iconColorSync: boolean
   iconColorMode: ColorMode
   iconColor: string
-  iconGradientStart: string
-  iconGradientEnd: string
+  iconGradientColors: string[]
   iconGradientAngle: number
 }
 
@@ -42,8 +41,7 @@ export function getTagColorSettings(config: TagConfiguration): ColorSettings {
   return {
     colorMode: config.colorMode,
     color: config.color,
-    gradientStart: config.gradientStart,
-    gradientEnd: config.gradientEnd,
+    gradientColors: normalizeGradientColors(config.gradientColors),
     gradientAngle: config.gradientAngle,
   }
 }
@@ -53,8 +51,7 @@ export function getIconColorSettings(config: TagConfiguration): ColorSettings {
   return {
     colorMode: config.iconColorMode,
     color: config.iconColor,
-    gradientStart: config.iconGradientStart,
-    gradientEnd: config.iconGradientEnd,
+    gradientColors: normalizeGradientColors(config.iconGradientColors),
     gradientAngle: config.iconGradientAngle,
   }
 }
@@ -63,14 +60,20 @@ export function tagConfigFromEntry(entry: TagConfiguration): TagConfiguration {
   return { ...entry }
 }
 
+function gradientColorsEqual(a: string[], b: string[]): boolean {
+  const na = normalizeGradientColors(a)
+  const nb = normalizeGradientColors(b)
+  if (na.length !== nb.length) return false
+  return na.every((c, i) => c === nb[i])
+}
+
 export function configsEqual(a: TagConfiguration, b: TagConfiguration): boolean {
   return (
     a.text === b.text &&
     a.styleId === b.styleId &&
     a.colorMode === b.colorMode &&
     a.color === b.color &&
-    a.gradientStart === b.gradientStart &&
-    a.gradientEnd === b.gradientEnd &&
+    gradientColorsEqual(a.gradientColors, b.gradientColors) &&
     a.gradientAngle === b.gradientAngle &&
     a.iconId === b.iconId &&
     a.iconBgSync === b.iconBgSync &&
@@ -78,8 +81,7 @@ export function configsEqual(a: TagConfiguration, b: TagConfiguration): boolean 
     a.iconColorSync === b.iconColorSync &&
     a.iconColorMode === b.iconColorMode &&
     a.iconColor === b.iconColor &&
-    a.iconGradientStart === b.iconGradientStart &&
-    a.iconGradientEnd === b.iconGradientEnd &&
+    gradientColorsEqual(a.iconGradientColors, b.iconGradientColors) &&
     a.iconGradientAngle === b.iconGradientAngle
   )
 }

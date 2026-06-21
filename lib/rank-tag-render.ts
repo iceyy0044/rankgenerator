@@ -1,5 +1,6 @@
 import type { ColorSettings, TagConfiguration } from "@/lib/tag-config-types"
 import { getIconColorSettings, getTagColorSettings } from "@/lib/tag-config-types"
+import { applyMultiGradient, averageGradientRgb, gradientColorsToJson, normalizeGradientColors, parseGradientColorsFromRow } from "@/lib/gradient-utils"
 import type { RankTagStyle } from "@/lib/rank-tag-config"
 import {
   getIconBackgroundUrl,
@@ -74,23 +75,10 @@ function applyGradient(
   y: number,
   w: number,
   h: number,
-  colorStart: { r: number; g: number; b: number },
-  colorEnd: { r: number; g: number; b: number },
+  colors: string[],
   angle: number
 ) {
-  const centerX = x + w / 2
-  const centerY = y + h / 2
-  const rad = (angle * Math.PI) / 180
-  const halfDiagonal = Math.sqrt(w * w + h * h) / 2
-  const dx = Math.cos(rad) * halfDiagonal
-  const dy = Math.sin(rad) * halfDiagonal
-
-  const gradient = ctx.createLinearGradient(centerX - dx, centerY - dy, centerX + dx, centerY + dy)
-  gradient.addColorStop(0, `rgb(${colorStart.r}, ${colorStart.g}, ${colorStart.b})`)
-  gradient.addColorStop(1, `rgb(${colorEnd.r}, ${colorEnd.g}, ${colorEnd.b})`)
-
-  ctx.fillStyle = gradient
-  ctx.fillRect(x, y, w, h)
+  applyMultiGradient(ctx, x, y, w, h, colors, angle)
 }
 
 export function loadImage(url: string): Promise<HTMLImageElement> {
@@ -148,8 +136,7 @@ function drawTintedSegment(
 ) {
   const { leftWidth: leftW, middleWidth: midW, rightWidth: rightW, tileHeight: tileH } = style
   const selectedRgb = hexToRgb(colors.color)
-  const startRgb = hexToRgb(colors.gradientStart)
-  const endRgb = hexToRgb(colors.gradientEnd)
+  const gradientStops = normalizeGradientColors(colors.gradientColors)
   const segmentW = leftW + midW * midCount + rightW
 
   if (colors.colorMode === "solid") {
@@ -183,7 +170,7 @@ function drawTintedSegment(
   segCtx.imageSmoothingEnabled = false
   segCtx.drawImage(maskCanvas, 0, 0)
   segCtx.globalCompositeOperation = "multiply"
-  applyGradient(segCtx, 0, 0, segmentW, tileH, startRgb, endRgb, colors.gradientAngle)
+  applyGradient(segCtx, 0, 0, segmentW, tileH, gradientStops, colors.gradientAngle)
   segCtx.globalCompositeOperation = "destination-in"
   segCtx.drawImage(maskCanvas, 0, 0)
   segCtx.globalCompositeOperation = "source-over"
@@ -193,13 +180,7 @@ function drawTintedSegment(
 
 function getTintRgb(colors: ColorSettings): { r: number; g: number; b: number } {
   if (colors.colorMode === "solid") return hexToRgb(colors.color)
-  const startRgb = hexToRgb(colors.gradientStart)
-  const endRgb = hexToRgb(colors.gradientEnd)
-  return {
-    r: Math.round((startRgb.r + endRgb.r) / 2),
-    g: Math.round((startRgb.g + endRgb.g) / 2),
-    b: Math.round((startRgb.b + endRgb.b) / 2),
-  }
+  return averageGradientRgb(colors.gradientColors)
 }
 
 function drawTintedIconBackground(
@@ -212,8 +193,7 @@ function drawTintedIconBackground(
   const w = ICON_BACKGROUND_WIDTH
   const h = ICON_BACKGROUND_HEIGHT
   const selectedRgb = hexToRgb(colors.color)
-  const startRgb = hexToRgb(colors.gradientStart)
-  const endRgb = hexToRgb(colors.gradientEnd)
+  const gradientStops = normalizeGradientColors(colors.gradientColors)
 
   if (colors.colorMode === "solid") {
     tintImageData(ctx, bgImg, x, y, w, h, selectedRgb)
@@ -238,7 +218,7 @@ function drawTintedIconBackground(
   bgCtx.imageSmoothingEnabled = false
   bgCtx.drawImage(maskCanvas, 0, 0)
   bgCtx.globalCompositeOperation = "multiply"
-  applyGradient(bgCtx, 0, 0, w, h, startRgb, endRgb, colors.gradientAngle)
+  applyGradient(bgCtx, 0, 0, w, h, gradientStops, colors.gradientAngle)
   bgCtx.globalCompositeOperation = "destination-in"
   bgCtx.drawImage(maskCanvas, 0, 0)
   bgCtx.globalCompositeOperation = "source-over"
@@ -429,14 +409,18 @@ export async function renderRankTag(
 }
 
 export function configToDbRow(config: TagConfiguration, userId: string) {
+  const tagGradient = normalizeGradientColors(config.gradientColors)
+  const iconGradient = normalizeGradientColors(config.iconGradientColors)
+
   return {
     user_id: userId,
     text: config.text,
     style_id: config.styleId,
     color_mode: config.colorMode,
     color: config.color,
-    gradient_start: config.gradientStart,
-    gradient_end: config.gradientEnd,
+    gradient_start: tagGradient[0],
+    gradient_end: tagGradient[tagGradient.length - 1],
+    gradient_colors: gradientColorsToJson(tagGradient),
     gradient_angle: config.gradientAngle,
     icon_id: config.iconId,
     icon_bg_sync: config.iconBgSync,
@@ -444,22 +428,24 @@ export function configToDbRow(config: TagConfiguration, userId: string) {
     icon_color_sync: config.iconColorSync,
     icon_color_mode: config.iconColorMode,
     icon_color: config.iconColor,
-    icon_gradient_start: config.iconGradientStart,
-    icon_gradient_end: config.iconGradientEnd,
+    icon_gradient_start: iconGradient[0],
+    icon_gradient_end: iconGradient[iconGradient.length - 1],
+    icon_gradient_colors: gradientColorsToJson(iconGradient),
     icon_gradient_angle: config.iconGradientAngle,
   }
 }
 
 export function rowToConfig(row: Record<string, unknown>): TagConfiguration {
   const rawIconId = row.icon_id ? String(row.icon_id) : null
+  const tagGradient = parseGradientColorsFromRow(row)
+  const iconGradient = parseGradientColorsFromRow(row, "icon_")
 
   return {
     text: String(row.text ?? ""),
     styleId: String(row.style_id ?? "rounded"),
     colorMode: (row.color_mode as TagConfiguration["colorMode"]) ?? "solid",
     color: String(row.color ?? "#fbbf24"),
-    gradientStart: String(row.gradient_start ?? "#0051FF"),
-    gradientEnd: String(row.gradient_end ?? "#FFFFFF"),
+    gradientColors: tagGradient,
     gradientAngle: Number(row.gradient_angle ?? 0),
     iconId: rawIconId && getIconEntry(rawIconId) ? rawIconId : null,
     iconBgSync: row.icon_bg_sync !== undefined ? Boolean(row.icon_bg_sync) : true,
@@ -467,8 +453,7 @@ export function rowToConfig(row: Record<string, unknown>): TagConfiguration {
     iconColorSync: row.icon_color_sync !== undefined ? Boolean(row.icon_color_sync) : true,
     iconColorMode: (row.icon_color_mode as TagConfiguration["colorMode"]) ?? "solid",
     iconColor: String(row.icon_color ?? "#fbbf24"),
-    iconGradientStart: String(row.icon_gradient_start ?? "#0051FF"),
-    iconGradientEnd: String(row.icon_gradient_end ?? "#FFFFFF"),
+    iconGradientColors: iconGradient,
     iconGradientAngle: Number(row.icon_gradient_angle ?? 0),
   }
 }

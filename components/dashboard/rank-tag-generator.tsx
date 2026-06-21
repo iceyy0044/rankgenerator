@@ -5,9 +5,10 @@ import { RANK_TAG_STYLES, DEFAULT_STYLE_ID, getIconBackgroundUrl } from "@/lib/r
 import { FONT_SHEET_URL, getCachedImage, loadImage, renderRankTag } from "@/lib/rank-tag-render"
 import type { TagConfiguration } from "@/lib/tag-config-types"
 import { ICON_OPTIONS, ICON_SHEET_URL } from "@/lib/icon-sheet-config"
-import TagSavedPanel, { saveTagToHistory } from "@/components/dashboard/tag-saved-panel"
+import { DEFAULT_GRADIENT_COLORS } from "@/lib/gradient-utils"
 import TagColorControls from "@/components/dashboard/tag-color-controls"
 import SyncToggle from "@/components/dashboard/sync-toggle"
+import TagSavedPanel, { saveTagToHistory } from "@/components/dashboard/tag-saved-panel"
 
 const FONT_URL =
   "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/5x5-font-monospaced-0fGxzkqEby3jzE6VeuPUC7wYMuj5oZ.ttf"
@@ -82,8 +83,7 @@ export default function RankTagGenerator() {
   const [text, setText] = useState("ADMIN")
   const [colorMode, setColorMode] = useState<"solid" | "gradient">("solid")
   const [color, setColor] = useState("#fbbf24")
-  const [gradientStart, setGradientStart] = useState("#0051FF")
-  const [gradientEnd, setGradientEnd] = useState("#FFFFFF")
+  const [gradientColors, setGradientColors] = useState<string[]>([...DEFAULT_GRADIENT_COLORS])
   const [gradientAngle, setGradientAngle] = useState(0)
   const [styleId, setStyleId] = useState(DEFAULT_STYLE_ID)
   const [iconId, setIconId] = useState<string | null>(null)
@@ -92,8 +92,7 @@ export default function RankTagGenerator() {
   const [iconColorSync, setIconColorSync] = useState(true)
   const [iconColorMode, setIconColorMode] = useState<"solid" | "gradient">("solid")
   const [iconColor, setIconColor] = useState("#fbbf24")
-  const [iconGradientStart, setIconGradientStart] = useState("#0051FF")
-  const [iconGradientEnd, setIconGradientEnd] = useState("#FFFFFF")
+  const [iconGradientColors, setIconGradientColors] = useState<string[]>([...DEFAULT_GRADIENT_COLORS])
   const [iconGradientAngle, setIconGradientAngle] = useState(0)
   const [fontLoaded, setFontLoaded] = useState(false)
   const [fontSheet, setFontSheet] = useState<HTMLImageElement | null>(null)
@@ -110,8 +109,7 @@ export default function RankTagGenerator() {
     styleId,
     colorMode,
     color,
-    gradientStart,
-    gradientEnd,
+    gradientColors,
     gradientAngle,
     iconId,
     iconBgSync,
@@ -119,8 +117,7 @@ export default function RankTagGenerator() {
     iconColorSync,
     iconColorMode,
     iconColor,
-    iconGradientStart,
-    iconGradientEnd,
+    iconGradientColors,
     iconGradientAngle,
   }
 
@@ -179,8 +176,7 @@ export default function RankTagGenerator() {
     setStyleId(config.styleId)
     setColorMode(config.colorMode)
     setColor(config.color)
-    setGradientStart(config.gradientStart)
-    setGradientEnd(config.gradientEnd)
+    setGradientColors([...config.gradientColors])
     setGradientAngle(config.gradientAngle)
     setIconId(config.iconId)
     setIconBgSync(config.iconBgSync)
@@ -188,8 +184,7 @@ export default function RankTagGenerator() {
     setIconColorSync(config.iconColorSync)
     setIconColorMode(config.iconColorMode)
     setIconColor(config.iconColor)
-    setIconGradientStart(config.iconGradientStart)
-    setIconGradientEnd(config.iconGradientEnd)
+    setIconGradientColors([...config.iconGradientColors])
     setIconGradientAngle(config.iconGradientAngle)
   }, [])
 
@@ -222,7 +217,7 @@ export default function RankTagGenerator() {
     if (!dCtx) return
     dCtx.imageSmoothingEnabled = false
     dCtx.drawImage(off, 0, 0, displayW, displayH)
-  }, [color, colorMode, currentConfig, currentStyle, fontLoaded, fontSheet, gradientAngle, gradientEnd, gradientStart, iconBgSync, iconColor, iconColorMode, iconColorSync, iconGradientAngle, iconGradientEnd, iconGradientStart, iconId, iconSheet, iconSheetLoaded, iconStyleId, imagesLoaded, resolvedIconStyleId])
+  }, [color, colorMode, currentConfig, currentStyle, fontLoaded, fontSheet, gradientAngle, gradientColors, iconBgSync, iconColor, iconColorMode, iconColorSync, iconGradientAngle, iconGradientColors, iconId, iconSheet, iconSheetLoaded, iconStyleId, imagesLoaded, resolvedIconStyleId])
 
   useEffect(() => {
     renderTag()
@@ -382,13 +377,11 @@ export default function RankTagGenerator() {
                   <TagColorControls
                     colorMode={iconColorMode}
                     color={iconColor}
-                    gradientStart={iconGradientStart}
-                    gradientEnd={iconGradientEnd}
+                    gradientColors={iconGradientColors}
                     gradientAngle={iconGradientAngle}
                     onColorModeChange={setIconColorMode}
                     onColorChange={setIconColor}
-                    onGradientStartChange={setIconGradientStart}
-                    onGradientEndChange={setIconGradientEnd}
+                    onGradientColorsChange={setIconGradientColors}
                     onGradientAngleChange={setIconGradientAngle}
                     solidLabel="Icon Background Tint"
                   />
@@ -402,13 +395,11 @@ export default function RankTagGenerator() {
             <TagColorControls
               colorMode={colorMode}
               color={color}
-              gradientStart={gradientStart}
-              gradientEnd={gradientEnd}
+              gradientColors={gradientColors}
               gradientAngle={gradientAngle}
               onColorModeChange={setColorMode}
               onColorChange={setColor}
-              onGradientStartChange={setGradientStart}
-              onGradientEndChange={setGradientEnd}
+              onGradientColorsChange={setGradientColors}
               onGradientAngleChange={setGradientAngle}
             />
           </div>
