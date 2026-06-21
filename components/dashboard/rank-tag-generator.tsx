@@ -268,13 +268,13 @@ export default function RankTagGenerator() {
         <div className="glass rounded-2xl p-4 sm:p-6 flex flex-col gap-6">
           {/* Full-width preview — rank tags are wide & short, not suited to a side column */}
           <div className="rounded-xl border border-[rgba(120,80,10,0.12)] bg-[#0e1117]/40 p-4 sm:p-5">
-            <div className="flex flex-col lg:flex-row lg:items-center gap-4">
-              <div className="flex flex-col gap-3 min-w-0 flex-1">
-                <div>
-                  <h3 className="text-sm font-semibold text-[#e8eaf0] tracking-tight">Live preview</h3>
-                  <p className="text-xs text-[#7a869a] mt-0.5">Updates as you change settings.</p>
-                </div>
-                <div className="flex items-center justify-center rounded-xl bg-[#0e1117] border border-[rgba(120,80,10,0.12)] py-4 px-4 overflow-x-auto">
+            <div className="flex flex-col gap-3">
+              <div>
+                <h3 className="text-sm font-semibold text-[#e8eaf0] tracking-tight">Live preview</h3>
+                <p className="text-xs text-[#7a869a] mt-0.5">Updates as you change settings.</p>
+              </div>
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-full flex items-center justify-center rounded-xl bg-[#0e1117] border border-[rgba(120,80,10,0.12)] py-4 px-4 overflow-x-auto">
                   {!fontLoaded || !imagesLoaded || !fontSheet ? (
                     <div className="flex items-center gap-2 text-[#e6d8a3] text-sm py-2">
                       <span className="iconify w-4 h-4 animate-spin text-[#fbbf24]" data-icon="mdi:loading" />
@@ -284,28 +284,28 @@ export default function RankTagGenerator() {
                     <canvas ref={canvasRef} className="rounded-sm max-w-full h-auto block" style={{ imageRendering: "pixelated" }} />
                   )}
                 </div>
-              </div>
-              <div className="flex flex-row lg:flex-col gap-2 shrink-0 self-end lg:self-center">
-                <button
-                  onClick={handleDownload}
-                  disabled={downloading || !fontLoaded || !imagesLoaded}
-                  className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold text-black
-                    bg-[#fbbf24] hover:bg-[#ffd454] disabled:opacity-50 disabled:cursor-not-allowed
-                    transition-all duration-150 shadow-[0_4px_12px_rgba(245,158,11,0.18)] active:scale-[0.98]"
-                >
-                  <span className="iconify w-4 h-4" data-icon="mdi:download" />
-                  {downloading ? "Exporting..." : "Download"}
-                </button>
-                <button
-                  onClick={handleSaveFavourite}
-                  disabled={savingFav}
-                  className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold
-                    bg-[#1e1706] text-[#fbbf24] border border-[rgba(245,158,11,0.3)] hover:bg-[#2a2108]
-                    disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98]"
-                >
-                  <span className="iconify w-4 h-4" data-icon="mdi:star" />
-                  {savingFav ? "Saving..." : "Save"}
-                </button>
+                <div className="flex flex-row flex-wrap items-center justify-center gap-2.5">
+                  <button
+                    onClick={handleDownload}
+                    disabled={downloading || !fontLoaded || !imagesLoaded}
+                    className="flex items-center justify-center gap-2 min-w-[8.5rem] px-5 py-2.5 rounded-xl text-sm font-semibold text-black
+                      bg-[#fbbf24] hover:bg-[#ffd454] disabled:opacity-50 disabled:cursor-not-allowed
+                      transition-all duration-150 shadow-[0_4px_14px_rgba(245,158,11,0.2)] active:scale-[0.98]"
+                  >
+                    <span className="iconify w-4 h-4" data-icon="mdi:download" />
+                    {downloading ? "Exporting..." : "Download"}
+                  </button>
+                  <button
+                    onClick={handleSaveFavourite}
+                    disabled={savingFav}
+                    className="flex items-center justify-center gap-2 min-w-[8.5rem] px-5 py-2.5 rounded-xl text-sm font-semibold
+                      bg-[#1e1706] text-[#fbbf24] border border-[rgba(245,158,11,0.3)] hover:bg-[#2a2108]
+                      disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98]"
+                  >
+                    <span className="iconify w-4 h-4" data-icon="mdi:star" />
+                    {savingFav ? "Saving..." : "Save"}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
