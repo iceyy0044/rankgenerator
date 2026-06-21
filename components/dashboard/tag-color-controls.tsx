@@ -67,26 +67,26 @@ export default function TagColorControls({
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       <div className="flex flex-col gap-1.5">
         <label className="text-xs font-semibold text-[#e8d8a8] uppercase tracking-wider">Color Mode</label>
-        <div className="flex items-center gap-2">
+        <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-[#1e1706] border border-[rgba(120,80,10,0.12)] w-fit">
           <button
             onClick={() => onColorModeChange("solid")}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+            className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
               colorMode === "solid"
-                ? "bg-[#fbbf24] text-black"
-                : "bg-[#1e1706] text-[#e8eaf0] hover:bg-[#2a2108]"
+                ? "bg-[#fbbf24] text-black shadow-sm"
+                : "text-[#e8eaf0] hover:bg-[#2a2108]"
             }`}
           >
             Solid
           </button>
           <button
             onClick={() => onColorModeChange("gradient")}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+            className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
               colorMode === "gradient"
-                ? "bg-[#fbbf24] text-black"
-                : "bg-[#1e1706] text-[#e8eaf0] hover:bg-[#2a2108]"
+                ? "bg-[#fbbf24] text-black shadow-sm"
+                : "text-[#e8eaf0] hover:bg-[#2a2108]"
             }`}
           >
             Gradient
@@ -156,9 +156,9 @@ export default function TagColorControls({
               </div>
             </div>
 
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-1.5 max-h-[220px] overflow-y-auto pr-1">
               {stops.map((stopColor, index) => (
-                <div key={index} className="flex items-center gap-2">
+                <div key={index} className="flex items-center gap-2 rounded-lg bg-[#1e1706]/60 px-2 py-1.5">
                   <span className="text-[10px] text-[#7a869a] w-4 shrink-0">{index + 1}</span>
                   <input
                     type="color"

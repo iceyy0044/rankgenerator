@@ -9,6 +9,7 @@ import { DEFAULT_GRADIENT_COLORS } from "@/lib/gradient-utils"
 import TagColorControls from "@/components/dashboard/tag-color-controls"
 import SyncToggle from "@/components/dashboard/sync-toggle"
 import TagSavedPanel, { saveTagToHistory } from "@/components/dashboard/tag-saved-panel"
+import GeneratorSection, { fieldLabelClass, inputClass, selectClass } from "@/components/dashboard/generator-section"
 
 const FONT_URL =
   "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/5x5-font-monospaced-0fGxzkqEby3jzE6VeuPUC7wYMuj5oZ.ttf"
@@ -251,105 +252,43 @@ export default function RankTagGenerator() {
           <p className="text-sm text-[#7a869a] mt-1">Customize your rank tag in real-time and export as PNG.</p>
         </div>
 
-        <div className="glass rounded-2xl p-4 sm:p-6 flex flex-col gap-5">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-[#e8d8a8] uppercase tracking-wider">Rank Text</label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={text}
-                  onChange={(e) => {
-                    const filtered = e.target.value.toUpperCase().replace(/[^A-Z0-9_\/\.\- +!]/g, "").slice(0, 15)
-                    setText(filtered)
-                  }}
-                  placeholder="ADMIN"
-                  className="w-full px-4 py-2.5 rounded-xl bg-[#1e1706] border border-[rgba(120,80,10,0.12)] text-[#fff8e1]
-                    placeholder-[#6b4f1a] text-sm focus:outline-none focus:border-[#f59e0b] focus:ring-1
-                    focus:ring-[rgba(245,158,11,0.14)] transition-all pr-12"
-                  maxLength={15}
-                />
-                <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
-                  <span className="text-xs text-[#7a869a]">{text.length}/15</span>
-                </div>
-              </div>
-              <p className="text-xs text-[#7a869a] mt-1">
-                Allowed characters: ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-.+! and a space
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-[#e8d8a8] uppercase tracking-wider">Template Style</label>
-              <div className="relative">
-                <select
-                  value={styleId}
-                  onChange={(e) => setStyleId(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl bg-[#1e1706] border border-[rgba(120,80,10,0.12)] text-[#e8eaf0]
-                    text-sm focus:outline-none focus:border-[#f59e0b] focus:ring-1 focus:ring-[rgba(245,158,11,0.14)]
-                    transition-all appearance-none cursor-pointer"
-                >
-                  {RANK_TAG_STYLES.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}
-                    </option>
-                  ))}
-                </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3">
-                  <span className="iconify text-[#7a869a]" data-icon="mdi:chevron-down" />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-3">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-[#e8d8a8] uppercase tracking-wider">Prefix Icon</label>
-              <div className="relative">
-                <select
-                  value={iconId ?? ""}
-                  onChange={(e) => setIconId(e.target.value || null)}
-                  className="w-full px-4 py-2.5 rounded-xl bg-[#1e1706] border border-[rgba(120,80,10,0.12)] text-[#e8eaf0]
-                    text-sm focus:outline-none focus:border-[#f59e0b] focus:ring-1 focus:ring-[rgba(245,158,11,0.14)]
-                    transition-all appearance-none cursor-pointer"
-                >
-                  <option value="">None</option>
-                  {ICON_OPTIONS.map((icon) => (
-                    <option key={icon.id} value={icon.id}>
-                      {icon.name}
-                    </option>
-                  ))}
-                </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3">
-                  <span className="iconify text-[#7a869a]" data-icon="mdi:chevron-down" />
-                </div>
-              </div>
-            </div>
-
-            {iconId && (
-              <div className="flex flex-col gap-3">
-                <SyncToggle
-                  label="Sync Icon Background"
-                  checked={iconBgSync}
-                  onChange={setIconBgSync}
-                  description={
-                    iconBgSync
-                      ? "Icon background matches the rank tag template style."
-                      : "Choose a separate background style for the icon box."
-                  }
-                />
-                {!iconBgSync && (
+        <div className="glass rounded-2xl p-4 sm:p-6">
+          <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_min(100%,320px)] gap-6 xl:gap-8">
+            {/* Controls */}
+            <div className="flex flex-col gap-4 min-w-0 order-2 xl:order-1">
+              <GeneratorSection
+                title="Tag basics"
+                description="Text and template style for your rank tag."
+                icon="mdi:format-text"
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-semibold text-[#e8d8a8] uppercase tracking-wider">
-                      Icon Background Style
-                    </label>
+                    <label className={fieldLabelClass}>Rank Text</label>
                     <div className="relative">
-                      <select
-                        value={iconStyleId}
-                        onChange={(e) => setIconStyleId(e.target.value)}
-                        className="w-full px-4 py-2.5 rounded-xl bg-[#1e1706] border border-[rgba(120,80,10,0.12)] text-[#e8eaf0]
-                          text-sm focus:outline-none focus:border-[#f59e0b] focus:ring-1 focus:ring-[rgba(245,158,11,0.14)]
-                          transition-all appearance-none cursor-pointer"
-                      >
+                      <input
+                        type="text"
+                        value={text}
+                        onChange={(e) => {
+                          const filtered = e.target.value.toUpperCase().replace(/[^A-Z0-9_\/\.\- +!]/g, "").slice(0, 15)
+                          setText(filtered)
+                        }}
+                        placeholder="ADMIN"
+                        className={`${inputClass} pr-12`}
+                        maxLength={15}
+                      />
+                      <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
+                        <span className="text-xs text-[#7a869a]">{text.length}/15</span>
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-[#7a869a] leading-snug">
+                      A–Z, 0–9, _-.+! and space
+                    </p>
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className={fieldLabelClass}>Template Style</label>
+                    <div className="relative">
+                      <select value={styleId} onChange={(e) => setStyleId(e.target.value)} className={selectClass}>
                         {RANK_TAG_STYLES.map((s) => (
                           <option key={s.id} value={s.id}>
                             {s.name}
@@ -361,75 +300,156 @@ export default function RankTagGenerator() {
                       </div>
                     </div>
                   </div>
-                )}
-
-                <SyncToggle
-                  label="Sync Icon Colors"
-                  checked={iconColorSync}
-                  onChange={setIconColorSync}
-                  description={
-                    iconColorSync
-                      ? "Icon background uses the same colors as the rank tag."
-                      : "Set separate colors for the icon background below."
-                  }
-                />
-                {!iconColorSync && (
-                  <TagColorControls
-                    colorMode={iconColorMode}
-                    color={iconColor}
-                    gradientColors={iconGradientColors}
-                    gradientAngle={iconGradientAngle}
-                    onColorModeChange={setIconColorMode}
-                    onColorChange={setIconColor}
-                    onGradientColorsChange={setIconGradientColors}
-                    onGradientAngleChange={setIconGradientAngle}
-                    solidLabel="Icon Background Tint"
-                  />
-                )}
-              </div>
-            )}
-          </div>
-
-          <div className="flex flex-col gap-4">
-            <label className="text-xs font-semibold text-[#e8d8a8] uppercase tracking-wider">Rank Tag Colors</label>
-            <TagColorControls
-              colorMode={colorMode}
-              color={color}
-              gradientColors={gradientColors}
-              gradientAngle={gradientAngle}
-              onColorModeChange={setColorMode}
-              onColorChange={setColor}
-              onGradientColorsChange={setGradientColors}
-              onGradientAngleChange={setGradientAngle}
-            />
-          </div>
-
-          <div className="h-px bg-[rgba(120,80,10,0.15)]" />
-
-          <div className="flex flex-col gap-3">
-            <label className="text-xs font-semibold text-[#e8d8a8] uppercase tracking-wider">Live Preview</label>
-            <div className="flex items-center justify-center rounded-xl bg-[#0e1117] border border-[rgba(120,80,10,0.12)] min-h-[100px] p-4 sm:p-8">
-              {!fontLoaded || !imagesLoaded || !fontSheet ? (
-                <div className="flex items-center gap-2 text-[#e6d8a3] text-sm">
-                  <span className="iconify w-4 h-4 animate-spin text-[#fbbf24]" data-icon="mdi:loading" />
-                  Loading assets...
                 </div>
-              ) : (
-                <canvas ref={canvasRef} className="rounded-sm" style={{ imageRendering: "pixelated" }} />
-              )}
+              </GeneratorSection>
+
+              <GeneratorSection
+                title="Rank tag colors"
+                description={
+                  iconId && iconColorSync
+                    ? "These colors apply to both the rank tag and prefix icon."
+                    : "Background tint or gradient for the main rank tag."
+                }
+                icon="mdi:palette"
+              >
+                <TagColorControls
+                  colorMode={colorMode}
+                  color={color}
+                  gradientColors={gradientColors}
+                  gradientAngle={gradientAngle}
+                  onColorModeChange={setColorMode}
+                  onColorChange={setColor}
+                  onGradientColorsChange={setGradientColors}
+                  onGradientAngleChange={setGradientAngle}
+                />
+              </GeneratorSection>
+
+              <GeneratorSection
+                title="Prefix icon"
+                description="Optional icon shown before the rank tag."
+                icon="mdi:star-four-points"
+              >
+                <div className="flex flex-col gap-1.5">
+                  <label className={fieldLabelClass}>Icon</label>
+                  <div className="relative">
+                    <select
+                      value={iconId ?? ""}
+                      onChange={(e) => setIconId(e.target.value || null)}
+                      className={selectClass}
+                    >
+                      <option value="">None</option>
+                      {ICON_OPTIONS.map((icon) => (
+                        <option key={icon.id} value={icon.id}>
+                          {icon.name}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3">
+                      <span className="iconify text-[#7a869a]" data-icon="mdi:chevron-down" />
+                    </div>
+                  </div>
+                </div>
+
+                {iconId && (
+                  <div className="flex flex-col gap-4 pt-1 border-t border-[rgba(120,80,10,0.12)]">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <SyncToggle
+                        label="Sync Icon Background"
+                        checked={iconBgSync}
+                        onChange={setIconBgSync}
+                        description={
+                          iconBgSync
+                            ? "Uses the same template as the rank tag."
+                            : "Pick a different icon box style."
+                        }
+                      />
+                      <SyncToggle
+                        label="Sync Icon Colors"
+                        checked={iconColorSync}
+                        onChange={setIconColorSync}
+                        description={
+                          iconColorSync
+                            ? "Uses rank tag colors for the icon."
+                            : "Set icon colors separately below."
+                        }
+                      />
+                    </div>
+
+                    {!iconBgSync && (
+                      <div className="flex flex-col gap-1.5 max-w-md">
+                        <label className={fieldLabelClass}>Icon Background Style</label>
+                        <div className="relative">
+                          <select
+                            value={iconStyleId}
+                            onChange={(e) => setIconStyleId(e.target.value)}
+                            className={selectClass}
+                          >
+                            {RANK_TAG_STYLES.map((s) => (
+                              <option key={s.id} value={s.id}>
+                                {s.name}
+                              </option>
+                            ))}
+                          </select>
+                          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3">
+                            <span className="iconify text-[#7a869a]" data-icon="mdi:chevron-down" />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {!iconColorSync && (
+                      <div className="rounded-lg border border-[rgba(120,80,10,0.1)] bg-[#1e1706]/50 p-4">
+                        <p className={fieldLabelClass}>Icon colors</p>
+                        <div className="mt-3">
+                          <TagColorControls
+                            colorMode={iconColorMode}
+                            color={iconColor}
+                            gradientColors={iconGradientColors}
+                            gradientAngle={iconGradientAngle}
+                            onColorModeChange={setIconColorMode}
+                            onColorChange={setIconColor}
+                            onGradientColorsChange={setIconGradientColors}
+                            onGradientAngleChange={setIconGradientAngle}
+                            solidLabel="Icon Background Tint"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </GeneratorSection>
+            </div>
+
+            {/* Preview sidebar */}
+            <div className="flex flex-col gap-4 order-1 xl:order-2 xl:sticky xl:top-6 xl:self-start">
+              <div className="rounded-xl border border-[rgba(120,80,10,0.12)] bg-[#0e1117]/40 p-4 sm:p-5 flex flex-col gap-4">
+                <div>
+                  <h3 className="text-sm font-semibold text-[#e8eaf0] tracking-tight">Live preview</h3>
+                  <p className="text-xs text-[#7a869a] mt-0.5">Updates as you change settings.</p>
+                </div>
+                <div className="flex items-center justify-center rounded-xl bg-[#0e1117] border border-[rgba(120,80,10,0.12)] min-h-[88px] p-4 sm:p-6 overflow-x-auto">
+                  {!fontLoaded || !imagesLoaded || !fontSheet ? (
+                    <div className="flex items-center gap-2 text-[#e6d8a3] text-sm">
+                      <span className="iconify w-4 h-4 animate-spin text-[#fbbf24]" data-icon="mdi:loading" />
+                      Loading assets...
+                    </div>
+                  ) : (
+                    <canvas ref={canvasRef} className="rounded-sm max-w-full" style={{ imageRendering: "pixelated" }} />
+                  )}
+                </div>
+                <button
+                  onClick={handleDownload}
+                  disabled={downloading || !fontLoaded || !imagesLoaded}
+                  className="flex items-center justify-center gap-2 w-full px-5 py-3 rounded-xl font-semibold text-black
+                    bg-[#fbbf24] hover:bg-[#ffd454] disabled:opacity-50 disabled:cursor-not-allowed
+                    transition-all duration-150 shadow-[0_6px_18px_rgba(245,158,11,0.22)] active:scale-[0.98]"
+                >
+                  <span className="iconify w-4 h-4" data-icon="mdi:download" />
+                  {downloading ? "Exporting..." : "Download PNG"}
+                </button>
+              </div>
             </div>
           </div>
-
-          <button
-            onClick={handleDownload}
-            disabled={downloading || !fontLoaded || !imagesLoaded}
-            className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-semibold text-black
-              bg-[#fbbf24] hover:bg-[#ffd454] disabled:opacity-50 disabled:cursor-not-allowed
-              transition-all duration-150 shadow-[0_6px_18px_rgba(245,158,11,0.22)] active:scale-[0.98]"
-          >
-            <span className="iconify w-4 h-4" data-icon="mdi:download" />
-            {downloading ? "Exporting..." : "Download PNG"}
-          </button>
         </div>
 
         <TagSavedPanel currentConfig={currentConfig} onLoadConfig={loadConfig} refreshKey={historyRefreshKey} />
