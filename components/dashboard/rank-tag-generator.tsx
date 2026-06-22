@@ -80,7 +80,11 @@ function loadImageFromUrl(url: string): Promise<HTMLImageElement> {
 
 export default function RankTagGenerator() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const previewContainerRef = useRef<HTMLDivElement>(null)
   const offscreenRef = useRef<HTMLCanvasElement | null>(null)
+  const previewDimensionsRef = useRef({ w: 0, h: 0 })
+
+  const PREVIEW_PIXEL_SCALE = 12
 
   const [text, setText] = useState("ADMIN")
   const [colorMode, setColorMode] = useState<"solid" | "gradient">("solid")
@@ -195,6 +199,26 @@ export default function RankTagGenerator() {
     if (stashed) loadConfig(stashed)
   }, [loadConfig])
 
+  const fitPreviewToContainer = useCallback(() => {
+    const display = canvasRef.current
+    const container = previewContainerRef.current
+    const { w, h } = previewDimensionsRef.current
+    if (!display || !w || !h) return
+
+    const maxW = container?.clientWidth ?? w
+    const fitScale = Math.min(1, maxW / w)
+    display.style.width = `${Math.floor(w * fitScale)}px`
+    display.style.height = `${Math.floor(h * fitScale)}px`
+  }, [])
+
+  useEffect(() => {
+    const container = previewContainerRef.current
+    if (!container) return
+    const observer = new ResizeObserver(() => fitPreviewToContainer())
+    observer.observe(container)
+    return () => observer.disconnect()
+  }, [fitPreviewToContainer])
+
   const renderTag = useCallback(async () => {
     if (!fontLoaded || !imagesLoaded || !fontSheet || !canvasRef.current) return
 
@@ -211,20 +235,20 @@ export default function RankTagGenerator() {
     })
 
     const display = canvasRef.current
-    const displayScale = 12
-    const displayW = off.width * displayScale
-    const displayH = off.height * displayScale
+    const displayW = off.width * PREVIEW_PIXEL_SCALE
+    const displayH = off.height * PREVIEW_PIXEL_SCALE
 
     display.width = displayW
     display.height = displayH
-    display.style.width = `${displayW}px`
-    display.style.height = `${displayH}px`
 
     const dCtx = display.getContext("2d")
     if (!dCtx) return
     dCtx.imageSmoothingEnabled = false
     dCtx.drawImage(off, 0, 0, displayW, displayH)
-  }, [color, colorMode, currentConfig, currentStyle, fontLoaded, fontSheet, gradientAngle, gradientColors, iconBgSync, iconColor, iconColorMode, iconColorSync, iconGradientAngle, iconGradientColors, iconId, iconSheet, iconSheetLoaded, iconStyleId, imagesLoaded, resolvedIconStyleId])
+
+    previewDimensionsRef.current = { w: displayW, h: displayH }
+    fitPreviewToContainer()
+  }, [color, colorMode, currentConfig, currentStyle, fitPreviewToContainer, fontLoaded, fontSheet, gradientAngle, gradientColors, iconBgSync, iconColor, iconColorMode, iconColorSync, iconGradientAngle, iconGradientColors, iconId, iconSheet, iconSheetLoaded, iconStyleId, imagesLoaded, resolvedIconStyleId])
 
   useEffect(() => {
     renderTag()
@@ -277,14 +301,17 @@ export default function RankTagGenerator() {
                 <p className="text-xs text-[var(--app-text-muted)] mt-0.5">Updates as you change settings.</p>
               </div>
               <div className="flex flex-col items-center gap-3">
-                <div className="w-full flex items-center justify-center rounded-xl bg-[var(--app-preview-bg)] border border-[var(--app-border)] py-4 px-4 overflow-x-auto">
+                <div
+                  ref={previewContainerRef}
+                  className="w-full flex items-center justify-center rounded-xl bg-[var(--app-preview-bg)] border border-[var(--app-border)] py-4 px-4 overflow-hidden min-h-[5.5rem]"
+                >
                   {!fontLoaded || !imagesLoaded || !fontSheet ? (
                     <div className="flex items-center gap-2 text-[var(--app-text-cream)] text-sm py-2">
                       <span className="iconify w-4 h-4 animate-spin text-[var(--app-brand)]" data-icon="mdi:loading" />
                       Loading assets...
                     </div>
                   ) : (
-                    <canvas ref={canvasRef} className="rounded-sm max-w-full h-auto block" style={{ imageRendering: "pixelated" }} />
+                    <canvas ref={canvasRef} className="rounded-sm block" style={{ imageRendering: "pixelated" }} />
                   )}
                 </div>
                 <div className="flex flex-row flex-wrap items-center justify-center gap-2.5">
