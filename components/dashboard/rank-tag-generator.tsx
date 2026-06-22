@@ -3,7 +3,7 @@
 import { useRef, useEffect, useState, useCallback } from "react"
 import { RANK_TAG_STYLES, DEFAULT_STYLE_ID, getIconBackgroundUrl } from "@/lib/rank-tag-config"
 import { FONT_SHEET_URL, getCachedImage, loadImage, renderRankTag } from "@/lib/rank-tag-render"
-import type { TagConfiguration } from "@/lib/tag-config-types"
+import { type TagConfiguration, MAX_TAG_TEXT_LENGTH } from "@/lib/tag-config-types"
 import { ICON_OPTIONS, ICON_SHEET_URL, normalizeIconId } from "@/lib/icon-sheet-config"
 import { DEFAULT_GRADIENT_COLORS } from "@/lib/gradient-utils"
 import TagColorControls from "@/components/dashboard/tag-color-controls"
@@ -327,15 +327,15 @@ export default function RankTagGenerator() {
                         type="text"
                         value={text}
                         onChange={(e) => {
-                          const filtered = e.target.value.toUpperCase().replace(/[^A-Z0-9_\/\.\- +!]/g, "").slice(0, 15)
+                          const filtered = e.target.value.toUpperCase().replace(/[^A-Z0-9_\/\.\- +!]/g, "").slice(0, MAX_TAG_TEXT_LENGTH)
                           setText(filtered)
                         }}
                         placeholder="ADMIN"
                         className={`${inputClass} pr-12`}
-                        maxLength={15}
+                        maxLength={MAX_TAG_TEXT_LENGTH}
                       />
                       <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
-                        <span className="text-xs text-[var(--app-text-muted)]">{text.length}/15</span>
+                        <span className="text-xs text-[var(--app-text-muted)]">{text.length}/{MAX_TAG_TEXT_LENGTH}</span>
                       </div>
                     </div>
                     <p className="text-[11px] text-[var(--app-text-muted)] leading-snug">

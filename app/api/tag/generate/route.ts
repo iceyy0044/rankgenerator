@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { RANK_TAG_STYLES_SERVER } from "@/lib/rank-tag-config.server";
+import { MAX_TAG_TEXT_LENGTH } from "@/lib/tag-config-types";
 import * as Jimp from "jimp";
 import fs from "fs/promises";
 import path from "path";
@@ -67,7 +68,7 @@ export async function GET(req: Request) {
         }
 
         const { searchParams } = new URL(req.url);
-        const text = (searchParams.get("text") || "ADMIN").toUpperCase().slice(0, 15);
+        const text = (searchParams.get("text") || "ADMIN").toUpperCase().slice(0, MAX_TAG_TEXT_LENGTH);
         let color = (searchParams.get("color") || "random").toLowerCase();
         const styleId = searchParams.get("style") || "classic";
 

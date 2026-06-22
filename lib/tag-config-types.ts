@@ -1,5 +1,7 @@
 import { normalizeGradientColors } from "@/lib/gradient-utils"
 
+export const MAX_TAG_TEXT_LENGTH = 30
+
 export type ColorMode = "solid" | "gradient"
 
 export interface ColorSettings {
