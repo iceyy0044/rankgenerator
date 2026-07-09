@@ -5,9 +5,7 @@ import { DEFAULT_GRADIENT_COLORS, MAX_GRADIENT_COLORS, MIN_GRADIENT_COLORS, rand
 import { FONT_MAP } from "@/lib/rank-tag-render";
 import { ICON_OPTIONS, normalizeIconId } from "@/lib/icon-sheet-config";
 import { renderRankTagBuffer } from "@/lib/rank-tag-render.server";
-
-// TODO: move to an environment variable instead of a hardcoded secret.
-const API_SECRET_KEY = "a1b2c3d4-e5f6-7890-1234-567890abcdef";
+import { createAdminClient } from "@/lib/supabase/server";
 
 const ALLOWED_CHARS = Object.keys(FONT_MAP).join("");
 const VALID_STYLE_IDS = RANK_TAG_STYLES_SERVER.map((s) => s.id);
@@ -26,7 +24,9 @@ const HEX_COLOR_RE = /^#?[0-9a-fA-F]{6}$/;
  * any tag buildable in the editor is reproducible via a single URL.
  *
  * ## Auth
- * Requires `Authorization: Bearer <API_SECRET_KEY>`.
+ * Requires `Authorization: Bearer <your license key>` — the same key used to
+ * activate the dashboard (`profiles.license_key` via `license_keys`). The key
+ * must exist, be active, and be claimed by a user.
  *
  * ## Query parameters
  *
@@ -66,8 +66,26 @@ const HEX_COLOR_RE = /^#?[0-9a-fA-F]{6}$/;
 export async function GET(req: Request) {
   try {
     const authHeader = req.headers.get("Authorization");
-    if (authHeader !== `Bearer ${API_SECRET_KEY}`) {
+    const licenseKey = authHeader?.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
+    if (!licenseKey) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const admin = createAdminClient();
+    const { data: license, error: licenseError } = await admin
+      .from("license_keys")
+      .select("is_active, used_by")
+      .eq("key", licenseKey)
+      .single();
+
+    if (licenseError || !license) {
+      return NextResponse.json({ error: "Invalid license key" }, { status: 401 });
+    }
+    if (!license.is_active) {
+      return NextResponse.json({ error: "This license key has been deactivated" }, { status: 401 });
+    }
+    if (!license.used_by) {
+      return NextResponse.json({ error: "This license key has not been activated by a user yet" }, { status: 401 });
     }
 
     const { searchParams } = new URL(req.url);
