@@ -68,8 +68,21 @@ export function averageGradientRgb(colors: string[]): { r: number; g: number; b:
   }
 }
 
+/**
+ * Structural subset of `CanvasRenderingContext2D` needed for gradient fills.
+ * Kept minimal (rather than importing the DOM lib type) so this function works
+ * unmodified against both the browser canvas (`lib/rank-tag-render.ts`) and the
+ * server-side `@napi-rs/canvas` context (`lib/rank-tag-render.server.ts`), which
+ * are structurally compatible but not nominally the same type.
+ */
+export interface GradientFillContext {
+  createLinearGradient(x0: number, y0: number, x1: number, y1: number): { addColorStop(offset: number, color: string): void }
+  fillStyle: unknown
+  fillRect(x: number, y: number, w: number, h: number): void
+}
+
 export function applyMultiGradient(
-  ctx: CanvasRenderingContext2D,
+  ctx: GradientFillContext,
   x: number,
   y: number,
   w: number,

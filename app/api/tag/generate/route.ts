@@ -1,168 +1,240 @@
 import { NextResponse } from "next/server";
 import { RANK_TAG_STYLES_SERVER } from "@/lib/rank-tag-config.server";
-import { MAX_TAG_TEXT_LENGTH } from "@/lib/tag-config-types";
-import * as Jimp from "jimp";
-import fs from "fs/promises";
-import path from "path";
+import { MAX_TAG_TEXT_LENGTH, type TagConfiguration, type ColorMode } from "@/lib/tag-config-types";
+import { DEFAULT_GRADIENT_COLORS, MAX_GRADIENT_COLORS, MIN_GRADIENT_COLORS, randomHexColor } from "@/lib/gradient-utils";
+import { FONT_MAP } from "@/lib/rank-tag-render";
+import { ICON_OPTIONS, normalizeIconId } from "@/lib/icon-sheet-config";
+import { renderRankTagBuffer } from "@/lib/rank-tag-render.server";
 
-const API_SECRET_KEY = "a1b2c3d4-e5f6-7890-1234-567890abcdef"; // This should be in an environment variable
+// TODO: move to an environment variable instead of a hardcoded secret.
+const API_SECRET_KEY = "a1b2c3d4-e5f6-7890-1234-567890abcdef";
 
-async function readImageAsBuffer(filePath: string): Promise<Buffer> {
-    const absolutePath = path.join(process.cwd(), "public", filePath);
-    try {
-        await fs.access(absolutePath);
-        const fileBuffer = await fs.readFile(absolutePath);
-        return fileBuffer;
-    } catch (error: any) {
-        console.error(`Error reading file: ${filePath} at ${absolutePath}`, error);
-        throw new Error(`Could not read image from ${filePath}. Error: ${error.message}`);
-    }
-}
+const ALLOWED_CHARS = Object.keys(FONT_MAP).join("");
+const VALID_STYLE_IDS = RANK_TAG_STYLES_SERVER.map((s) => s.id);
+const VALID_ICON_IDS = ICON_OPTIONS.map((i) => i.id);
+const HEX_COLOR_RE = /^#?[0-9a-fA-F]{6}$/;
 
-// --- Bitmap Font Configuration ---
-const FONT_MAP: { [key: string]: { x: number; y: number } } = {
-    'A': { x: 0, y: 0 }, 'B': { x: 8, y: 0 }, 'C': { x: 16, y: 0 }, 'D': { x: 24, y: 0 },
-    'E': { x: 32, y: 0 }, 'F': { x: 40, y: 0 }, 'G': { x: 48, y: 0 }, 'H': { x: 56, y: 0 },
-    'I': { x: 64, y: 0 }, 'J': { x: 72, y: 0 }, 'K': { x: 80, y: 0 }, 'L': { x: 88, y: 0 },
-    'M': { x: 96, y: 0 }, 'N': { x: 104, y: 0 }, 'O': { x: 112, y: 0 }, 'P': { x: 120, y: 0 },
-    'Q': { x: 0, y: 8 }, 'R': { x: 8, y: 8 }, 'S': { x: 16, y: 8 }, 'T': { x: 24, y: 8 },
-    'U': { x: 32, y: 8 }, 'V': { x: 40, y: 8 }, 'W': { x: 48, y: 8 }, 'X': { x: 56, y: 8 },
-    'Y': { x: 64, y: 8 }, 'Z': { x: 72, y: 8 }, '_': { x: 80, y: 8}, '-': { x: 88, y: 8}, '.': { x: 96, y: 8}, ' ': { x: 104, y: 8}, '+': { x: 112, y: 8}, '!': { x: 120, y: 8},
-    '0': { x: 0, y: 16 }, '1': { x: 8, y: 16 }, '2': { x: 16, y: 16 }, '3': { x: 24, y: 16 },
-    '4': { x: 32, y: 16 }, '5': { x: 40, y: 16 }, '6': { x: 48, y: 16 }, '7': { x: 56, y: 16 },
-    '8': { x: 64, y: 16 }, '9': { x: 72, y: 16 }
-};
-const CHAR_WIDTH = 7;
-const CHAR_HEIGHT = 7;
-const ALLOWED_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-.+! ";
-const FONT_SHEET_PATH = "rank-tag-tiles/font_sheet.png";
-
-function hexToRgb(hex: string) {
-    const r = parseInt(hex.slice(1, 3), 16);
-    const g = parseInt(hex.slice(3, 5), 16);
-    const b = parseInt(hex.slice(5, 7), 16);
-    return { r, g, b };
-}
-
-async function tintImage(image: Jimp, color: { r: number, g: number, b: number }): Promise<Jimp> {
-    // Create a tint layer by colorizing a white image
-    const tintLayer = new Jimp(image.getWidth(), image.getHeight(), 0xffffffff);
-    tintLayer.color([{ apply: 'red', params: [color.r] }, { apply: 'green', params: [color.g] }, { apply: 'blue', params: [color.b] }]);
-
-    // Create a copy of the original image to use as a mask
-    const mask = image.clone();
-
-    // Apply the tint
-    return image.composite(tintLayer, 0, 0, {
-        mode: Jimp.BLEND_MULTIPLY,
-        opacitySource: 1,
-        opacityDest: 1
-    }).mask(mask, 0, 0);
-}
-
+/**
+ * `GET /api/tag/generate`
+ *
+ * Renders a rank tag as a PNG using the exact same styling engine as the
+ * in-app editor — solid or multi-stop gradient fills (at any angle), any
+ * template style, and an optional prefix icon with its own independent
+ * background style / color overrides — and streams the image back.
+ *
+ * Every field the editor UI exposes has a matching query parameter here, so
+ * any tag buildable in the editor is reproducible via a single URL.
+ *
+ * ## Auth
+ * Requires `Authorization: Bearer <API_SECRET_KEY>`.
+ *
+ * ## Query parameters
+ *
+ * | Param                | Type                  | Default    | Notes |
+ * |-----------------------|-----------------------|------------|-------|
+ * | `text`                | string                | `ADMIN`    | Max {@link MAX_TAG_TEXT_LENGTH} chars. Allowed: `A-Z 0-9 _ - . + !` and space. Automatically uppercased. |
+ * | `style`               | string                | `classic`  | One of: `rounded`, `squared`, `extra-rounded`, `medieval`, `cartoon`, `classic`, `hourglass`, `legacy`, `modern`, `tapered`. |
+ * | `colorMode`           | `solid` \| `gradient` | `solid`    | Fill mode for the tag background. |
+ * | `color`               | hex or `random`       | `random`   | Used when `colorMode=solid`. |
+ * | `gradientColors`      | comma-separated hex   | `#0051FF,#FFFFFF` | 2–6 colors. Used when `colorMode=gradient`. |
+ * | `gradientAngle`       | number (degrees)      | `0`        | Used when `colorMode=gradient`. |
+ * | `icon`                | string                | *(none)*   | Prefix icon id. Omit for no icon. See valid ids below. |
+ * | `iconBgSync`          | `true` \| `false`     | `true`     | When true, the icon's background box uses `style`. |
+ * | `iconStyle`           | string                | = `style`  | Icon background style id. Only used when `iconBgSync=false`. |
+ * | `iconColorSync`       | `true` \| `false`     | `true`     | When true, the icon reuses the tag's color/gradient. |
+ * | `iconColorMode`       | `solid` \| `gradient` | `solid`    | Only used when `iconColorSync=false`. |
+ * | `iconColor`           | hex or `random`       | `random`   | Only used when `iconColorSync=false` and `iconColorMode=solid`. |
+ * | `iconGradientColors`  | comma-separated hex   | `#0051FF,#FFFFFF` | Only used when `iconColorSync=false` and `iconColorMode=gradient`. |
+ * | `iconGradientAngle`   | number (degrees)      | `0`        | Only used when `iconColorSync=false` and `iconColorMode=gradient`. |
+ *
+ * Valid icon ids: {@link ICON_OPTIONS} in `lib/icon-sheet-config.ts` (e.g.
+ * `crown`, `shield`, `star`, `skull`, `compass`, ...). An invalid `style` or
+ * `icon` value returns a 400 listing the accepted values.
+ *
+ * ## Examples
+ * ```
+ * /api/tag/generate?text=OWNER&style=medieval&color=%23ff0000
+ * /api/tag/generate?text=VIP&colorMode=gradient&gradientColors=%23ff0000,%23ffff00&gradientAngle=45
+ * /api/tag/generate?text=ADMIN&icon=crown&iconColorSync=false&iconColor=%23ffd700
+ * ```
+ *
+ * ## Response
+ * `200` with `Content-Type: image/png` and a `Content-Disposition` attachment
+ * header on success. `400` with `{ error, details? }` JSON on invalid input,
+ * `401` if unauthenticated, `500` on unexpected render failures.
+ */
 export async function GET(req: Request) {
-    try {
-        const authHeader = req.headers.get("Authorization");
-        if (authHeader !== `Bearer ${API_SECRET_KEY}`) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
-
-        const { searchParams } = new URL(req.url);
-        const text = (searchParams.get("text") || "ADMIN").toUpperCase().slice(0, MAX_TAG_TEXT_LENGTH);
-        let color = (searchParams.get("color") || "random").toLowerCase();
-        const styleId = searchParams.get("style") || "classic";
-
-        for (const char of text) {
-            if (!ALLOWED_CHARS.includes(char)) {
-                return NextResponse.json({
-                    error: `Invalid character '${char}' in text.`,
-                    allowed_characters: ALLOWED_CHARS.split('')
-                }, { status: 400 });
-            }
-        }
-
-        if (color === "random") {
-            color = "#" + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
-        } else if (!/^#[0-9a-f]{6}$/i.test(color)) {
-            return NextResponse.json({ error: "Invalid color format. Use a 6-digit hex code (e.g., #FF0000)." }, { status: 400 });
-        }
-
-        const selectedRgb = hexToRgb(color);
-
-        const style = RANK_TAG_STYLES_SERVER.find(s => s.id === styleId);
-        if (!style) {
-            return NextResponse.json({ error: `Style '${styleId}' not found.` }, { status: 400 });
-        }
-        
-        const [leftImg, midImg, rightImg, fontSheet] = await Promise.all([
-            Jimp.read(await readImageAsBuffer(style.leftUrl)),
-            Jimp.read(await readImageAsBuffer(style.middleUrl)),
-            Jimp.read(await readImageAsBuffer(style.rightUrl)),
-            Jimp.read(await readImageAsBuffer(FONT_SHEET_PATH))
-        ]);
-
-        const [leftTinted, midTinted, rightTinted] = await Promise.all([
-            tintImage(leftImg, selectedRgb),
-            tintImage(midImg, selectedRgb),
-            tintImage(rightImg, selectedRgb),
-        ]);
-
-        const charCount = text.length;
-        const leftW = leftTinted.getWidth();
-        const midW = midTinted.getWidth();
-        const rightW = rightTinted.getWidth();
-        const tileH = leftTinted.getHeight();
-        const totalW = leftW + charCount * midW + rightW;
-
-        const finalImage = new Jimp(totalW, tileH, 0x00000000); // Transparent background
-
-        finalImage.composite(leftTinted, 0, 0);
-        for (let i = 0; i < charCount; i++) {
-            finalImage.composite(midTinted, leftW + i * midW, 0);
-        }
-        finalImage.composite(rightTinted, leftW + charCount * midW, 0);
-
-        for (let i = 0; i < charCount; i++) {
-            const ch = text[i];
-            const fontChar = FONT_MAP[ch];
-            if (!fontChar) continue;
-
-            const cx = leftW + i * midW + Math.floor((midW - CHAR_WIDTH) / 2);
-            const textY = Math.floor((tileH - CHAR_HEIGHT) / 2);
-
-            const charImg = fontSheet.clone().crop(fontChar.x, fontChar.y, CHAR_WIDTH, CHAR_HEIGHT);
-
-            // Shadow
-            const shadowImg = charImg.clone().color([{ apply: 'red', params: [0] }, { apply: 'green', params: [0] }, { apply: 'blue', params: [0] }]).opacity(0.55);
-            finalImage.composite(shadowImg, cx + 1, textY + 1);
-
-            // Main glyph with tint
-            const baseRgb = { r: 205, g: 205, b: 205 };
-            const mixedRgb = {
-                r: Math.round(baseRgb.r * 0.8 + selectedRgb.r * 0.2),
-                g: Math.round(baseRgb.g * 0.8 + selectedRgb.g * 0.2),
-                b: Math.round(baseRgb.b * 0.8 + selectedRgb.b * 0.2),
-            };
-            
-            const glyphTint = new Jimp(CHAR_WIDTH, 3, 0x000000ff).color([{apply: 'red', params: [mixedRgb.r]}, {apply: 'green', params: [mixedRgb.g]}, {apply: 'blue', params: [mixedRgb.b]}]).opacity(0.4);
-            const glyphBuffer = charImg.clone().color([{ apply: 'red', params: [255] }, { apply: 'green', params: [255] }, { apply: 'blue', params: [255] }]).composite(glyphTint, 0, CHAR_HEIGHT - 3);
-
-            finalImage.composite(glyphBuffer, cx + 1, textY);
-        }
-
-        const finalBuffer = await finalImage.getBufferAsync(Jimp.MIME_PNG);
-
-        return new NextResponse(finalBuffer, {
-            status: 200,
-            headers: {
-                'Content-Type': 'image/png',
-                'Content-Disposition': `attachment; filename="${text || 'rank'}.png"`,
-            },
-        });
-
-    } catch (error) {
-        console.error("Error generating tag:", error);
-        const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
-        return NextResponse.json({ error: "An unexpected error occurred while generating the tag.", details: errorMessage }, { status: 500 });
+  try {
+    const authHeader = req.headers.get("Authorization");
+    if (authHeader !== `Bearer ${API_SECRET_KEY}`) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    const { searchParams } = new URL(req.url);
+
+    // --- text -----------------------------------------------------------
+    const text = (searchParams.get("text") || "ADMIN").toUpperCase().slice(0, MAX_TAG_TEXT_LENGTH);
+    for (const char of text) {
+      if (!ALLOWED_CHARS.includes(char)) {
+        return NextResponse.json(
+          {
+            error: `Invalid character '${char}' in text.`,
+            allowed_characters: ALLOWED_CHARS.split(""),
+          },
+          { status: 400 }
+        );
+      }
+    }
+
+    // --- style ------------------------------------------------------------
+    const styleId = searchParams.get("style") || "classic";
+    const style = RANK_TAG_STYLES_SERVER.find((s) => s.id === styleId);
+    if (!style) {
+      return NextResponse.json(
+        { error: `Style '${styleId}' not found.`, valid_styles: VALID_STYLE_IDS },
+        { status: 400 }
+      );
+    }
+
+    // --- tag color / gradient ----------------------------------------------
+    const colorMode = parseColorMode(searchParams.get("colorMode"), "colorMode");
+    if (colorMode instanceof NextResponse) return colorMode;
+
+    const color = parseColor(searchParams.get("color"), "color");
+    if (color instanceof NextResponse) return color;
+
+    const gradientColors = parseGradientColors(searchParams.get("gradientColors"), "gradientColors");
+    if (gradientColors instanceof NextResponse) return gradientColors;
+
+    const gradientAngle = parseAngle(searchParams.get("gradientAngle"), "gradientAngle");
+    if (gradientAngle instanceof NextResponse) return gradientAngle;
+
+    // --- prefix icon --------------------------------------------------------
+    const rawIcon = searchParams.get("icon");
+    const iconId = rawIcon ? normalizeIconId(rawIcon) : null;
+    if (rawIcon && !iconId) {
+      return NextResponse.json(
+        { error: `Icon '${rawIcon}' not found.`, valid_icons: VALID_ICON_IDS },
+        { status: 400 }
+      );
+    }
+
+    const iconBgSync = parseBool(searchParams.get("iconBgSync"), "iconBgSync", true);
+    if (iconBgSync instanceof NextResponse) return iconBgSync;
+
+    const iconStyleId = searchParams.get("iconStyle") || styleId;
+    if (!RANK_TAG_STYLES_SERVER.some((s) => s.id === iconStyleId)) {
+      return NextResponse.json(
+        { error: `Icon style '${iconStyleId}' not found.`, valid_styles: VALID_STYLE_IDS },
+        { status: 400 }
+      );
+    }
+
+    const iconColorSync = parseBool(searchParams.get("iconColorSync"), "iconColorSync", true);
+    if (iconColorSync instanceof NextResponse) return iconColorSync;
+
+    const iconColorMode = parseColorMode(searchParams.get("iconColorMode"), "iconColorMode");
+    if (iconColorMode instanceof NextResponse) return iconColorMode;
+
+    const iconColor = parseColor(searchParams.get("iconColor"), "iconColor");
+    if (iconColor instanceof NextResponse) return iconColor;
+
+    const iconGradientColors = parseGradientColors(searchParams.get("iconGradientColors"), "iconGradientColors");
+    if (iconGradientColors instanceof NextResponse) return iconGradientColors;
+
+    const iconGradientAngle = parseAngle(searchParams.get("iconGradientAngle"), "iconGradientAngle");
+    if (iconGradientAngle instanceof NextResponse) return iconGradientAngle;
+
+    const config: TagConfiguration = {
+      text,
+      styleId,
+      colorMode,
+      color,
+      gradientColors,
+      gradientAngle,
+      iconId,
+      iconBgSync,
+      iconStyleId,
+      iconColorSync,
+      iconColorMode,
+      iconColor,
+      iconGradientColors,
+      iconGradientAngle,
+    };
+
+    const pngBuffer = await renderRankTagBuffer(config, style);
+
+    return new NextResponse(new Uint8Array(pngBuffer), {
+      status: 200,
+      headers: {
+        "Content-Type": "image/png",
+        "Content-Disposition": `attachment; filename="${text || "rank"}.png"`,
+      },
+    });
+  } catch (error) {
+    console.error("Error generating tag:", error);
+    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
+    return NextResponse.json(
+      { error: "An unexpected error occurred while generating the tag.", details: errorMessage },
+      { status: 500 }
+    );
+  }
+}
+
+/** Resolves a hex color param, treating `"random"` (or a missing value) as a random color. */
+function parseColor(raw: string | null, field: string): string | NextResponse {
+  if (!raw || raw.toLowerCase() === "random") return randomHexColor();
+  if (!HEX_COLOR_RE.test(raw)) {
+    return NextResponse.json(
+      { error: `Invalid '${field}'. Use a 6-digit hex code (e.g. #FF0000) or "random".` },
+      { status: 400 }
+    );
+  }
+  return raw.startsWith("#") ? raw : `#${raw}`;
+}
+
+function parseColorMode(raw: string | null, field: string): ColorMode | NextResponse {
+  if (!raw) return "solid";
+  if (raw === "solid" || raw === "gradient") return raw;
+  return NextResponse.json({ error: `Invalid '${field}'. Must be "solid" or "gradient".` }, { status: 400 });
+}
+
+/** Parses a comma-separated hex color list (2-6 colors); missing value falls back to the default gradient. */
+function parseGradientColors(raw: string | null, field: string): string[] | NextResponse {
+  if (!raw) return [...DEFAULT_GRADIENT_COLORS];
+  const parts = raw.split(",").map((c) => c.trim()).filter(Boolean);
+  if (parts.length < MIN_GRADIENT_COLORS || parts.length > MAX_GRADIENT_COLORS) {
+    return NextResponse.json(
+      { error: `Invalid '${field}'. Provide ${MIN_GRADIENT_COLORS}-${MAX_GRADIENT_COLORS} comma-separated hex colors.` },
+      { status: 400 }
+    );
+  }
+  const normalized: string[] = [];
+  for (const part of parts) {
+    if (!HEX_COLOR_RE.test(part)) {
+      return NextResponse.json(
+        { error: `Invalid color '${part}' in '${field}'. Use 6-digit hex codes (e.g. #FF0000).` },
+        { status: 400 }
+      );
+    }
+    normalized.push(part.startsWith("#") ? part : `#${part}`);
+  }
+  return normalized;
+}
+
+function parseAngle(raw: string | null, field: string): number | NextResponse {
+  if (!raw) return 0;
+  const n = Number(raw);
+  if (!Number.isFinite(n)) {
+    return NextResponse.json({ error: `Invalid '${field}'. Must be a number.` }, { status: 400 });
+  }
+  return n;
+}
+
+function parseBool(raw: string | null, field: string, defaultValue: boolean): boolean | NextResponse {
+  if (raw === null) return defaultValue;
+  const lower = raw.toLowerCase();
+  if (lower === "true") return true;
+  if (lower === "false") return false;
+  return NextResponse.json({ error: `Invalid '${field}'. Must be "true" or "false".` }, { status: 400 });
 }

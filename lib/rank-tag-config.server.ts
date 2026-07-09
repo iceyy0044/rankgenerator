@@ -3,6 +3,24 @@ import { RankTagStyle } from "@/lib/rank-tag-config";
 // This config uses local file paths for server-side rendering.
 // Make sure your image files are located in the 'public/rank-tag-tiles/' directory.
 
+/** Server-side (filesystem-relative, no leading slash) mirror of `ICON_BACKGROUNDS` in rank-tag-config.ts. */
+export const ICON_BACKGROUNDS_SERVER: Record<string, string> = {
+  rounded: "rank-tag-tiles/round_icon.png",
+  squared: "rank-tag-tiles/squire_icon.png",
+  "extra-rounded": "rank-tag-tiles/extra_round_icon.png",
+  medieval: "rank-tag-tiles/medieval_icon.png",
+  cartoon: "rank-tag-tiles/cartoon_icon.png",
+  classic: "rank-tag-tiles/classic_icon.png",
+  hourglass: "rank-tag-tiles/hourglass_icon.png",
+  legacy: "rank-tag-tiles/legacy_icon.png",
+  modern: "rank-tag-tiles/modern_icon.png",
+  tapered: "rank-tag-tiles/tapered_icon.png",
+};
+
+export function getIconBackgroundUrlServer(styleId: string): string {
+  return ICON_BACKGROUNDS_SERVER[styleId] ?? ICON_BACKGROUNDS_SERVER.rounded;
+}
+
 export const RANK_TAG_STYLES_SERVER: RankTagStyle[] = [
       {
         id: "rounded",
