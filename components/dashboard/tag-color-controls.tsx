@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import type { ColorMode } from "@/lib/tag-config-types"
 import {
   MAX_GRADIENT_COLORS,
@@ -49,6 +50,8 @@ export default function TagColorControls({
   solidLabel = "Background Tint Color",
 }: TagColorControlsProps) {
   const stops = normalizeGradientColors(gradientColors)
+  const [dragIndex, setDragIndex] = useState<number | null>(null)
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
 
   function updateStop(index: number, value: string) {
     const next = [...stops]
@@ -64,6 +67,14 @@ export default function TagColorControls({
   function removeStop(index: number) {
     if (stops.length <= MIN_GRADIENT_COLORS) return
     onGradientColorsChange(stops.filter((_, i) => i !== index))
+  }
+
+  function reorderStops(from: number, to: number) {
+    if (from === to) return
+    const next = [...stops]
+    const [moved] = next.splice(from, 1)
+    next.splice(to, 0, moved)
+    onGradientColorsChange(next)
   }
 
   return (
@@ -158,7 +169,34 @@ export default function TagColorControls({
 
             <div className="flex flex-col gap-1.5 max-h-[220px] overflow-y-auto pr-1">
               {stops.map((stopColor, index) => (
-                <div key={index} className="flex items-center gap-2 rounded-lg bg-[var(--app-input-bg)]/60 px-2 py-1.5">
+                <div
+                  key={index}
+                  draggable
+                  onDragStart={() => setDragIndex(index)}
+                  onDragOver={(e) => {
+                    e.preventDefault()
+                    if (dragIndex !== null && dragIndex !== index) setDragOverIndex(index)
+                  }}
+                  onDragLeave={() => setDragOverIndex((cur) => (cur === index ? null : cur))}
+                  onDrop={(e) => {
+                    e.preventDefault()
+                    if (dragIndex !== null) reorderStops(dragIndex, index)
+                    setDragIndex(null)
+                    setDragOverIndex(null)
+                  }}
+                  onDragEnd={() => {
+                    setDragIndex(null)
+                    setDragOverIndex(null)
+                  }}
+                  className={`flex items-center gap-2 rounded-lg bg-[var(--app-input-bg)]/60 px-2 py-1.5 transition-all ${
+                    dragIndex === index ? "opacity-40" : ""
+                  } ${dragOverIndex === index ? "ring-1 ring-[var(--app-brand)]" : ""}`}
+                >
+                  <span
+                    className="iconify w-4 h-4 text-[var(--app-text-muted)] shrink-0 cursor-grab active:cursor-grabbing"
+                    data-icon="mdi:drag-vertical"
+                    title="Drag to reorder"
+                  />
                   <span className="text-[10px] text-[var(--app-text-muted)] w-4 shrink-0">{index + 1}</span>
                   <input
                     type="color"
