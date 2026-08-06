@@ -91,21 +91,44 @@ export const ICON_MAP: Record<string, IconSheetEntry> = Object.fromEntries(
 /** Dropdown order: left-to-right on the sheet (row 0, then row 1). */
 export const ICON_OPTIONS = ICON_SHEET_ICONS
 
+/**
+ * User-drawn icons (see `pixel-icon-editor.tsx`) are referenced by embedding
+ * their PNG data URL directly in the iconId, prefixed with `custom:`. This
+ * needs no separate storage/lookup — the id is self-contained and travels
+ * through the same string field sprite icon ids use (saved favourites,
+ * history, the public generate API).
+ */
+const CUSTOM_ICON_PREFIX = "custom:"
+
+export function isCustomIconId(iconId: string | null | undefined): iconId is string {
+  return !!iconId && iconId.startsWith(CUSTOM_ICON_PREFIX)
+}
+
+export function makeCustomIconId(dataUrl: string): string {
+  return CUSTOM_ICON_PREFIX + dataUrl
+}
+
+export function getCustomIconDataUrl(iconId: string): string {
+  return iconId.slice(CUSTOM_ICON_PREFIX.length)
+}
+
 function resolveIconId(iconId: string): string {
   return LEGACY_ICON_IDS[iconId] ?? iconId
 }
 
 export function normalizeIconId(iconId: string | null | undefined): string | null {
   if (!iconId) return null
+  if (isCustomIconId(iconId)) return iconId
   const resolved = resolveIconId(iconId)
   return ICON_MAP[resolved] ? resolved : null
 }
 
 export function getIconEntry(iconId: string | null | undefined): IconSheetEntry | null {
-  if (!iconId) return null
+  if (!iconId || isCustomIconId(iconId)) return null
   return ICON_MAP[resolveIconId(iconId)] ?? null
 }
 
 export function getIconDisplayName(iconId: string | null | undefined): string | null {
+  if (isCustomIconId(iconId)) return "Custom icon"
   return getIconEntry(iconId)?.name ?? null
 }

@@ -23,7 +23,7 @@ import type { RankTagStyle } from "@/lib/rank-tag-config"
 import { ICON_BACKGROUND_HEIGHT, ICON_BACKGROUND_WIDTH, resolveIconStyleId } from "@/lib/rank-tag-config"
 import { getIconBackgroundUrlServer } from "@/lib/rank-tag-config.server"
 import { CHAR_HEIGHT, CHAR_WIDTH, FONT_MAP, hexToRgb } from "@/lib/rank-tag-render"
-import { ICON_TAG_GAP, ICON_X_OFFSET, getIconEntry } from "@/lib/icon-sheet-config"
+import { ICON_TAG_GAP, ICON_X_OFFSET, getCustomIconDataUrl, getIconEntry, isCustomIconId } from "@/lib/icon-sheet-config"
 
 const FONT_SHEET_PATH = "font_sheet.png"
 const ICON_SHEET_PATH = "icon_sheet.png"
@@ -44,6 +44,17 @@ function getCachedImage(publicRelativePath: string): Promise<Image> {
 
 function newCanvas(w: number, h: number): Canvas {
   return createCanvas(w, h)
+}
+
+/** Decodes a `custom:<data-url>` icon's embedded PNG data URL into a cached Image. */
+function getCachedDataUrlImage(dataUrl: string): Promise<Image> {
+  let cached = imageCache.get(dataUrl)
+  if (!cached) {
+    const base64 = dataUrl.slice(dataUrl.indexOf(",") + 1)
+    cached = loadImage(Buffer.from(base64, "base64"))
+    imageCache.set(dataUrl, cached)
+  }
+  return cached
 }
 
 /** Tints an image by (grayscale luminance) * color, matching `tintImageData` in the browser renderer. */
@@ -157,27 +168,42 @@ function drawTintedIconBackground(
   ctx.drawImage(bgCanvas, x, y)
 }
 
+interface IconGlyphSource {
+  img: Image
+  x: number
+  y: number
+  w: number
+  h: number
+}
+
+/** Resolves the sprite-sheet crop rect for a built-in icon, or the whole image for a custom one. */
+function getIconGlyphSource(iconId: string, iconSheet: Image | null, customImg: Image | null): IconGlyphSource | null {
+  if (isCustomIconId(iconId)) {
+    if (!customImg) return null
+    return { img: customImg, x: 0, y: 0, w: customImg.width, h: customImg.height }
+  }
+  if (!iconSheet) return null
+  const entry = getIconEntry(iconId)
+  if (!entry) return null
+  return { img: iconSheet, x: entry.x, y: entry.y, w: entry.w, h: entry.h }
+}
+
 function drawIconGlyph(
   ctx: import("@napi-rs/canvas").SKRSContext2D,
-  iconSheet: Image,
-  iconId: string,
+  source: IconGlyphSource,
   prefixX: number,
   prefixW: number,
   y: number,
   tileH: number,
   textTintRgb: { r: number; g: number; b: number }
 ) {
-  const entry = getIconEntry(iconId)
-  if (!entry) return
-
-  const w = entry.w
-  const h = entry.h
+  const { img, x: sx, y: sy, w, h } = source
   const drawX = prefixX + Math.floor((prefixW - w) / 2) + ICON_X_OFFSET
   const drawY = y + Math.floor((tileH - h) / 2)
 
   const shadowCanvas = newCanvas(w, h)
   const shadowCtx = shadowCanvas.getContext("2d")
-  shadowCtx.drawImage(iconSheet, entry.x, entry.y, w, h, 0, 0, w, h)
+  shadowCtx.drawImage(img, sx, sy, w, h, 0, 0, w, h)
   shadowCtx.globalCompositeOperation = "source-in"
   shadowCtx.fillStyle = "rgba(0,0,0,0.55)"
   shadowCtx.fillRect(0, 0, w, h)
@@ -185,7 +211,7 @@ function drawIconGlyph(
 
   const glyphCanvas = newCanvas(w, h)
   const glyphCtx = glyphCanvas.getContext("2d")
-  glyphCtx.drawImage(iconSheet, entry.x, entry.y, w, h, 0, 0, w, h)
+  glyphCtx.drawImage(img, sx, sy, w, h, 0, 0, w, h)
   glyphCtx.globalCompositeOperation = "source-in"
   glyphCtx.fillStyle = "#ffffff"
   glyphCtx.fillRect(0, 0, w, h)
@@ -265,8 +291,9 @@ export async function renderRankTagBuffer(config: TagConfiguration, style: RankT
   const charCount = displayText.length
   const mainW = leftW + midW * charCount + rightW
 
-  const iconEntry = config.iconId ? getIconEntry(config.iconId) : null
-  const hasIconPrefix = Boolean(iconEntry)
+  const isCustomIcon = isCustomIconId(config.iconId)
+  const iconEntry = config.iconId && !isCustomIcon ? getIconEntry(config.iconId) : null
+  const hasIconPrefix = isCustomIcon || Boolean(iconEntry)
   const iconPrefixW = hasIconPrefix ? ICON_BACKGROUND_WIDTH : 0
   const iconGap = hasIconPrefix ? ICON_TAG_GAP : 0
   const totalW = iconPrefixW + iconGap + mainW
@@ -289,12 +316,16 @@ export async function renderRankTagBuffer(config: TagConfiguration, style: RankT
   let mainX = 0
 
   if (hasIconPrefix && config.iconId) {
-    const [iconBgImg, iconSheet] = await Promise.all([
+    const [iconBgImg, iconSheet, customIconImg] = await Promise.all([
       getCachedImage(getIconBackgroundUrlServer(resolveIconStyleId(config.styleId, config.iconBgSync, config.iconStyleId))),
-      getCachedImage(ICON_SHEET_PATH),
+      isCustomIcon ? Promise.resolve(null) : getCachedImage(ICON_SHEET_PATH),
+      isCustomIcon ? getCachedDataUrlImage(getCustomIconDataUrl(config.iconId)) : Promise.resolve(null),
     ])
     drawTintedIconBackground(ctx, iconBgImg, 0, 0, iconColors)
-    drawIconGlyph(ctx, iconSheet, config.iconId, 0, ICON_BACKGROUND_WIDTH, 0, ICON_BACKGROUND_HEIGHT, iconTintRgb)
+    const glyphSource = getIconGlyphSource(config.iconId, iconSheet, customIconImg)
+    if (glyphSource) {
+      drawIconGlyph(ctx, glyphSource, 0, ICON_BACKGROUND_WIDTH, 0, ICON_BACKGROUND_HEIGHT, iconTintRgb)
+    }
     mainX = iconPrefixW + iconGap
   }
 

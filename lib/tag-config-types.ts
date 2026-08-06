@@ -37,6 +37,14 @@ export interface TagFavouriteEntry extends TagConfiguration {
   id: string
   name: string | null
   created_at: string
+  folderId: string | null
+  position: number
+}
+
+export interface TagFavouriteFolder {
+  id: string
+  name: string
+  created_at: string
 }
 
 export function getTagColorSettings(config: TagConfiguration): ColorSettings {

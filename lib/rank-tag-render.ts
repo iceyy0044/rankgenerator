@@ -8,7 +8,15 @@ import {
   ICON_BACKGROUND_WIDTH,
   resolveIconStyleId,
 } from "@/lib/rank-tag-config"
-import { getIconEntry, ICON_SHEET_URL, ICON_TAG_GAP, ICON_X_OFFSET, normalizeIconId } from "@/lib/icon-sheet-config"
+import {
+  getCustomIconDataUrl,
+  getIconEntry,
+  ICON_SHEET_URL,
+  ICON_TAG_GAP,
+  ICON_X_OFFSET,
+  isCustomIconId,
+  normalizeIconId,
+} from "@/lib/icon-sheet-config"
 
 export const FONT_SHEET_URL = "/font_sheet.png"
 
@@ -226,21 +234,36 @@ function drawTintedIconBackground(
   ctx.drawImage(bgCanvas, x, y)
 }
 
+interface IconGlyphSource {
+  img: HTMLImageElement
+  x: number
+  y: number
+  w: number
+  h: number
+}
+
+/** Resolves the sprite-sheet crop rect for a built-in icon, or the whole image for a custom one. */
+function getIconGlyphSource(iconId: string, iconSheet: HTMLImageElement | null, customImg: HTMLImageElement | null): IconGlyphSource | null {
+  if (isCustomIconId(iconId)) {
+    if (!customImg) return null
+    return { img: customImg, x: 0, y: 0, w: customImg.naturalWidth, h: customImg.naturalHeight }
+  }
+  if (!iconSheet) return null
+  const entry = getIconEntry(iconId)
+  if (!entry) return null
+  return { img: iconSheet, x: entry.x, y: entry.y, w: entry.w, h: entry.h }
+}
+
 function drawIconGlyph(
   ctx: CanvasRenderingContext2D,
-  iconSheet: HTMLImageElement,
-  iconId: string,
+  source: IconGlyphSource,
   prefixX: number,
   prefixW: number,
   y: number,
   tileH: number,
   textTintRgb: { r: number; g: number; b: number }
 ) {
-  const entry = getIconEntry(iconId)
-  if (!entry) return
-
-  const w = entry.w
-  const h = entry.h
+  const { img, x: sx, y: sy, w, h } = source
   const drawX = prefixX + Math.floor((prefixW - w) / 2) + ICON_X_OFFSET
   const drawY = y + Math.floor((tileH - h) / 2)
 
@@ -248,7 +271,7 @@ function drawIconGlyph(
   if (!shadowCtx) return
   shadowCtx.canvas.width = w
   shadowCtx.canvas.height = h
-  shadowCtx.drawImage(iconSheet, entry.x, entry.y, w, h, 0, 0, w, h)
+  shadowCtx.drawImage(img, sx, sy, w, h, 0, 0, w, h)
   shadowCtx.globalCompositeOperation = "source-in"
   shadowCtx.fillStyle = "rgba(0,0,0,0.55)"
   shadowCtx.fillRect(0, 0, w, h)
@@ -258,7 +281,7 @@ function drawIconGlyph(
   if (!glyphCtx) return
   glyphCtx.canvas.width = w
   glyphCtx.canvas.height = h
-  glyphCtx.drawImage(iconSheet, entry.x, entry.y, w, h, 0, 0, w, h)
+  glyphCtx.drawImage(img, sx, sy, w, h, 0, 0, w, h)
   glyphCtx.globalCompositeOperation = "source-in"
   glyphCtx.fillStyle = "#ffffff"
   glyphCtx.fillRect(0, 0, w, h)
@@ -348,8 +371,9 @@ export async function renderRankTag(
   const charCount = displayText.length
   const mainW = leftW + midW * charCount + rightW
 
-  const iconEntry = config.iconId ? getIconEntry(config.iconId) : null
-  const hasIconPrefix = Boolean(iconEntry)
+  const isCustomIcon = isCustomIconId(config.iconId)
+  const iconEntry = config.iconId && !isCustomIcon ? getIconEntry(config.iconId) : null
+  const hasIconPrefix = isCustomIcon || Boolean(iconEntry)
   const iconPrefixW = hasIconPrefix ? ICON_BACKGROUND_WIDTH : 0
   const iconGap = hasIconPrefix ? ICON_TAG_GAP : 0
   const totalW = iconPrefixW + iconGap + mainW
@@ -377,7 +401,7 @@ export async function renderRankTag(
   let mainX = 0
 
   let resolvedIconSheet = iconSheet
-  if (hasIconPrefix && !resolvedIconSheet) {
+  if (hasIconPrefix && !isCustomIcon && !resolvedIconSheet) {
     try {
       resolvedIconSheet = await getCachedImage(ICON_SHEET_URL)
     } catch {
@@ -385,21 +409,22 @@ export async function renderRankTag(
     }
   }
 
+  let customIconImg: HTMLImageElement | null = null
+  if (isCustomIcon && config.iconId) {
+    try {
+      customIconImg = await getCachedImage(getCustomIconDataUrl(config.iconId))
+    } catch {
+      customIconImg = null
+    }
+  }
+
   if (hasIconPrefix && config.iconId) {
     const iconStyleId = resolveIconStyleId(config.styleId, config.iconBgSync, config.iconStyleId)
     const iconBgImg = await getCachedImage(getIconBackgroundUrl(iconStyleId))
     drawTintedIconBackground(ctx, iconBgImg, 0, 0, iconColors)
-    if (resolvedIconSheet) {
-      drawIconGlyph(
-        ctx,
-        resolvedIconSheet,
-        config.iconId,
-        0,
-        ICON_BACKGROUND_WIDTH,
-        0,
-        ICON_BACKGROUND_HEIGHT,
-        iconTintRgb
-      )
+    const glyphSource = getIconGlyphSource(config.iconId, resolvedIconSheet, customIconImg)
+    if (glyphSource) {
+      drawIconGlyph(ctx, glyphSource, 0, ICON_BACKGROUND_WIDTH, 0, ICON_BACKGROUND_HEIGHT, iconTintRgb)
     }
     mainX = iconPrefixW + iconGap
   }
@@ -471,6 +496,16 @@ export function rowToFavouriteEntry(row: Record<string, unknown>) {
     id: String(row.id),
     name: row.name ? String(row.name) : null,
     created_at: String(row.created_at),
+    folderId: row.folder_id ? String(row.folder_id) : null,
+    position: Number(row.position ?? 0),
     ...rowToConfig(row),
+  }
+}
+
+export function rowToFolderEntry(row: Record<string, unknown>) {
+  return {
+    id: String(row.id),
+    name: String(row.name),
+    created_at: String(row.created_at),
   }
 }

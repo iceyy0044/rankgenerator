@@ -3,18 +3,67 @@
 import { useRef, useEffect, useState, useCallback } from "react"
 import { RANK_TAG_STYLES, DEFAULT_STYLE_ID, getIconBackgroundUrl } from "@/lib/rank-tag-config"
 import { FONT_SHEET_URL, getCachedImage, loadImage, renderRankTag } from "@/lib/rank-tag-render"
-import { type TagConfiguration, MAX_TAG_TEXT_LENGTH } from "@/lib/tag-config-types"
-import { ICON_OPTIONS, ICON_SHEET_URL, normalizeIconId } from "@/lib/icon-sheet-config"
+import { type ColorMode, type TagConfiguration, MAX_TAG_TEXT_LENGTH } from "@/lib/tag-config-types"
+import { ICON_OPTIONS, ICON_SHEET_URL, isCustomIconId, normalizeIconId } from "@/lib/icon-sheet-config"
 import { DEFAULT_GRADIENT_COLORS } from "@/lib/gradient-utils"
+import { useUndoable } from "@/lib/use-undoable"
 import TagColorControls from "@/components/dashboard/tag-color-controls"
 import SyncToggle from "@/components/dashboard/sync-toggle"
 import { saveTagToHistory, saveTagToFavourites } from "@/components/dashboard/tag-saved-panel"
 import { consumeStashedTagConfig } from "@/lib/tag-config-storage"
-import GeneratorSection, { fieldLabelClass, inputClass, selectClass } from "@/components/dashboard/generator-section"
+import GeneratorSection, {
+  fieldLabelClass,
+  inputClass,
+  selectClass,
+  SectionHistoryControls,
+} from "@/components/dashboard/generator-section"
+import TrueSizePreview from "@/components/dashboard/true-size-preview"
+import PixelIconEditor from "@/components/dashboard/pixel-icon-editor"
 
 const FONT_URL =
   "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/5x5-font-monospaced-0fGxzkqEby3jzE6VeuPUC7wYMuj5oZ.ttf"
 const FONT_FAMILY = "RankFont"
+
+interface BasicsState {
+  text: string
+  styleId: string
+}
+
+interface ColorsState {
+  colorMode: ColorMode
+  color: string
+  gradientColors: string[]
+  gradientAngle: number
+}
+
+interface IconState {
+  iconId: string | null
+  iconBgSync: boolean
+  iconStyleId: string
+  iconColorSync: boolean
+  iconColorMode: ColorMode
+  iconColor: string
+  iconGradientColors: string[]
+  iconGradientAngle: number
+}
+
+const DEFAULT_BASICS: BasicsState = { text: "ADMIN", styleId: DEFAULT_STYLE_ID }
+const DEFAULT_COLORS: ColorsState = {
+  colorMode: "solid",
+  color: "#fbbf24",
+  gradientColors: [...DEFAULT_GRADIENT_COLORS],
+  gradientAngle: 0,
+}
+const DEFAULT_ICON: IconState = {
+  iconId: null,
+  iconBgSync: true,
+  iconStyleId: "rounded",
+  iconColorSync: true,
+  iconColorMode: "solid",
+  iconColor: "#fbbf24",
+  iconGradientColors: [...DEFAULT_GRADIENT_COLORS],
+  iconGradientAngle: 0,
+}
 
 type ProductBanner = {
   id: string
@@ -86,20 +135,20 @@ export default function RankTagGenerator() {
 
   const PREVIEW_PIXEL_SCALE = 12
 
-  const [text, setText] = useState("ADMIN")
-  const [colorMode, setColorMode] = useState<"solid" | "gradient">("solid")
-  const [color, setColor] = useState("#fbbf24")
-  const [gradientColors, setGradientColors] = useState<string[]>([...DEFAULT_GRADIENT_COLORS])
-  const [gradientAngle, setGradientAngle] = useState(0)
-  const [styleId, setStyleId] = useState(DEFAULT_STYLE_ID)
-  const [iconId, setIconId] = useState<string | null>(null)
-  const [iconBgSync, setIconBgSync] = useState(true)
-  const [iconStyleId, setIconStyleId] = useState("rounded")
-  const [iconColorSync, setIconColorSync] = useState(true)
-  const [iconColorMode, setIconColorMode] = useState<"solid" | "gradient">("solid")
-  const [iconColor, setIconColor] = useState("#fbbf24")
-  const [iconGradientColors, setIconGradientColors] = useState<string[]>([...DEFAULT_GRADIENT_COLORS])
-  const [iconGradientAngle, setIconGradientAngle] = useState(0)
+  const basics = useUndoable<BasicsState>(DEFAULT_BASICS)
+  const colors = useUndoable<ColorsState>(DEFAULT_COLORS)
+  const icon = useUndoable<IconState>(DEFAULT_ICON)
+
+  const updateBasics = useCallback(
+    (patch: Partial<BasicsState>) => basics.set({ ...basics.value, ...patch }),
+    [basics]
+  )
+  const updateColors = useCallback(
+    (patch: Partial<ColorsState>) => colors.set({ ...colors.value, ...patch }),
+    [colors]
+  )
+  const updateIcon = useCallback((patch: Partial<IconState>) => icon.set({ ...icon.value, ...patch }), [icon])
+
   const [fontLoaded, setFontLoaded] = useState(false)
   const [fontSheet, setFontSheet] = useState<HTMLImageElement | null>(null)
   const [iconSheet, setIconSheet] = useState<HTMLImageElement | null>(null)
@@ -107,27 +156,29 @@ export default function RankTagGenerator() {
   const [imagesLoaded, setImagesLoaded] = useState(false)
   const [downloading, setDownloading] = useState(false)
   const [savingFav, setSavingFav] = useState(false)
+  const [showTrueSize, setShowTrueSize] = useState(false)
+  const [iconEditorOpen, setIconEditorOpen] = useState(false)
 
-  const currentStyle = RANK_TAG_STYLES.find((s) => s.id === styleId) ?? RANK_TAG_STYLES[0]
+  const currentStyle = RANK_TAG_STYLES.find((s) => s.id === basics.value.styleId) ?? RANK_TAG_STYLES[0]
 
   const currentConfig: TagConfiguration = {
-    text,
-    styleId,
-    colorMode,
-    color,
-    gradientColors,
-    gradientAngle,
-    iconId,
-    iconBgSync,
-    iconStyleId,
-    iconColorSync,
-    iconColorMode,
-    iconColor,
-    iconGradientColors,
-    iconGradientAngle,
+    text: basics.value.text,
+    styleId: basics.value.styleId,
+    colorMode: colors.value.colorMode,
+    color: colors.value.color,
+    gradientColors: colors.value.gradientColors,
+    gradientAngle: colors.value.gradientAngle,
+    iconId: icon.value.iconId,
+    iconBgSync: icon.value.iconBgSync,
+    iconStyleId: icon.value.iconStyleId,
+    iconColorSync: icon.value.iconColorSync,
+    iconColorMode: icon.value.iconColorMode,
+    iconColor: icon.value.iconColor,
+    iconGradientColors: icon.value.iconGradientColors,
+    iconGradientAngle: icon.value.iconGradientAngle,
   }
 
-  const resolvedIconStyleId = iconBgSync ? styleId : iconStyleId
+  const resolvedIconStyleId = icon.value.iconBgSync ? basics.value.styleId : icon.value.iconStyleId
 
   useEffect(() => {
     if (typeof window === "undefined") return
@@ -167,7 +218,7 @@ export default function RankTagGenerator() {
 
   useEffect(() => {
     setImagesLoaded(false)
-    const iconBgUrl = iconId ? getIconBackgroundUrl(resolvedIconStyleId) : null
+    const iconBgUrl = icon.value.iconId ? getIconBackgroundUrl(resolvedIconStyleId) : null
     const loads = [
       getCachedImage(currentStyle.leftUrl),
       getCachedImage(currentStyle.middleUrl),
@@ -175,24 +226,34 @@ export default function RankTagGenerator() {
     ]
     if (iconBgUrl) loads.push(getCachedImage(iconBgUrl))
     Promise.all(loads).then(() => setImagesLoaded(true))
-  }, [currentStyle, iconId, resolvedIconStyleId])
+  }, [currentStyle, icon.value.iconId, resolvedIconStyleId])
 
-  const loadConfig = useCallback((config: TagConfiguration) => {
-    setText(config.text)
-    setStyleId(config.styleId)
-    setColorMode(config.colorMode)
-    setColor(config.color)
-    setGradientColors([...config.gradientColors])
-    setGradientAngle(config.gradientAngle)
-    setIconId(normalizeIconId(config.iconId))
-    setIconBgSync(config.iconBgSync)
-    setIconStyleId(config.iconStyleId)
-    setIconColorSync(config.iconColorSync)
-    setIconColorMode(config.iconColorMode)
-    setIconColor(config.iconColor)
-    setIconGradientColors([...config.iconGradientColors])
-    setIconGradientAngle(config.iconGradientAngle)
-  }, [])
+  const { load: basicsLoad } = basics
+  const { load: colorsLoad } = colors
+  const { load: iconLoad } = icon
+
+  const loadConfig = useCallback(
+    (config: TagConfiguration) => {
+      basicsLoad({ text: config.text, styleId: config.styleId })
+      colorsLoad({
+        colorMode: config.colorMode,
+        color: config.color,
+        gradientColors: [...config.gradientColors],
+        gradientAngle: config.gradientAngle,
+      })
+      iconLoad({
+        iconId: normalizeIconId(config.iconId),
+        iconBgSync: config.iconBgSync,
+        iconStyleId: config.iconStyleId,
+        iconColorSync: config.iconColorSync,
+        iconColorMode: config.iconColorMode,
+        iconColor: config.iconColor,
+        iconGradientColors: [...config.iconGradientColors],
+        iconGradientAngle: config.iconGradientAngle,
+      })
+    },
+    [basicsLoad, colorsLoad, iconLoad]
+  )
 
   useEffect(() => {
     const stashed = consumeStashedTagConfig()
@@ -235,6 +296,7 @@ export default function RankTagGenerator() {
     })
 
     const display = canvasRef.current
+    if (!display) return
     const displayW = off.width * PREVIEW_PIXEL_SCALE
     const displayH = off.height * PREVIEW_PIXEL_SCALE
 
@@ -248,7 +310,18 @@ export default function RankTagGenerator() {
 
     previewDimensionsRef.current = { w: displayW, h: displayH }
     fitPreviewToContainer()
-  }, [color, colorMode, currentConfig, currentStyle, fitPreviewToContainer, fontLoaded, fontSheet, gradientAngle, gradientColors, iconBgSync, iconColor, iconColorMode, iconColorSync, iconGradientAngle, iconGradientColors, iconId, iconSheet, iconSheetLoaded, iconStyleId, imagesLoaded, resolvedIconStyleId])
+  }, [
+    basics.value,
+    colors.value,
+    icon.value,
+    currentStyle,
+    fitPreviewToContainer,
+    fontLoaded,
+    fontSheet,
+    iconSheet,
+    iconSheetLoaded,
+    imagesLoaded,
+  ])
 
   useEffect(() => {
     renderTag()
@@ -265,7 +338,7 @@ export default function RankTagGenerator() {
     }
 
     const link = document.createElement("a")
-    link.download = `${text || "rank"}.png`
+    link.download = `${basics.value.text || "rank"}.png`
     link.href = off.toDataURL("image/png")
     link.click()
 
@@ -296,14 +369,27 @@ export default function RankTagGenerator() {
           {/* Full-width preview — rank tags are wide & short, not suited to a side column */}
           <div className="rounded-xl border border-[var(--app-border)] bg-[var(--app-section-bg)] p-4 sm:p-5">
             <div className="flex flex-col gap-3">
-              <div>
-                <h3 className="text-sm font-semibold text-[var(--app-text)] tracking-tight">Live preview</h3>
-                <p className="text-xs text-[var(--app-text-muted)] mt-0.5">Updates as you change settings.</p>
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <h3 className="text-sm font-semibold text-[var(--app-text)] tracking-tight">Live preview</h3>
+                  <p className="text-xs text-[var(--app-text-muted)] mt-0.5">Updates as you change settings.</p>
+                </div>
+                <button
+                  onClick={() => setShowTrueSize((v) => !v)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all shrink-0 ${
+                    showTrueSize
+                      ? "bg-[var(--app-brand)] text-black"
+                      : "bg-[var(--app-input-bg)] text-[var(--app-text)] hover:bg-[var(--app-surface-2)]"
+                  }`}
+                >
+                  {showTrueSize ? "Editor preview" : "True size preview"}
+                </button>
               </div>
               <div className="flex flex-col items-center gap-3">
                 <div
                   ref={previewContainerRef}
                   className="w-full flex items-center justify-center rounded-xl bg-[var(--app-preview-bg)] border border-[var(--app-border)] py-4 px-4 overflow-hidden min-h-[5.5rem]"
+                  style={{ display: showTrueSize ? "none" : "flex" }}
                 >
                   {!fontLoaded || !imagesLoaded || !fontSheet ? (
                     <div className="flex items-center gap-2 text-[var(--app-text-cream)] text-sm py-2">
@@ -314,6 +400,9 @@ export default function RankTagGenerator() {
                     <canvas ref={canvasRef} className="rounded-sm block" style={{ imageRendering: "pixelated" }} />
                   )}
                 </div>
+                {showTrueSize && fontSheet && (
+                  <TrueSizePreview config={currentConfig} style={currentStyle} fontSheet={fontSheet} iconSheet={iconSheet} />
+                )}
                 <div className="flex flex-row flex-wrap items-center justify-center gap-2.5">
                   <button
                     onClick={handleDownload}
@@ -345,6 +434,15 @@ export default function RankTagGenerator() {
                 title="Tag basics"
                 description="Text and template style for your rank tag."
                 icon="mdi:format-text"
+                actions={
+                  <SectionHistoryControls
+                    onUndo={basics.undo}
+                    onRedo={basics.redo}
+                    onReset={() => basics.set(DEFAULT_BASICS)}
+                    canUndo={basics.canUndo}
+                    canRedo={basics.canRedo}
+                  />
+                }
               >
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="flex flex-col gap-1.5">
@@ -352,17 +450,17 @@ export default function RankTagGenerator() {
                     <div className="relative">
                       <input
                         type="text"
-                        value={text}
+                        value={basics.value.text}
                         onChange={(e) => {
                           const filtered = e.target.value.toUpperCase().replace(/[^A-Z0-9_\/\.\- +!]/g, "").slice(0, MAX_TAG_TEXT_LENGTH)
-                          setText(filtered)
+                          updateBasics({ text: filtered })
                         }}
                         placeholder="ADMIN"
                         className={`${inputClass} pr-12`}
                         maxLength={MAX_TAG_TEXT_LENGTH}
                       />
                       <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
-                        <span className="text-xs text-[var(--app-text-muted)]">{text.length}/{MAX_TAG_TEXT_LENGTH}</span>
+                        <span className="text-xs text-[var(--app-text-muted)]">{basics.value.text.length}/{MAX_TAG_TEXT_LENGTH}</span>
                       </div>
                     </div>
                     <p className="text-[11px] text-[var(--app-text-muted)] leading-snug">
@@ -373,7 +471,11 @@ export default function RankTagGenerator() {
                   <div className="flex flex-col gap-1.5">
                     <label className={fieldLabelClass}>Template Style</label>
                     <div className="relative">
-                      <select value={styleId} onChange={(e) => setStyleId(e.target.value)} className={selectClass}>
+                      <select
+                        value={basics.value.styleId}
+                        onChange={(e) => updateBasics({ styleId: e.target.value })}
+                        className={selectClass}
+                      >
                         {RANK_TAG_STYLES.map((s) => (
                           <option key={s.id} value={s.id}>
                             {s.name}
@@ -391,21 +493,30 @@ export default function RankTagGenerator() {
               <GeneratorSection
                 title="Rank tag colors"
                 description={
-                  iconId && iconColorSync
+                  icon.value.iconId && icon.value.iconColorSync
                     ? "These colors apply to both the rank tag and prefix icon."
                     : "Background tint or gradient for the main rank tag."
                 }
                 icon="mdi:palette"
+                actions={
+                  <SectionHistoryControls
+                    onUndo={colors.undo}
+                    onRedo={colors.redo}
+                    onReset={() => colors.set(DEFAULT_COLORS)}
+                    canUndo={colors.canUndo}
+                    canRedo={colors.canRedo}
+                  />
+                }
               >
                 <TagColorControls
-                  colorMode={colorMode}
-                  color={color}
-                  gradientColors={gradientColors}
-                  gradientAngle={gradientAngle}
-                  onColorModeChange={setColorMode}
-                  onColorChange={setColor}
-                  onGradientColorsChange={setGradientColors}
-                  onGradientAngleChange={setGradientAngle}
+                  colorMode={colors.value.colorMode}
+                  color={colors.value.color}
+                  gradientColors={colors.value.gradientColors}
+                  gradientAngle={colors.value.gradientAngle}
+                  onColorModeChange={(m) => updateColors({ colorMode: m })}
+                  onColorChange={(c) => updateColors({ color: c })}
+                  onGradientColorsChange={(g) => updateColors({ gradientColors: g })}
+                  onGradientAngleChange={(a) => updateColors({ gradientAngle: a })}
                 />
               </GeneratorSection>
 
@@ -413,60 +524,82 @@ export default function RankTagGenerator() {
                 title="Prefix icon"
                 description="Optional icon shown before the rank tag."
                 icon="mdi:star-four-points"
+                actions={
+                  <SectionHistoryControls
+                    onUndo={icon.undo}
+                    onRedo={icon.redo}
+                    onReset={() => icon.set(DEFAULT_ICON)}
+                    canUndo={icon.canUndo}
+                    canRedo={icon.canRedo}
+                  />
+                }
               >
                 <div className="flex flex-col gap-1.5">
                   <label className={fieldLabelClass}>Icon</label>
-                  <div className="relative">
-                    <select
-                      value={iconId ?? ""}
-                      onChange={(e) => setIconId(e.target.value || null)}
-                      className={selectClass}
-                    >
-                      <option value="">None</option>
-                      {ICON_OPTIONS.map((icon) => (
-                        <option key={icon.id} value={icon.id}>
-                          {icon.name}
-                        </option>
-                      ))}
-                    </select>
-                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3">
-                      <span className="iconify text-[var(--app-text-muted)]" data-icon="mdi:chevron-down" />
+                  <div className="flex items-center gap-2">
+                    <div className="relative flex-1">
+                      <select
+                        value={icon.value.iconId ?? ""}
+                        onChange={(e) => updateIcon({ iconId: e.target.value || null })}
+                        className={selectClass}
+                      >
+                        <option value="">None</option>
+                        {isCustomIconId(icon.value.iconId) && <option value={icon.value.iconId}>Custom icon</option>}
+                        {ICON_OPTIONS.map((iconOption) => (
+                          <option key={iconOption.id} value={iconOption.id}>
+                            {iconOption.name}
+                          </option>
+                        ))}
+                      </select>
+                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3">
+                        <span className="iconify text-[var(--app-text-muted)]" data-icon="mdi:chevron-down" />
+                      </div>
                     </div>
+                    <button
+                      onClick={() => setIconEditorOpen(true)}
+                      title={isCustomIconId(icon.value.iconId) ? "Edit custom icon" : "Draw a custom icon"}
+                      className="shrink-0 flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-medium
+                        bg-[var(--app-input-bg)] text-[var(--app-text)] border border-[var(--app-border)]
+                        hover:bg-[var(--app-surface-2)] hover:border-[var(--app-brand)] transition-all"
+                    >
+                      <span className="iconify w-4 h-4" data-icon="mdi:brush" />
+                      Draw
+                    </button>
                   </div>
                 </div>
 
-                {iconId && (
+                {icon.value.iconId && (
                   <div className="flex flex-col gap-4 pt-1 border-t border-[rgba(120,80,10,0.12)]">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <SyncToggle
                         label="Sync Icon Background"
-                        checked={iconBgSync}
-                        onChange={setIconBgSync}
+                        checked={icon.value.iconBgSync}
+                        onChange={(v) => updateIcon({ iconBgSync: v })}
                         description={
-                          iconBgSync
+                          icon.value.iconBgSync
                             ? "Uses the same template as the rank tag."
                             : "Pick a different icon box style."
                         }
                       />
                       <SyncToggle
                         label="Sync Icon Colors"
-                        checked={iconColorSync}
-                        onChange={setIconColorSync}
+                        checked={icon.value.iconColorSync}
+                        onChange={(v) => updateIcon({ iconColorSync: v })}
                         description={
-                          iconColorSync
+                          icon.value.iconColorSync
                             ? "Uses rank tag colors for the icon."
                             : "Set icon colors separately below."
                         }
                       />
                     </div>
 
-                    {!iconBgSync && (
+                    {!icon.value.iconBgSync && (
                       <div className="flex flex-col gap-1.5 max-w-md">
                         <label className={fieldLabelClass}>Icon Background Style</label>
                         <div className="relative">
                           <select
-                            value={iconStyleId}
-                            onChange={(e) => setIconStyleId(e.target.value)}
+                            value={icon.value.iconStyleId}
+                            onChange={(e) => updateIcon({ iconStyleId: e.target.value })}
                             className={selectClass}
                           >
                             {RANK_TAG_STYLES.map((s) => (
@@ -482,19 +615,19 @@ export default function RankTagGenerator() {
                       </div>
                     )}
 
-                    {!iconColorSync && (
+                    {!icon.value.iconColorSync && (
                       <div className="rounded-lg border border-[var(--app-border)] bg-[var(--app-input-bg)]/50 p-4">
                         <p className={fieldLabelClass}>Icon colors</p>
                         <div className="mt-3">
                           <TagColorControls
-                            colorMode={iconColorMode}
-                            color={iconColor}
-                            gradientColors={iconGradientColors}
-                            gradientAngle={iconGradientAngle}
-                            onColorModeChange={setIconColorMode}
-                            onColorChange={setIconColor}
-                            onGradientColorsChange={setIconGradientColors}
-                            onGradientAngleChange={setIconGradientAngle}
+                            colorMode={icon.value.iconColorMode}
+                            color={icon.value.iconColor}
+                            gradientColors={icon.value.iconGradientColors}
+                            gradientAngle={icon.value.iconGradientAngle}
+                            onColorModeChange={(m) => updateIcon({ iconColorMode: m })}
+                            onColorChange={(c) => updateIcon({ iconColor: c })}
+                            onGradientColorsChange={(g) => updateIcon({ iconGradientColors: g })}
+                            onGradientAngleChange={(a) => updateIcon({ iconGradientAngle: a })}
                             solidLabel="Icon Background Tint"
                           />
                         </div>
@@ -505,6 +638,13 @@ export default function RankTagGenerator() {
               </GeneratorSection>
           </div>
         </div>
+
+        <PixelIconEditor
+          open={iconEditorOpen}
+          onOpenChange={setIconEditorOpen}
+          initialIconId={icon.value.iconId}
+          onSave={(iconId) => updateIcon({ iconId })}
+        />
 
         <div className="glass rounded-2xl p-4 sm:p-6 flex flex-col gap-4">
           <div>
