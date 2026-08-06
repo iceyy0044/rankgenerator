@@ -341,10 +341,10 @@ export default function PixelIconEditor({ open, onOpenChange, initialIconId, onS
                 gridTemplateColumns: `repeat(${GRID_SIZE}, ${CELL_PX}px)`,
                 gridTemplateRows: `repeat(${GRID_SIZE}, ${CELL_PX}px)`,
                 backgroundImage:
-                  "linear-gradient(45deg, #808080 25%, transparent 25%), linear-gradient(-45deg, #808080 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #808080 75%), linear-gradient(-45deg, transparent 75%, #808080 75%)",
+                  "linear-gradient(45deg, #4a4a4a 25%, transparent 25%), linear-gradient(-45deg, #4a4a4a 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #4a4a4a 75%), linear-gradient(-45deg, transparent 75%, #4a4a4a 75%)",
                 backgroundSize: `${CELL_PX / 2}px ${CELL_PX / 2}px`,
                 backgroundPosition: `0 0, 0 ${CELL_PX / 4}px, ${CELL_PX / 4}px -${CELL_PX / 4}px, -${CELL_PX / 4}px 0px`,
-                backgroundColor: "#c0c0c0",
+                backgroundColor: "#2e2e2e",
               }}
               onPointerLeave={() => setPainting(false)}
             >
@@ -461,8 +461,8 @@ export default function PixelIconEditor({ open, onOpenChange, initialIconId, onS
                     key={opt.id}
                     onClick={() => loadIconIntoDraw(opt.id)}
                     title={`Base a new icon off ${opt.name}`}
-                    className="flex items-center justify-center aspect-square rounded-lg bg-[var(--app-surface)] border border-[var(--app-border)]
-                      hover:border-[var(--app-brand)] hover:bg-[var(--app-surface-2)] transition-all"
+                    className="flex items-center justify-center aspect-square rounded-lg bg-[#1a1a1a] border border-[var(--app-border)]
+                      hover:border-[var(--app-brand)] transition-all"
                   >
                     <div
                       style={{
@@ -595,7 +595,7 @@ function IconList<T extends CustomIconEntry>({
           key={item.id}
           className="flex items-center gap-3 rounded-xl bg-[var(--app-surface)] border border-[var(--app-border)] p-2"
         >
-          <div className="shrink-0 w-9 h-9 rounded-lg bg-[var(--app-preview-bg)] border border-[var(--app-border)] flex items-center justify-center overflow-hidden">
+          <div className="shrink-0 w-9 h-9 rounded-lg bg-[#1a1a1a] border border-[var(--app-border)] flex items-center justify-center overflow-hidden">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={item.imageData} alt={item.name} className="w-6 h-6" style={{ imageRendering: "pixelated" }} />
           </div>
