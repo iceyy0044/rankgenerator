@@ -1,6 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
+import { Icon } from "@iconify/react"
 
 interface GeneratorSectionProps {
   title: string
@@ -26,9 +27,9 @@ export default function GeneratorSection({
       <div className="flex items-start justify-between gap-2.5">
         <div className="flex items-start gap-2.5 min-w-0">
           {icon && (
-            <span
-              className="iconify w-5 h-5 text-[var(--app-text-gold)] shrink-0 mt-0.5"
-              data-icon={icon}
+            <Icon
+              icon={icon}
+              className="w-5 h-5 text-[var(--app-text-gold)] shrink-0 mt-0.5"
             />
           )}
           <div className="min-w-0">
@@ -65,7 +66,7 @@ export function SectionHistoryControls({
         className="p-1.5 rounded-lg text-[var(--app-text-muted)] hover:text-[var(--app-text)] hover:bg-[var(--app-input-bg)]
           disabled:opacity-30 disabled:pointer-events-none transition-all"
       >
-        <span className="iconify w-4 h-4" data-icon="mdi:undo" />
+        <Icon icon="mdi:undo" className="w-4 h-4" />
       </button>
       <button
         onClick={onRedo}
@@ -74,14 +75,14 @@ export function SectionHistoryControls({
         className="p-1.5 rounded-lg text-[var(--app-text-muted)] hover:text-[var(--app-text)] hover:bg-[var(--app-input-bg)]
           disabled:opacity-30 disabled:pointer-events-none transition-all"
       >
-        <span className="iconify w-4 h-4" data-icon="mdi:redo" />
+        <Icon icon="mdi:redo" className="w-4 h-4" />
       </button>
       <button
         onClick={onReset}
         title="Reset to default"
         className="p-1.5 rounded-lg text-[var(--app-text-muted)] hover:text-red-400 hover:bg-[var(--app-input-bg)] transition-all"
       >
-        <span className="iconify w-4 h-4" data-icon="mdi:restore" />
+        <Icon icon="mdi:restore" className="w-4 h-4" />
       </button>
     </>
   )

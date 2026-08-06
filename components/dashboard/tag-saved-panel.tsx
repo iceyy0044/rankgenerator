@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { Icon } from "@iconify/react"
 import { getIconDisplayName } from "@/lib/icon-sheet-config"
 import { RANK_TAG_STYLES } from "@/lib/rank-tag-config"
 import type {
@@ -369,9 +370,9 @@ export default function TagSavedPanel({ onLoadConfig, refreshKey = 0, fullPage =
         </div>
 
         <div className="relative flex-1 sm:max-w-xs sm:ml-auto">
-          <span
-            className="iconify w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[var(--app-text-muted)]"
-            data-icon="mdi:magnify"
+          <Icon
+            icon="mdi:magnify"
+            className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[var(--app-text-muted)]"
           />
           <input
             type="text"
@@ -388,7 +389,7 @@ export default function TagSavedPanel({ onLoadConfig, refreshKey = 0, fullPage =
               className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded text-[var(--app-text-muted)] hover:text-[var(--app-text)]"
               title="Clear search"
             >
-              <span className="iconify w-3.5 h-3.5" data-icon="mdi:close" />
+              <Icon icon="mdi:close" className="w-3.5 h-3.5" />
             </button>
           )}
         </div>
@@ -445,7 +446,7 @@ export default function TagSavedPanel({ onLoadConfig, refreshKey = 0, fullPage =
                   setRenameFolderValue(folder.name)
                 }}
               >
-                <span className="iconify w-3.5 h-3.5" data-icon="mdi:folder-outline" />
+                <Icon icon="mdi:folder-outline" className="w-3.5 h-3.5" />
                 {folder.name}
                 <button
                   onClick={(e) => {
@@ -455,7 +456,7 @@ export default function TagSavedPanel({ onLoadConfig, refreshKey = 0, fullPage =
                   title="Delete folder"
                   className="ml-0.5 p-0.5 rounded opacity-0 group-hover:opacity-70 hover:!opacity-100 transition-opacity"
                 >
-                  <span className="iconify w-3 h-3" data-icon="mdi:close" />
+                  <Icon icon="mdi:close" className="w-3 h-3" />
                 </button>
               </span>
             )
@@ -480,7 +481,7 @@ export default function TagSavedPanel({ onLoadConfig, refreshKey = 0, fullPage =
               className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium
                 bg-[var(--app-input-bg)] text-[var(--app-text-muted)] hover:text-[var(--app-text)] hover:bg-[var(--app-surface-2)] transition-all"
             >
-              <span className="iconify w-3.5 h-3.5" data-icon="mdi:folder-plus-outline" />
+              <Icon icon="mdi:folder-plus-outline" className="w-3.5 h-3.5" />
               New folder
             </button>
           )}
@@ -491,7 +492,7 @@ export default function TagSavedPanel({ onLoadConfig, refreshKey = 0, fullPage =
 
       {loading ? (
         <div className="flex items-center gap-2 text-[var(--app-text-cream)] text-sm py-4">
-          <span className="iconify w-4 h-4 animate-spin text-[var(--app-brand)]" data-icon="mdi:loading" />
+          <Icon icon="mdi:loading" className="w-4 h-4 animate-spin text-[var(--app-brand)]" />
           Loading...
         </div>
       ) : tab === "history" ? (
@@ -523,7 +524,7 @@ export default function TagSavedPanel({ onLoadConfig, refreshKey = 0, fullPage =
                       bg-[var(--app-input-bg)] text-[var(--app-text)] border border-[var(--app-border)]
                       hover:bg-[var(--app-surface-2)] hover:border-[var(--app-brand)] transition-all"
                   >
-                    <span className="iconify w-3.5 h-3.5" data-icon="mdi:pencil" />
+                    <Icon icon="mdi:pencil" className="w-3.5 h-3.5" />
                     Load
                   </button>
                   <button
@@ -532,14 +533,14 @@ export default function TagSavedPanel({ onLoadConfig, refreshKey = 0, fullPage =
                     title="Add to favourites"
                     className="p-2 rounded-lg text-[var(--app-text-muted)] hover:text-[var(--app-brand)] hover:bg-[var(--app-input-bg)] transition-all"
                   >
-                    <span className="iconify w-4 h-4" data-icon="mdi:star-outline" />
+                    <Icon icon="mdi:star-outline" className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => setPendingDelete({ tab: "history", id: item.id, label: entryLabel(item) })}
                     title="Remove from history"
                     className="p-2 rounded-lg text-[var(--app-text-muted)] hover:text-red-400 hover:bg-[var(--app-input-bg)] transition-all"
                   >
-                    <span className="iconify w-4 h-4" data-icon="mdi:trash-can-outline" />
+                    <Icon icon="mdi:trash-can-outline" className="w-4 h-4" />
                   </button>
                 </div>
               </li>
@@ -549,7 +550,7 @@ export default function TagSavedPanel({ onLoadConfig, refreshKey = 0, fullPage =
       ) : tab === "community" ? (
         loadingCommunity ? (
           <div className="flex items-center gap-2 text-[var(--app-text-cream)] text-sm py-4">
-            <span className="iconify w-4 h-4 animate-spin text-[var(--app-brand)]" data-icon="mdi:loading" />
+            <Icon icon="mdi:loading" className="w-4 h-4 animate-spin text-[var(--app-brand)]" />
             Loading...
           </div>
         ) : communityTags.length === 0 ? (
@@ -579,7 +580,7 @@ export default function TagSavedPanel({ onLoadConfig, refreshKey = 0, fullPage =
                     bg-[var(--app-input-bg)] text-[var(--app-text)] border border-[var(--app-border)]
                     hover:bg-[var(--app-surface-2)] hover:border-[var(--app-brand)] transition-all"
                 >
-                  <span className="iconify w-3.5 h-3.5" data-icon="mdi:download" />
+                  <Icon icon="mdi:download" className="w-3.5 h-3.5" />
                   Use
                 </button>
               </li>
@@ -618,11 +619,9 @@ export default function TagSavedPanel({ onLoadConfig, refreshKey = 0, fullPage =
                 dragFavId === item.id ? "opacity-40" : ""
               } ${dragOverFavId === item.id ? "ring-1 ring-[var(--app-brand)]" : ""}`}
             >
-              <span
-                className="iconify w-4 h-4 text-[var(--app-text-muted)] shrink-0 cursor-grab active:cursor-grabbing"
-                data-icon="mdi:drag-vertical"
-                title="Drag to reorder"
-              />
+              <span title="Drag to reorder" className="shrink-0 cursor-grab active:cursor-grabbing">
+                <Icon icon="mdi:drag-vertical" className="w-4 h-4 text-[var(--app-text-muted)]" />
+              </span>
               <div className="shrink-0 rounded-lg bg-[var(--app-preview-bg)] border border-[var(--app-border)] p-1.5 flex items-center justify-center">
                 <TagThumbnail config={item} scale={3} />
               </div>
@@ -671,7 +670,7 @@ export default function TagSavedPanel({ onLoadConfig, refreshKey = 0, fullPage =
                     bg-[var(--app-input-bg)] text-[var(--app-text)] border border-[var(--app-border)]
                     hover:bg-[var(--app-surface-2)] hover:border-[var(--app-brand)] transition-all"
                 >
-                  <span className="iconify w-3.5 h-3.5" data-icon="mdi:pencil" />
+                  <Icon icon="mdi:pencil" className="w-3.5 h-3.5" />
                   Load
                 </button>
                 <button
@@ -682,7 +681,7 @@ export default function TagSavedPanel({ onLoadConfig, refreshKey = 0, fullPage =
                   title="Rename"
                   className="p-2 rounded-lg text-[var(--app-text-muted)] hover:text-[var(--app-text)] hover:bg-[var(--app-input-bg)] transition-all"
                 >
-                  <span className="iconify w-4 h-4" data-icon="mdi:rename-box" />
+                  <Icon icon="mdi:rename-box" className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => duplicateFavourite(item)}
@@ -690,7 +689,7 @@ export default function TagSavedPanel({ onLoadConfig, refreshKey = 0, fullPage =
                   title="Duplicate"
                   className="p-2 rounded-lg text-[var(--app-text-muted)] hover:text-[var(--app-text)] hover:bg-[var(--app-input-bg)] transition-all"
                 >
-                  <span className="iconify w-4 h-4" data-icon="mdi:content-copy" />
+                  <Icon icon="mdi:content-copy" className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => togglePublic(item)}
@@ -701,7 +700,7 @@ export default function TagSavedPanel({ onLoadConfig, refreshKey = 0, fullPage =
                       : "text-[var(--app-text-muted)] hover:text-[var(--app-text)] hover:bg-[var(--app-input-bg)]"
                   }`}
                 >
-                  <span className="iconify w-4 h-4" data-icon={item.isPublic ? "mdi:earth" : "mdi:lock-outline"} />
+                  <Icon icon={item.isPublic ? "mdi:earth" : "mdi:lock-outline"} className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() =>
@@ -710,7 +709,7 @@ export default function TagSavedPanel({ onLoadConfig, refreshKey = 0, fullPage =
                   title="Remove favourite"
                   className="p-2 rounded-lg text-[var(--app-text-muted)] hover:text-red-400 hover:bg-[var(--app-input-bg)] transition-all"
                 >
-                  <span className="iconify w-4 h-4" data-icon="mdi:trash-can-outline" />
+                  <Icon icon="mdi:trash-can-outline" className="w-4 h-4" />
                 </button>
               </div>
             </li>

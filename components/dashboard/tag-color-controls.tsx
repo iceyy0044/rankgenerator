@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { Icon } from "@iconify/react"
 import type { ColorMode } from "@/lib/tag-config-types"
 import {
   MAX_GRADIENT_COLORS,
@@ -33,7 +34,7 @@ function RandomColorButton({ onClick, title = "Random color" }: { onClick: () =>
         overflow-hidden transition-all duration-300 hover:border-yellow-400/50 shrink-0"
     >
       <div className="absolute inset-0 bg-gradient-to-br from-yellow-400/20 via-yellow-600/20 to-yellow-800/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-      <span className="iconify w-4 h-4 text-yellow-400/70 group-hover:text-white transition-colors duration-300 z-10" data-icon="ion:sparkles-sharp" />
+      <Icon icon="ion:sparkles-sharp" className="w-4 h-4 text-yellow-400/70 group-hover:text-white transition-colors duration-300 z-10" />
     </button>
   )
 }
@@ -192,11 +193,9 @@ export default function TagColorControls({
                     dragIndex === index ? "opacity-40" : ""
                   } ${dragOverIndex === index ? "ring-1 ring-[var(--app-brand)]" : ""}`}
                 >
-                  <span
-                    className="iconify w-4 h-4 text-[var(--app-text-muted)] shrink-0 cursor-grab active:cursor-grabbing"
-                    data-icon="mdi:drag-vertical"
-                    title="Drag to reorder"
-                  />
+                  <span title="Drag to reorder" className="shrink-0 cursor-grab active:cursor-grabbing">
+                    <Icon icon="mdi:drag-vertical" className="w-4 h-4 text-[var(--app-text-muted)]" />
+                  </span>
                   <span className="text-[10px] text-[var(--app-text-muted)] w-4 shrink-0">{index + 1}</span>
                   <input
                     type="color"
@@ -226,7 +225,7 @@ export default function TagColorControls({
                       title="Remove color"
                       className="p-1.5 rounded-lg text-[var(--app-text-muted)] hover:text-red-400 hover:bg-[var(--app-input-bg)] transition-all shrink-0"
                     >
-                      <span className="iconify w-4 h-4" data-icon="mdi:close" />
+                      <Icon icon="mdi:close" className="w-4 h-4" />
                     </button>
                   )}
                 </div>

@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/client"
 import { useState } from "react"
+import { Icon } from "@iconify/react"
 
 export default function LoginPageClient() {
   const [loading, setLoading] = useState(false)
@@ -68,18 +69,12 @@ export default function LoginPageClient() {
             >
               {loading ? (
                 <>
-                  <span
-                    className="iconify w-5 h-5 animate-spin"
-                    data-icon="mdi:loading"
-                  />
+                  <Icon icon="mdi:loading" className="w-5 h-5 animate-spin" />
                   <span>Signing in...</span>
                 </>
               ) : (
                 <>
-                  <span
-                    className="iconify w-6 h-6"
-                    data-icon="ic:baseline-discord"
-                  />
+                  <Icon icon="ic:baseline-discord" className="w-6 h-6" />
                   <span>Sign in with Discord</span>
                 </>
               )}

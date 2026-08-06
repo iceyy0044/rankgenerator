@@ -1,6 +1,7 @@
 "use client"
 
 import { useRef, useEffect, useState, useCallback } from "react"
+import { Icon } from "@iconify/react"
 import { RANK_TAG_STYLES, DEFAULT_STYLE_ID, getIconBackgroundUrl } from "@/lib/rank-tag-config"
 import { FONT_SHEET_URL, getCachedImage, loadImage, renderRankTag } from "@/lib/rank-tag-render"
 import { type ColorMode, type TagConfiguration, MAX_TAG_TEXT_LENGTH } from "@/lib/tag-config-types"
@@ -179,18 +180,6 @@ export default function RankTagGenerator() {
   }
 
   const resolvedIconStyleId = icon.value.iconBgSync ? basics.value.styleId : icon.value.iconStyleId
-
-  useEffect(() => {
-    if (typeof window === "undefined") return
-    if ((window as Window & { Iconify?: unknown }).Iconify) return
-    const script = document.createElement("script")
-    script.src = "https://code.iconify.design/2/2.2.1/iconify.min.js"
-    script.async = true
-    document.head.appendChild(script)
-    return () => {
-      document.head.removeChild(script)
-    }
-  }, [])
 
   useEffect(() => {
     const fontFace = new FontFace(FONT_FAMILY, `url(${FONT_URL})`)
@@ -393,7 +382,7 @@ export default function RankTagGenerator() {
                 >
                   {!fontLoaded || !imagesLoaded || !fontSheet ? (
                     <div className="flex items-center gap-2 text-[var(--app-text-cream)] text-sm py-2">
-                      <span className="iconify w-4 h-4 animate-spin text-[var(--app-brand)]" data-icon="mdi:loading" />
+                      <Icon icon="mdi:loading" className="w-4 h-4 animate-spin text-[var(--app-brand)]" />
                       Loading assets...
                     </div>
                   ) : (
@@ -411,7 +400,7 @@ export default function RankTagGenerator() {
                       bg-[var(--app-brand)] hover:bg-[var(--app-brand-hover)] disabled:opacity-50 disabled:cursor-not-allowed
                       transition-all duration-150 shadow-[0_4px_14px_rgba(201,162,39,0.2)] active:scale-[0.98]"
                   >
-                    <span className="iconify w-4 h-4" data-icon="mdi:download" />
+                    <Icon icon="mdi:download" className="w-4 h-4" />
                     {downloading ? "Exporting..." : "Download"}
                   </button>
                   <button
@@ -421,7 +410,7 @@ export default function RankTagGenerator() {
                       bg-[var(--app-input-bg)] text-[var(--app-text-gold)] border border-[rgba(201,162,39,0.3)] hover:bg-[var(--app-surface-2)]
                       disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98]"
                   >
-                    <span className="iconify w-4 h-4" data-icon="mdi:star" />
+                    <Icon icon="mdi:star" className="w-4 h-4" />
                     {savingFav ? "Saving..." : "Save"}
                   </button>
                 </div>
@@ -483,7 +472,7 @@ export default function RankTagGenerator() {
                         ))}
                       </select>
                       <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3">
-                        <span className="iconify text-[var(--app-text-muted)]" data-icon="mdi:chevron-down" />
+                        <Icon icon="mdi:chevron-down" className="text-[var(--app-text-muted)]" />
                       </div>
                     </div>
                   </div>
@@ -554,7 +543,7 @@ export default function RankTagGenerator() {
                         ))}
                       </select>
                       <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3">
-                        <span className="iconify text-[var(--app-text-muted)]" data-icon="mdi:chevron-down" />
+                        <Icon icon="mdi:chevron-down" className="text-[var(--app-text-muted)]" />
                       </div>
                     </div>
                     <button
@@ -564,7 +553,7 @@ export default function RankTagGenerator() {
                         bg-[var(--app-input-bg)] text-[var(--app-text)] border border-[var(--app-border)]
                         hover:bg-[var(--app-surface-2)] hover:border-[var(--app-brand)] transition-all"
                     >
-                      <span className="iconify w-4 h-4" data-icon="mdi:brush" />
+                      <Icon icon="mdi:brush" className="w-4 h-4" />
                       Icons
                     </button>
                   </div>
@@ -611,7 +600,7 @@ export default function RankTagGenerator() {
                             ))}
                           </select>
                           <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3">
-                            <span className="iconify text-[var(--app-text-muted)]" data-icon="mdi:chevron-down" />
+                            <Icon icon="mdi:chevron-down" className="text-[var(--app-text-muted)]" />
                           </div>
                         </div>
                       </div>

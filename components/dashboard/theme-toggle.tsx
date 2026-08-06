@@ -2,6 +2,7 @@
 
 import { useTheme } from "next-themes"
 import { useEffect, useState } from "react"
+import { Icon } from "@iconify/react"
 
 export default function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme()
@@ -23,10 +24,7 @@ export default function ThemeToggle() {
       title={isDark ? "Light mode" : "Dark mode"}
       className="flex h-9 w-9 items-center justify-center rounded-lg text-[var(--app-text)] transition-colors hover:bg-[var(--app-nav-hover-bg)]"
     >
-      <span
-        className="iconify h-5 w-5"
-        data-icon={isDark ? "mdi:weather-sunny" : "mdi:weather-night"}
-      />
+      <Icon icon={isDark ? "mdi:weather-sunny" : "mdi:weather-night"} className="h-5 w-5" />
     </button>
   )
 }

@@ -32,8 +32,13 @@ export async function GET(req: Request) {
     }
 
     const userIds = Array.from(new Set((data ?? []).map((row) => String(row.user_id))))
-    const { data: profiles } = await admin.from("profiles").select("id, discord_username").in("id", userIds)
-    const nameById = new Map((profiles ?? []).map((p) => [p.id as string, (p.discord_username as string) || "Anonymous"]))
+    const nameById = new Map<string, string>()
+    if (userIds.length > 0) {
+      const { data: profiles } = await admin.from("profiles").select("id, discord_username").in("id", userIds)
+      for (const p of profiles ?? []) {
+        nameById.set(p.id as string, (p.discord_username as string) || "Anonymous")
+      }
+    }
 
     return NextResponse.json({
       items: (data ?? []).map((row) => ({

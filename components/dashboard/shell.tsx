@@ -4,7 +4,8 @@ import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { useState, useEffect } from "react"
+import { useState } from "react"
+import { Icon } from "@iconify/react"
 import ThemeToggle from "@/components/dashboard/theme-toggle"
 
 interface User {
@@ -27,15 +28,6 @@ export default function DashboardShell({ user, children }: Props) {
   const pathname = usePathname()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
 
-  useEffect(() => {
-    if (typeof window === "undefined") return
-    if ((window as Window & { Iconify?: unknown }).Iconify) return
-    const script = document.createElement("script")
-    script.src = "https://code.iconify.design/2/2.2.1/iconify.min.js"
-    script.async = true
-    document.head.appendChild(script)
-  }, [])
-
   async function handleSignOut() {
     setSigningOut(true)
     const supabase = createClient()
@@ -49,22 +41,17 @@ export default function DashboardShell({ user, children }: Props) {
       href: "/dashboard",
       label: "Generator",
       exact: true,
-      icon: (
-        <span
-          className="iconify w-5 h-5"
-          data-icon="fluent:paint-brush-24-regular"
-        />
-      ),
+      icon: <Icon icon="fluent:paint-brush-24-regular" className="w-5 h-5" />,
     },
     {
       href: "/dashboard/history",
       label: "History",
-      icon: <span className="iconify w-5 h-5" data-icon="mdi:history" />,
+      icon: <Icon icon="mdi:history" className="w-5 h-5" />,
     },
     {
       href: "/dashboard/admin",
       label: "Admin",
-      icon: <span className="iconify w-5 h-5" data-icon="la:user-shield" />,
+      icon: <Icon icon="la:user-shield" className="w-5 h-5" />,
       adminOnly: true,
     },
   ].filter((item) => !item.adminOnly || user.role === "admin")
@@ -93,10 +80,7 @@ export default function DashboardShell({ user, children }: Props) {
               className="md:hidden text-[var(--app-text)]"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
             >
-              <span
-                className="iconify h-6 w-6"
-                data-icon="fluent:line-horizontal-3-20-filled"
-              />
+              <Icon icon="fluent:line-horizontal-3-20-filled" className="h-6 w-6" />
             </button>
             <Link href="/dashboard" className="flex items-center gap-2">
               <img src="/logo.png" alt="Sam's Ranks Logo" className="h-8 w-8 rounded-lg object-cover" />
@@ -126,12 +110,9 @@ export default function DashboardShell({ user, children }: Props) {
               title="Sign Out"
             >
               {signingOut ? (
-                <span
-                  className="iconify h-5 w-5 animate-spin"
-                  data-icon="mdi:loading"
-                />
+                <Icon icon="mdi:loading" className="h-5 w-5 animate-spin" />
               ) : (
-                <span className="iconify h-5 w-5" data-icon="fe:logout" />
+                <Icon icon="fe:logout" className="h-5 w-5" />
               )}
             </button>
           </div>

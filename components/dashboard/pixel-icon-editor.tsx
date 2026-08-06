@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
+import { Icon } from "@iconify/react"
 import { useUndoable } from "@/lib/use-undoable"
 import {
   getCustomIconDataUrl,
@@ -19,8 +20,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 
-const GRID_SIZE = 8
-const CELL_PX = 28
+const GRID_SIZE = 5
+const CELL_PX = 44
 const PRESET_COLORS = ["#ffffff", "#fbbf24", "#ef4444", "#22c55e", "#3b82f6", "#a855f7", "#000000"]
 
 type Grid = (string | null)[]
@@ -278,7 +279,7 @@ export default function PixelIconEditor({ open, onOpenChange, initialIconId, onS
                     tool === "pencil" ? "bg-[var(--app-brand)] text-black" : "text-[var(--app-text)] hover:bg-[var(--app-surface-2)]"
                   }`}
                 >
-                  <span className="iconify w-4 h-4" data-icon="mdi:pencil" />
+                  <Icon icon="mdi:pencil" className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => setTool("eraser")}
@@ -287,7 +288,7 @@ export default function PixelIconEditor({ open, onOpenChange, initialIconId, onS
                     tool === "eraser" ? "bg-[var(--app-brand)] text-black" : "text-[var(--app-text)] hover:bg-[var(--app-surface-2)]"
                   }`}
                 >
-                  <span className="iconify w-4 h-4" data-icon="mdi:eraser" />
+                  <Icon icon="mdi:eraser" className="w-4 h-4" />
                 </button>
               </div>
 
@@ -322,7 +323,7 @@ export default function PixelIconEditor({ open, onOpenChange, initialIconId, onS
                 className="p-2 rounded-lg text-[var(--app-text-muted)] hover:text-[var(--app-text)] hover:bg-[var(--app-input-bg)]
                   disabled:opacity-30 disabled:pointer-events-none transition-all"
               >
-                <span className="iconify w-4 h-4" data-icon="mdi:undo" />
+                <Icon icon="mdi:undo" className="w-4 h-4" />
               </button>
               <button
                 onClick={grid.redo}
@@ -331,14 +332,14 @@ export default function PixelIconEditor({ open, onOpenChange, initialIconId, onS
                 className="p-2 rounded-lg text-[var(--app-text-muted)] hover:text-[var(--app-text)] hover:bg-[var(--app-input-bg)]
                   disabled:opacity-30 disabled:pointer-events-none transition-all"
               >
-                <span className="iconify w-4 h-4" data-icon="mdi:redo" />
+                <Icon icon="mdi:redo" className="w-4 h-4" />
               </button>
               <button
                 onClick={() => grid.set(emptyGrid())}
                 title="Clear all"
                 className="p-2 rounded-lg text-[var(--app-text-muted)] hover:text-red-400 hover:bg-[var(--app-input-bg)] transition-all"
               >
-                <span className="iconify w-4 h-4" data-icon="mdi:trash-can-outline" />
+                <Icon icon="mdi:trash-can-outline" className="w-4 h-4" />
               </button>
             </div>
 
@@ -369,14 +370,14 @@ export default function PixelIconEditor({ open, onOpenChange, initialIconId, onS
                     item.isPublic ? "text-[var(--app-brand)]" : "text-[var(--app-text-muted)] hover:text-[var(--app-text)]"
                   }`}
                 >
-                  <span className="iconify w-4 h-4" data-icon={item.isPublic ? "mdi:earth" : "mdi:lock-outline"} />
+                  <Icon icon={item.isPublic ? "mdi:earth" : "mdi:lock-outline"} className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => deleteMyIcon(item.id)}
                   title="Delete"
                   className="p-1.5 rounded-lg text-[var(--app-text-muted)] hover:text-red-400 transition-all"
                 >
-                  <span className="iconify w-4 h-4" data-icon="mdi:trash-can-outline" />
+                  <Icon icon="mdi:trash-can-outline" className="w-4 h-4" />
                 </button>
               </>
             )}
@@ -435,7 +436,7 @@ function IconList<T extends CustomIconEntry>({
   if (loading) {
     return (
       <div className="flex items-center gap-2 text-[var(--app-text-cream)] text-sm py-6 justify-center">
-        <span className="iconify w-4 h-4 animate-spin text-[var(--app-brand)]" data-icon="mdi:loading" />
+        <Icon icon="mdi:loading" className="w-4 h-4 animate-spin text-[var(--app-brand)]" />
         Loading...
       </div>
     )
