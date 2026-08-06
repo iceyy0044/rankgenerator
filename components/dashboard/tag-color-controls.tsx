@@ -124,7 +124,7 @@ export default function TagColorControls({
                 if (/^#[0-9a-fA-F]{0,6}$/.test(val)) onColorChange(val)
               }}
               className="px-3 py-2 rounded-lg bg-[var(--app-input-bg)] border border-[var(--app-border)] text-[var(--app-text)]
-                font-mono text-sm w-32 focus:outline-none focus:border-[#f59e0b] transition-all"
+                font-mono text-sm w-32 focus:outline-none focus:border-[#c9a227] transition-all"
               maxLength={7}
             />
             <div className="flex items-center gap-2 flex-wrap">
@@ -159,7 +159,7 @@ export default function TagColorControls({
                   <button
                     onClick={addStop}
                     className="px-2.5 py-1 rounded-lg text-xs font-medium bg-[var(--app-input-bg)] text-[var(--app-text-gold)]
-                      border border-[rgba(245,158,11,0.3)] hover:bg-[var(--app-surface-2)] transition-all"
+                      border border-[rgba(201,162,39,0.3)] hover:bg-[var(--app-surface-2)] transition-all"
                   >
                     + Add
                   </button>
@@ -213,7 +213,7 @@ export default function TagColorControls({
                       if (/^#[0-9a-fA-F]{0,6}$/.test(val)) updateStop(index, val)
                     }}
                     className="flex-1 min-w-0 px-2 py-1.5 rounded-lg bg-[var(--app-input-bg)] border border-[var(--app-border)] text-[var(--app-text)]
-                      font-mono text-xs focus:outline-none focus:border-[#f59e0b] transition-all"
+                      font-mono text-xs focus:outline-none focus:border-[#c9a227] transition-all"
                     maxLength={7}
                   />
                   <RandomColorButton

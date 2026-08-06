@@ -26,38 +26,38 @@ export default function LoginPageClient() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden bg-[#0e1117]">
+    <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden bg-[#0f0f0f]">
       {/* Background grid */}
       <div
         className="absolute inset-0 opacity-[0.04]"
         style={{
           backgroundImage:
-            "linear-gradient(rgba(245,158,11,1) 1px, transparent 1px), linear-gradient(90deg, rgba(245,158,11,1) 1px, transparent 1px)",
+            "linear-gradient(rgba(201,162,39,1) 1px, transparent 1px), linear-gradient(90deg, rgba(201,162,39,1) 1px, transparent 1px)",
           backgroundSize: "48px 48px",
         }}
       />
       {/* Glow blobs */}
-      <div className="absolute top-[-20%] left-[10%] w-[500px] h-[500px] rounded-full bg-[#f59e0b] opacity-[0.06] blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[5%] w-[400px] h-[400px] rounded-full bg-[#eab308] opacity-[0.05] blur-[100px] pointer-events-none" />
+      <div className="absolute top-[-20%] left-[10%] w-[500px] h-[500px] rounded-full bg-[#c9a227] opacity-[0.06] blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[5%] w-[400px] h-[400px] rounded-full bg-[#c9a227] opacity-[0.05] blur-[100px] pointer-events-none" />
 
       {/* Card */}
       <div className="relative z-10 w-full max-w-md px-4">
         <div className="glass rounded-2xl p-8 flex flex-col items-center gap-6">
           {/* Logo / Brand */}
           <div className="flex flex-col items-center gap-2 text-center">
-            <div className="w-14 h-14 rounded-xl bg-[rgba(245,158,11,0.15)] border border-[rgba(245,158,11,0.25)] flex items-center justify-center mb-1">
-              <img src="/logo.png" alt="Sam's Ranks Logo" className="w-8 h-8" />
+            <div className="w-14 h-14 rounded-xl overflow-hidden bg-[rgba(201,162,39,0.15)] border border-[rgba(201,162,39,0.25)] flex items-center justify-center mb-1">
+              <img src="/logo.png" alt="Sam's Ranks Logo" className="w-full h-full object-cover" />
             </div>
-            <h1 className="text-2xl font-bold text-[#e8eaf0] tracking-tight">
-              Welcome to Sam's Ranks
+            <h1 className="text-2xl font-bold text-[#f5f5f5] tracking-tight">
+              Welcome to Sam&apos;s Ranks
             </h1>
-            <p className="text-sm text-[#7a869a]">
+            <p className="text-sm text-[#a3a3a3]">
               The ultimate tool for creating Minecraft rank tags.
             </p>
           </div>
 
           {/* Divider */}
-          <div className="w-full h-px bg-[rgba(245,158,11,0.15)]" />
+          <div className="w-full h-px bg-[rgba(201,162,39,0.15)]" />
 
           {/* Login Button */}
           <div className="w-full flex flex-col gap-3">
@@ -84,7 +84,7 @@ export default function LoginPageClient() {
                 </>
               )}
             </button>
-            <p className="text-xs text-center text-[#7a869a]">
+            <p className="text-xs text-center text-[#a3a3a3]">
               By signing in, you agree to our Terms of Service on BBB. In order to use our services you have to have a valid license key.
             </p>
           </div>
@@ -95,8 +95,8 @@ export default function LoginPageClient() {
             </div>
           )}
         </div>
-        <footer className="text-center text-sm text-[#7a869a] py-8">
-          © {new Date().getFullYear()} Sam's Ranks. All Rights Reserved.
+        <footer className="text-center text-sm text-[#a3a3a3] py-8">
+          © {new Date().getFullYear()} Sam&apos;s Ranks. All Rights Reserved.
         </footer>
       </div>
     </div>

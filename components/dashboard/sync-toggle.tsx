@@ -19,10 +19,10 @@ export default function SyncToggle({ label, checked, onChange, description }: Sy
             aria-checked={checked}
             aria-label={`${label}: ${checked ? "synced" : "independent"}`}
             onClick={() => onChange(!checked)}
-            className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[rgba(245,158,11,0.35)] ${
+            className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[rgba(201,162,39,0.35)] ${
               checked
                 ? "border-[var(--app-brand)] bg-[var(--app-brand)]"
-                : "border-[var(--app-border)] bg-[var(--app-input-bg)] hover:border-[rgba(245,158,11,0.4)]"
+                : "border-[var(--app-border)] bg-[var(--app-input-bg)] hover:border-[rgba(201,162,39,0.4)]"
             }`}
           >
             <span

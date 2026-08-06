@@ -1,12 +1,17 @@
 import type { Metadata } from 'next'
-import { Poppins } from 'next/font/google'
+import { Geist, Geist_Mono } from 'next/font/google'
 import { ThemeProvider } from '@/components/theme-provider'
 import './globals.css'
 
-const poppins = Poppins({
+const geistSans = Geist({
   subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700'],
   variable: '--font-sans',
+  display: 'swap',
+})
+
+const geistMono = Geist_Mono({
+  subsets: ['latin'],
+  variable: '--font-geist-mono',
   display: 'swap',
 })
 
@@ -22,7 +27,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${poppins.variable} font-sans antialiased bg-background text-foreground`}>
+      <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased bg-background text-foreground`}>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} storageKey="sams-ranks-theme">
           {children}
         </ThemeProvider>

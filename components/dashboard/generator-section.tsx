@@ -91,7 +91,7 @@ export const fieldLabelClass =
   "text-xs font-semibold text-[var(--app-text-label)] uppercase tracking-wider"
 
 export const selectClass =
-  "w-full px-4 py-2.5 rounded-xl bg-[var(--app-input-bg)] border border-[var(--app-border)] text-[var(--app-text)] text-sm focus:outline-none focus:border-[#f59e0b] focus:ring-1 focus:ring-[rgba(245,158,11,0.14)] transition-all appearance-none cursor-pointer"
+  "w-full px-4 py-2.5 rounded-xl bg-[var(--app-input-bg)] border border-[var(--app-border)] text-[var(--app-text)] text-sm focus:outline-none focus:border-[#c9a227] focus:ring-1 focus:ring-[rgba(201,162,39,0.14)] transition-all appearance-none cursor-pointer"
 
 export const inputClass =
-  "w-full px-4 py-2.5 rounded-xl bg-[var(--app-input-bg)] border border-[var(--app-border)] text-[var(--app-text)] placeholder:text-[var(--app-text-muted)] text-sm focus:outline-none focus:border-[#f59e0b] focus:ring-1 focus:ring-[rgba(245,158,11,0.14)] transition-all"
+  "w-full px-4 py-2.5 rounded-xl bg-[var(--app-input-bg)] border border-[var(--app-border)] text-[var(--app-text)] placeholder:text-[var(--app-text-muted)] text-sm focus:outline-none focus:border-[#c9a227] focus:ring-1 focus:ring-[rgba(201,162,39,0.14)] transition-all"
