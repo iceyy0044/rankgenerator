@@ -5,7 +5,11 @@ import { Icon } from "@iconify/react"
 import { useUndoable } from "@/lib/use-undoable"
 import {
   getCustomIconDataUrl,
+  getIconEntry,
   getLibraryIconRecordId,
+  ICON_CELL_SIZE,
+  ICON_OPTIONS,
+  ICON_SHEET_URL,
   isCustomIconId,
   isLibraryIconId,
   makeLibraryIconId,
@@ -25,10 +29,34 @@ const CELL_PX = 44
 const PRESET_COLORS = ["#ffffff", "#fbbf24", "#ef4444", "#22c55e", "#3b82f6", "#a855f7", "#000000"]
 
 type Grid = (string | null)[]
-type PanelTab = "draw" | "mine" | "community"
+type PanelTab = "draw" | "presets" | "mine" | "community"
 
 function emptyGrid(): Grid {
   return Array(GRID_SIZE * GRID_SIZE).fill(null)
+}
+
+/** Crops a built-in sprite icon out of the shared icon sheet as a standalone data URL. */
+async function getPresetIconDataUrl(iconId: string): Promise<string | null> {
+  const entry = getIconEntry(iconId)
+  if (!entry) return null
+  try {
+    const img = new Image()
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve()
+      img.onerror = () => reject(new Error("load failed"))
+      img.src = ICON_SHEET_URL
+    })
+    const canvas = document.createElement("canvas")
+    canvas.width = entry.w
+    canvas.height = entry.h
+    const ctx = canvas.getContext("2d")
+    if (!ctx) return null
+    ctx.imageSmoothingEnabled = false
+    ctx.drawImage(img, entry.x, entry.y, entry.w, entry.h, 0, 0, entry.w, entry.h)
+    return canvas.toDataURL("image/png")
+  } catch {
+    return null
+  }
 }
 
 async function resolveIconDataUrl(iconId: string): Promise<string | null> {
@@ -43,7 +71,7 @@ async function resolveIconDataUrl(iconId: string): Promise<string | null> {
       return null
     }
   }
-  return null
+  return getPresetIconDataUrl(iconId)
 }
 
 /** Decodes an existing custom/library icon back into an editable pixel grid. */
@@ -102,7 +130,8 @@ export default function PixelIconEditor({ open, onOpenChange, initialIconId, onS
   const [panelTab, setPanelTab] = useState<PanelTab>("draw")
   const [myIcons, setMyIcons] = useState<CustomIconEntry[]>([])
   const [communityIcons, setCommunityIcons] = useState<PublicIconEntry[]>([])
-  const [loadingList, setLoadingList] = useState(false);
+  const [loadingList, setLoadingList] = useState(false)
+  const [loadingBase, setLoadingBase] = useState(false)
 
   useEffect(() => {
     if (!open) return
@@ -143,6 +172,19 @@ export default function PixelIconEditor({ open, onOpenChange, initialIconId, onS
     if (panelTab === "mine") fetchMyIcons()
     if (panelTab === "community") fetchCommunityIcons()
   }, [open, panelTab, fetchMyIcons, fetchCommunityIcons])
+
+  /** Loads any existing icon (preset, own, or community) as a starting point in the Draw tab, ready to tweak and save as a new icon. */
+  async function loadIconIntoDraw(iconId: string) {
+    setLoadingBase(true)
+    try {
+      const g = await gridFromIconId(iconId)
+      grid.load(g)
+      setIconName("")
+      setPanelTab("draw")
+    } finally {
+      setLoadingBase(false)
+    }
+  }
 
   function paintCell(index: number, next: Grid) {
     const value = tool === "eraser" ? null : color
@@ -225,11 +267,13 @@ export default function PixelIconEditor({ open, onOpenChange, initialIconId, onS
       <DialogContent onPointerUp={handlePointerUp} className="max-w-md">
         <DialogHeader>
           <DialogTitle>Custom icon</DialogTitle>
-          <DialogDescription>Draw a new icon, reuse one of yours, or grab one from the community.</DialogDescription>
+          <DialogDescription>
+            Draw from scratch, or base a new icon off a built-in icon, one of yours, or a community one — tweak it and save as your own.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="inline-flex items-center gap-1 p-1 rounded-xl bg-[var(--app-input-bg)] border border-[var(--app-border)] w-fit">
-          {(["draw", "mine", "community"] as const).map((t) => (
+          {(["draw", "presets", "mine", "community"] as const).map((t) => (
             <button
               key={t}
               onClick={() => setPanelTab(t)}
@@ -239,7 +283,7 @@ export default function PixelIconEditor({ open, onOpenChange, initialIconId, onS
                   : "text-[var(--app-text)] hover:bg-[var(--app-surface-2)]"
               }`}
             >
-              {t === "mine" ? "My Icons" : t === "community" ? "Community" : "Draw"}
+              {t === "mine" ? "My Icons" : t === "community" ? "Community" : t === "presets" ? "Presets" : "Draw"}
             </button>
           ))}
         </div>
@@ -355,6 +399,43 @@ export default function PixelIconEditor({ open, onOpenChange, initialIconId, onS
           </div>
         )}
 
+        {panelTab === "presets" && (
+          <div className="flex flex-col gap-2">
+            <p className="text-xs text-[var(--app-text-muted)]">
+              Pick one to load into the Draw tab as a starting point — tweak it, then save as your own icon.
+            </p>
+            {loadingBase ? (
+              <div className="flex items-center gap-2 text-[var(--app-text-cream)] text-sm py-6 justify-center">
+                <Icon icon="mdi:loading" className="w-4 h-4 animate-spin text-[var(--app-brand)]" />
+                Loading...
+              </div>
+            ) : (
+              <div className="grid grid-cols-5 gap-2 max-h-64 overflow-y-auto pr-1">
+                {ICON_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.id}
+                    onClick={() => loadIconIntoDraw(opt.id)}
+                    title={`Base a new icon off ${opt.name}`}
+                    className="flex items-center justify-center aspect-square rounded-lg bg-[var(--app-surface)] border border-[var(--app-border)]
+                      hover:border-[var(--app-brand)] hover:bg-[var(--app-surface-2)] transition-all"
+                  >
+                    <div
+                      style={{
+                        width: opt.w * 3,
+                        height: opt.h * 3,
+                        backgroundImage: `url(${ICON_SHEET_URL})`,
+                        backgroundPosition: `-${opt.x * 3}px -${opt.y * 3}px`,
+                        backgroundSize: `${125 * 3}px ${15 * 3}px`,
+                        imageRendering: "pixelated",
+                      }}
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {panelTab === "mine" && (
           <IconList
             items={myIcons}
@@ -363,6 +444,13 @@ export default function PixelIconEditor({ open, onOpenChange, initialIconId, onS
             onUse={(id) => useIcon(id)}
             renderActions={(item) => (
               <>
+                <button
+                  onClick={() => loadIconIntoDraw(makeLibraryIconId(item.id))}
+                  title="Edit as new icon"
+                  className="p-1.5 rounded-lg text-[var(--app-text-muted)] hover:text-[var(--app-text)] transition-all"
+                >
+                  <Icon icon="mdi:pencil-outline" className="w-4 h-4" />
+                </button>
                 <button
                   onClick={() => toggleMyIconPublic(item)}
                   title={item.isPublic ? "Public — click to make private" : "Private — click to make public"}
@@ -391,6 +479,15 @@ export default function PixelIconEditor({ open, onOpenChange, initialIconId, onS
             emptyLabel="No public icons yet. Make one of yours public from My Icons."
             onUse={(id) => useIcon(id)}
             renderSubtitle={(item) => `by ${item.authorName}`}
+            renderActions={(item) => (
+              <button
+                onClick={() => loadIconIntoDraw(makeLibraryIconId(item.id))}
+                title="Edit as new icon"
+                className="p-1.5 rounded-lg text-[var(--app-text-muted)] hover:text-[var(--app-text)] transition-all"
+              >
+                <Icon icon="mdi:pencil-outline" className="w-4 h-4" />
+              </button>
+            )}
           />
         )}
 
