@@ -255,18 +255,20 @@ interface IconGlyphSource {
   y: number
   w: number
   h: number
+  /** Horizontal nudge from center — sprite icons carry their own internal padding baked into the image and need `ICON_X_OFFSET`; hand-drawn custom icons fill their canvas edge-to-edge and center correctly without it. */
+  xOffset: number
 }
 
 /** Resolves the sprite-sheet crop rect for a built-in icon, or the whole image for a custom one. */
 function getIconGlyphSource(iconId: string, iconSheet: HTMLImageElement | null, customImg: HTMLImageElement | null): IconGlyphSource | null {
   if (isCustomIconId(iconId) || isLibraryIconId(iconId)) {
     if (!customImg) return null
-    return { img: customImg, x: 0, y: 0, w: customImg.naturalWidth, h: customImg.naturalHeight }
+    return { img: customImg, x: 0, y: 0, w: customImg.naturalWidth, h: customImg.naturalHeight, xOffset: 0 }
   }
   if (!iconSheet) return null
   const entry = getIconEntry(iconId)
   if (!entry) return null
-  return { img: iconSheet, x: entry.x, y: entry.y, w: entry.w, h: entry.h }
+  return { img: iconSheet, x: entry.x, y: entry.y, w: entry.w, h: entry.h, xOffset: ICON_X_OFFSET }
 }
 
 function drawIconGlyph(
@@ -278,8 +280,8 @@ function drawIconGlyph(
   tileH: number,
   textTintRgb: { r: number; g: number; b: number }
 ) {
-  const { img, x: sx, y: sy, w, h } = source
-  const drawX = prefixX + Math.floor((prefixW - w) / 2) + ICON_X_OFFSET
+  const { img, x: sx, y: sy, w, h, xOffset } = source
+  const drawX = prefixX + Math.floor((prefixW - w) / 2) + xOffset
   const drawY = y + Math.floor((tileH - h) / 2)
 
   const shadowCtx = document.createElement("canvas").getContext("2d")
