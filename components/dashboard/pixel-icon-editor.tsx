@@ -86,24 +86,69 @@ async function gridFromIconId(iconId: string | null): Promise<Grid> {
       img.onerror = () => reject(new Error("load failed"))
       img.src = dataUrl
     })
-    const canvas = document.createElement("canvas")
-    canvas.width = GRID_SIZE
-    canvas.height = GRID_SIZE
-    const ctx = canvas.getContext("2d")
-    if (!ctx) return emptyGrid()
-    ctx.imageSmoothingEnabled = false
-    ctx.drawImage(img, 0, 0, GRID_SIZE, GRID_SIZE)
-    const data = ctx.getImageData(0, 0, GRID_SIZE, GRID_SIZE).data
+
+    // Decode at native size first.
+    const srcCanvas = document.createElement("canvas")
+    srcCanvas.width = img.naturalWidth
+    srcCanvas.height = img.naturalHeight
+    const srcCtx = srcCanvas.getContext("2d")
+    if (!srcCtx) return emptyGrid()
+    srcCtx.imageSmoothingEnabled = false
+    srcCtx.drawImage(img, 0, 0)
+    const srcData = srcCtx.getImageData(0, 0, srcCanvas.width, srcCanvas.height).data
+
+    // If the source is already GRID_SIZE x GRID_SIZE (re-editing one of our
+    // own saved icons), decode it 1:1 — no trimming, so any intentional
+    // empty margin the user drew is preserved exactly as-is.
+    //
+    // Otherwise (importing a built-in sprite, stored in a fixed-size sheet
+    // cell like 8x8/8x7 whose actual artwork rarely fills it edge-to-edge),
+    // trim to the tight non-transparent bounding box first — scaling the
+    // padded cell down to GRID_SIZE would sample mostly blank margin and
+    // visibly skew the result toward whichever edge has more padding.
+    const needsTrim = srcCanvas.width !== GRID_SIZE || srcCanvas.height !== GRID_SIZE
+    let boxX = 0
+    let boxY = 0
+    let boxW = srcCanvas.width
+    let boxH = srcCanvas.height
+    if (needsTrim) {
+      let minX = srcCanvas.width, minY = srcCanvas.height, maxX = -1, maxY = -1
+      for (let y = 0; y < srcCanvas.height; y++) {
+        for (let x = 0; x < srcCanvas.width; x++) {
+          if (srcData[(y * srcCanvas.width + x) * 4 + 3] > 10) {
+            if (x < minX) minX = x
+            if (x > maxX) maxX = x
+            if (y < minY) minY = y
+            if (y > maxY) maxY = y
+          }
+        }
+      }
+      if (maxX >= minX && maxY >= minY) {
+        boxX = minX
+        boxY = minY
+        boxW = maxX - minX + 1
+        boxH = maxY - minY + 1
+      }
+    }
+
+    // Sample each grid cell from the center of its proportional region
+    // within that tight box (not a plain scale-to-fit, which for non-square
+    // ratios leaves the exact sampling grid up to the browser).
     const grid: Grid = []
-    for (let i = 0; i < GRID_SIZE * GRID_SIZE; i++) {
-      const a = data[i * 4 + 3]
-      if (a < 10) {
-        grid.push(null)
-      } else {
-        const r = data[i * 4]
-        const g = data[i * 4 + 1]
-        const b = data[i * 4 + 2]
-        grid.push(`#${[r, g, b].map((c) => c.toString(16).padStart(2, "0")).join("")}`)
+    for (let gy = 0; gy < GRID_SIZE; gy++) {
+      for (let gx = 0; gx < GRID_SIZE; gx++) {
+        const sx = boxX + Math.min(boxW - 1, Math.floor(((gx + 0.5) * boxW) / GRID_SIZE))
+        const sy = boxY + Math.min(boxH - 1, Math.floor(((gy + 0.5) * boxH) / GRID_SIZE))
+        const i = (sy * srcCanvas.width + sx) * 4
+        const a = srcData[i + 3]
+        if (a < 10) {
+          grid.push(null)
+        } else {
+          const r = srcData[i]
+          const g = srcData[i + 1]
+          const b = srcData[i + 2]
+          grid.push(`#${[r, g, b].map((c) => c.toString(16).padStart(2, "0")).join("")}`)
+        }
       }
     }
     return grid
