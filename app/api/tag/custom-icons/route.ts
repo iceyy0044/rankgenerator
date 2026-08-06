@@ -1,7 +1,8 @@
 import { createClient, createAdminClient } from "@/lib/supabase/server"
-import { configToDbRow, rowToFavouriteEntry } from "@/lib/rank-tag-render"
-import type { TagConfiguration } from "@/lib/tag-config-types"
+import { rowToCustomIconEntry } from "@/lib/rank-tag-render"
 import { NextResponse } from "next/server"
+
+const MAX_IMAGE_DATA_LENGTH = 50_000 // generous ceiling for a small pixel-art PNG data URL
 
 export async function GET(req: Request) {
   const supabase = await createClient()
@@ -15,11 +16,12 @@ export async function GET(req: Request) {
   }
 
   const { searchParams } = new URL(req.url)
+  const isPublic = searchParams.get("public") === "true"
 
-  if (searchParams.get("public") === "true") {
+  if (isPublic) {
     const admin = createAdminClient()
     const { data, error } = await admin
-      .from("tag_favourites")
+      .from("custom_icons")
       .select("*")
       .eq("is_public", true)
       .order("created_at", { ascending: false })
@@ -35,25 +37,23 @@ export async function GET(req: Request) {
 
     return NextResponse.json({
       items: (data ?? []).map((row) => ({
-        ...rowToFavouriteEntry(row),
+        ...rowToCustomIconEntry(row),
         authorName: nameById.get(String(row.user_id)) ?? "Anonymous",
       })),
     })
   }
 
-  const folderId = searchParams.get("folder_id")
-
-  let query = supabase.from("tag_favourites").select("*").eq("user_id", user.id)
-  if (folderId === "none") query = query.is("folder_id", null)
-  else if (folderId) query = query.eq("folder_id", folderId)
-
-  const { data, error } = await query.order("position", { ascending: false })
+  const { data, error } = await supabase
+    .from("custom_icons")
+    .select("*")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false })
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  return NextResponse.json({ items: (data ?? []).map(rowToFavouriteEntry) })
+  return NextResponse.json({ items: (data ?? []).map(rowToCustomIconEntry) })
 }
 
 export async function POST(req: Request) {
@@ -67,20 +67,21 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const body = (await req.json()) as TagConfiguration & { name?: string; folderId?: string | null }
-  if (!body?.text || !body?.styleId) {
-    return NextResponse.json({ error: "Invalid tag configuration" }, { status: 400 })
+  const body = (await req.json()) as { name?: string; imageData?: string }
+  if (!body?.imageData || !body.imageData.startsWith("data:image/")) {
+    return NextResponse.json({ error: "Missing or invalid imageData (expected a PNG data URL)" }, { status: 400 })
   }
-
-  const row = {
-    ...configToDbRow(body, user.id),
-    name: body.name?.trim() || body.text || null,
-    folder_id: body.folderId ?? null,
+  if (body.imageData.length > MAX_IMAGE_DATA_LENGTH) {
+    return NextResponse.json({ error: "Icon image is too large" }, { status: 400 })
   }
 
   const { data: inserted, error: insertError } = await supabase
-    .from("tag_favourites")
-    .insert(row)
+    .from("custom_icons")
+    .insert({
+      user_id: user.id,
+      name: body.name?.trim() || "Untitled Icon",
+      image_data: body.imageData,
+    })
     .select("*")
     .single()
 
@@ -88,7 +89,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: insertError.message }, { status: 500 })
   }
 
-  return NextResponse.json({ item: rowToFavouriteEntry(inserted) })
+  return NextResponse.json({ item: rowToCustomIconEntry(inserted) })
 }
 
 export async function PATCH(req: Request) {
@@ -102,22 +103,11 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const body = (await req.json()) as {
-    id?: string
-    name?: string
-    folderId?: string | null
-    position?: number
-    isPublic?: boolean
-  }
+  const body = (await req.json()) as { id?: string; name?: string; isPublic?: boolean }
   if (!body?.id) {
     return NextResponse.json({ error: "Missing id" }, { status: 400 })
   }
-  if (
-    body.name === undefined &&
-    body.folderId === undefined &&
-    body.position === undefined &&
-    body.isPublic === undefined
-  ) {
+  if (body.name === undefined && body.isPublic === undefined) {
     return NextResponse.json({ error: "Nothing to update" }, { status: 400 })
   }
 
@@ -126,17 +116,10 @@ export async function PATCH(req: Request) {
     if (!body.name.trim()) return NextResponse.json({ error: "Name can't be empty" }, { status: 400 })
     update.name = body.name.trim()
   }
-  if (body.folderId !== undefined) update.folder_id = body.folderId
   if (body.isPublic !== undefined) update.is_public = body.isPublic
-  if (body.position !== undefined) {
-    if (!Number.isFinite(body.position)) {
-      return NextResponse.json({ error: "Invalid position" }, { status: 400 })
-    }
-    update.position = body.position
-  }
 
   const { data: updated, error: updateError } = await supabase
-    .from("tag_favourites")
+    .from("custom_icons")
     .update(update)
     .eq("id", body.id)
     .eq("user_id", user.id)
@@ -147,7 +130,7 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ error: updateError.message }, { status: 500 })
   }
 
-  return NextResponse.json({ item: rowToFavouriteEntry(updated) })
+  return NextResponse.json({ item: rowToCustomIconEntry(updated) })
 }
 
 export async function DELETE(req: Request) {
@@ -168,11 +151,7 @@ export async function DELETE(req: Request) {
     return NextResponse.json({ error: "Missing id" }, { status: 400 })
   }
 
-  const { error } = await supabase
-    .from("tag_favourites")
-    .delete()
-    .eq("id", id)
-    .eq("user_id", user.id)
+  const { error } = await supabase.from("custom_icons").delete().eq("id", id).eq("user_id", user.id)
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })

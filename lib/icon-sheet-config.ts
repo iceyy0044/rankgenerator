@@ -112,23 +112,45 @@ export function getCustomIconDataUrl(iconId: string): string {
   return iconId.slice(CUSTOM_ICON_PREFIX.length)
 }
 
+/**
+ * Icons saved to a user's library (`custom_icons` table) are referenced by
+ * id instead of embedding the image data — `library:<uuid>`. This is what
+ * the icon editor produces once "Save & Use" persists the drawing; it also
+ * lets a user reference someone else's *public* library icon without
+ * copying it. Resolving the id to actual pixels requires a lookup (see
+ * `getCachedLibraryIconDataUrl` in `rank-tag-render.ts` for the client path).
+ */
+const LIBRARY_ICON_PREFIX = "library:"
+
+export function isLibraryIconId(iconId: string | null | undefined): iconId is string {
+  return !!iconId && iconId.startsWith(LIBRARY_ICON_PREFIX)
+}
+
+export function makeLibraryIconId(id: string): string {
+  return LIBRARY_ICON_PREFIX + id
+}
+
+export function getLibraryIconRecordId(iconId: string): string {
+  return iconId.slice(LIBRARY_ICON_PREFIX.length)
+}
+
 function resolveIconId(iconId: string): string {
   return LEGACY_ICON_IDS[iconId] ?? iconId
 }
 
 export function normalizeIconId(iconId: string | null | undefined): string | null {
   if (!iconId) return null
-  if (isCustomIconId(iconId)) return iconId
+  if (isCustomIconId(iconId) || isLibraryIconId(iconId)) return iconId
   const resolved = resolveIconId(iconId)
   return ICON_MAP[resolved] ? resolved : null
 }
 
 export function getIconEntry(iconId: string | null | undefined): IconSheetEntry | null {
-  if (!iconId || isCustomIconId(iconId)) return null
+  if (!iconId || isCustomIconId(iconId) || isLibraryIconId(iconId)) return null
   return ICON_MAP[resolveIconId(iconId)] ?? null
 }
 
 export function getIconDisplayName(iconId: string | null | undefined): string | null {
-  if (isCustomIconId(iconId)) return "Custom icon"
+  if (isCustomIconId(iconId) || isLibraryIconId(iconId)) return "Custom icon"
   return getIconEntry(iconId)?.name ?? null
 }

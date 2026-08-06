@@ -39,12 +39,31 @@ export interface TagFavouriteEntry extends TagConfiguration {
   created_at: string
   folderId: string | null
   position: number
+  isPublic: boolean
+}
+
+/** A public favourite as seen in the Community library — same shape plus the author's display name. */
+export interface PublicTagEntry extends TagFavouriteEntry {
+  authorName: string
 }
 
 export interface TagFavouriteFolder {
   id: string
   name: string
   created_at: string
+}
+
+export interface CustomIconEntry {
+  id: string
+  name: string
+  imageData: string
+  isPublic: boolean
+  created_at: string
+}
+
+/** A public custom icon as seen in the Community library — same shape plus the author's display name. */
+export interface PublicIconEntry extends CustomIconEntry {
+  authorName: string
 }
 
 export function getTagColorSettings(config: TagConfiguration): ColorSettings {

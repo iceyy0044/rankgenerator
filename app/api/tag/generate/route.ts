@@ -3,7 +3,13 @@ import { RANK_TAG_STYLES_SERVER } from "@/lib/rank-tag-config.server";
 import { MAX_TAG_TEXT_LENGTH, type TagConfiguration, type ColorMode } from "@/lib/tag-config-types";
 import { DEFAULT_GRADIENT_COLORS, MAX_GRADIENT_COLORS, MIN_GRADIENT_COLORS, randomHexColor } from "@/lib/gradient-utils";
 import { FONT_MAP } from "@/lib/rank-tag-render";
-import { ICON_OPTIONS, normalizeIconId } from "@/lib/icon-sheet-config";
+import {
+  ICON_OPTIONS,
+  getLibraryIconRecordId,
+  isLibraryIconId,
+  makeCustomIconId,
+  normalizeIconId,
+} from "@/lib/icon-sheet-config";
 import { renderRankTagBuffer } from "@/lib/rank-tag-render.server";
 import { createAdminClient } from "@/lib/supabase/server";
 
@@ -129,12 +135,28 @@ export async function GET(req: Request) {
 
     // --- prefix icon --------------------------------------------------------
     const rawIcon = searchParams.get("icon");
-    const iconId = rawIcon ? normalizeIconId(rawIcon) : null;
+    let iconId = rawIcon ? normalizeIconId(rawIcon) : null;
     if (rawIcon && !iconId) {
       return NextResponse.json(
         { error: `Icon '${rawIcon}' not found.`, valid_icons: VALID_ICON_IDS },
         { status: 400 }
       );
+    }
+
+    // A `library:<id>` icon needs a DB lookup — only usable if it's public
+    // or owned by this license's user. Resolve it to an embedded `custom:`
+    // icon so the (DB-agnostic) renderer doesn't need to know about it.
+    if (iconId && isLibraryIconId(iconId)) {
+      const { data: iconRow } = await admin
+        .from("custom_icons")
+        .select("image_data, user_id, is_public")
+        .eq("id", getLibraryIconRecordId(iconId))
+        .single();
+
+      if (!iconRow || (!iconRow.is_public && iconRow.user_id !== license.used_by)) {
+        return NextResponse.json({ error: `Icon '${rawIcon}' not found.` }, { status: 400 });
+      }
+      iconId = makeCustomIconId(iconRow.image_data);
     }
 
     const iconBgSync = parseBool(searchParams.get("iconBgSync"), "iconBgSync", true);

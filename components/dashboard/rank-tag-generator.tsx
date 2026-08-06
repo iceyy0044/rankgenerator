@@ -4,7 +4,7 @@ import { useRef, useEffect, useState, useCallback } from "react"
 import { RANK_TAG_STYLES, DEFAULT_STYLE_ID, getIconBackgroundUrl } from "@/lib/rank-tag-config"
 import { FONT_SHEET_URL, getCachedImage, loadImage, renderRankTag } from "@/lib/rank-tag-render"
 import { type ColorMode, type TagConfiguration, MAX_TAG_TEXT_LENGTH } from "@/lib/tag-config-types"
-import { ICON_OPTIONS, ICON_SHEET_URL, isCustomIconId, normalizeIconId } from "@/lib/icon-sheet-config"
+import { ICON_OPTIONS, ICON_SHEET_URL, isCustomIconId, isLibraryIconId, normalizeIconId } from "@/lib/icon-sheet-config"
 import { DEFAULT_GRADIENT_COLORS } from "@/lib/gradient-utils"
 import { useUndoable } from "@/lib/use-undoable"
 import TagColorControls from "@/components/dashboard/tag-color-controls"
@@ -409,7 +409,7 @@ export default function RankTagGenerator() {
                     disabled={downloading || !fontLoaded || !imagesLoaded}
                     className="flex items-center justify-center gap-2 min-w-[8.5rem] px-5 py-2.5 rounded-xl text-sm font-semibold text-black
                       bg-[var(--app-brand)] hover:bg-[var(--app-brand-hover)] disabled:opacity-50 disabled:cursor-not-allowed
-                      transition-all duration-150 shadow-[0_4px_14px_rgba(245,158,11,0.2)] active:scale-[0.98]"
+                      transition-all duration-150 shadow-[0_4px_14px_rgba(201,162,39,0.2)] active:scale-[0.98]"
                   >
                     <span className="iconify w-4 h-4" data-icon="mdi:download" />
                     {downloading ? "Exporting..." : "Download"}
@@ -418,7 +418,7 @@ export default function RankTagGenerator() {
                     onClick={handleSaveFavourite}
                     disabled={savingFav}
                     className="flex items-center justify-center gap-2 min-w-[8.5rem] px-5 py-2.5 rounded-xl text-sm font-semibold
-                      bg-[var(--app-input-bg)] text-[var(--app-text-gold)] border border-[rgba(245,158,11,0.3)] hover:bg-[var(--app-surface-2)]
+                      bg-[var(--app-input-bg)] text-[var(--app-text-gold)] border border-[rgba(201,162,39,0.3)] hover:bg-[var(--app-surface-2)]
                       disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98]"
                   >
                     <span className="iconify w-4 h-4" data-icon="mdi:star" />
@@ -544,7 +544,9 @@ export default function RankTagGenerator() {
                         className={selectClass}
                       >
                         <option value="">None</option>
-                        {isCustomIconId(icon.value.iconId) && <option value={icon.value.iconId}>Custom icon</option>}
+                        {(isCustomIconId(icon.value.iconId) || isLibraryIconId(icon.value.iconId)) && (
+                          <option value={icon.value.iconId ?? ""}>Custom icon</option>
+                        )}
                         {ICON_OPTIONS.map((iconOption) => (
                           <option key={iconOption.id} value={iconOption.id}>
                             {iconOption.name}
@@ -557,13 +559,13 @@ export default function RankTagGenerator() {
                     </div>
                     <button
                       onClick={() => setIconEditorOpen(true)}
-                      title={isCustomIconId(icon.value.iconId) ? "Edit custom icon" : "Draw a custom icon"}
+                      title="Draw, save, or reuse a custom icon"
                       className="shrink-0 flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-medium
                         bg-[var(--app-input-bg)] text-[var(--app-text)] border border-[var(--app-border)]
                         hover:bg-[var(--app-surface-2)] hover:border-[var(--app-brand)] transition-all"
                     >
                       <span className="iconify w-4 h-4" data-icon="mdi:brush" />
-                      Draw
+                      Icons
                     </button>
                   </div>
                 </div>

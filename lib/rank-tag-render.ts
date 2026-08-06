@@ -11,12 +11,27 @@ import {
 import {
   getCustomIconDataUrl,
   getIconEntry,
+  getLibraryIconRecordId,
   ICON_SHEET_URL,
   ICON_TAG_GAP,
   ICON_X_OFFSET,
   isCustomIconId,
+  isLibraryIconId,
   normalizeIconId,
 } from "@/lib/icon-sheet-config"
+
+const libraryIconCache: Record<string, Promise<string | null>> = {}
+
+/** Resolves a `library:<id>` icon reference to its image data URL, caching by id. */
+function getCachedLibraryIconDataUrl(recordId: string): Promise<string | null> {
+  if (!libraryIconCache[recordId]) {
+    libraryIconCache[recordId] = fetch(`/api/tag/custom-icons/${recordId}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => (data ? (data.item.imageData as string) : null))
+      .catch(() => null)
+  }
+  return libraryIconCache[recordId]
+}
 
 export const FONT_SHEET_URL = "/font_sheet.png"
 
@@ -244,7 +259,7 @@ interface IconGlyphSource {
 
 /** Resolves the sprite-sheet crop rect for a built-in icon, or the whole image for a custom one. */
 function getIconGlyphSource(iconId: string, iconSheet: HTMLImageElement | null, customImg: HTMLImageElement | null): IconGlyphSource | null {
-  if (isCustomIconId(iconId)) {
+  if (isCustomIconId(iconId) || isLibraryIconId(iconId)) {
     if (!customImg) return null
     return { img: customImg, x: 0, y: 0, w: customImg.naturalWidth, h: customImg.naturalHeight }
   }
@@ -371,9 +386,11 @@ export async function renderRankTag(
   const charCount = displayText.length
   const mainW = leftW + midW * charCount + rightW
 
-  const isCustomIcon = isCustomIconId(config.iconId)
-  const iconEntry = config.iconId && !isCustomIcon ? getIconEntry(config.iconId) : null
-  const hasIconPrefix = isCustomIcon || Boolean(iconEntry)
+  const isEmbeddedIcon = isCustomIconId(config.iconId)
+  const isLibraryIcon = isLibraryIconId(config.iconId)
+  const isCustomStyleIcon = isEmbeddedIcon || isLibraryIcon
+  const iconEntry = config.iconId && !isCustomStyleIcon ? getIconEntry(config.iconId) : null
+  const hasIconPrefix = isCustomStyleIcon || Boolean(iconEntry)
   const iconPrefixW = hasIconPrefix ? ICON_BACKGROUND_WIDTH : 0
   const iconGap = hasIconPrefix ? ICON_TAG_GAP : 0
   const totalW = iconPrefixW + iconGap + mainW
@@ -401,7 +418,7 @@ export async function renderRankTag(
   let mainX = 0
 
   let resolvedIconSheet = iconSheet
-  if (hasIconPrefix && !isCustomIcon && !resolvedIconSheet) {
+  if (hasIconPrefix && !isCustomStyleIcon && !resolvedIconSheet) {
     try {
       resolvedIconSheet = await getCachedImage(ICON_SHEET_URL)
     } catch {
@@ -410,9 +427,16 @@ export async function renderRankTag(
   }
 
   let customIconImg: HTMLImageElement | null = null
-  if (isCustomIcon && config.iconId) {
+  if (config.iconId && isEmbeddedIcon) {
     try {
       customIconImg = await getCachedImage(getCustomIconDataUrl(config.iconId))
+    } catch {
+      customIconImg = null
+    }
+  } else if (config.iconId && isLibraryIcon) {
+    try {
+      const dataUrl = await getCachedLibraryIconDataUrl(getLibraryIconRecordId(config.iconId))
+      customIconImg = dataUrl ? await getCachedImage(dataUrl) : null
     } catch {
       customIconImg = null
     }
@@ -498,7 +522,18 @@ export function rowToFavouriteEntry(row: Record<string, unknown>) {
     created_at: String(row.created_at),
     folderId: row.folder_id ? String(row.folder_id) : null,
     position: Number(row.position ?? 0),
+    isPublic: Boolean(row.is_public),
     ...rowToConfig(row),
+  }
+}
+
+export function rowToCustomIconEntry(row: Record<string, unknown>) {
+  return {
+    id: String(row.id),
+    name: String(row.name ?? "Untitled Icon"),
+    imageData: String(row.image_data ?? ""),
+    isPublic: Boolean(row.is_public),
+    created_at: String(row.created_at),
   }
 }
 
