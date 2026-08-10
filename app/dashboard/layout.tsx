@@ -20,14 +20,24 @@ export default async function DashboardLayout({
     .eq("id", user.id)
     .single()
 
+  const discordId =
+    user.identities?.find((i) => i.provider === "discord")?.id ??
+    user.user_metadata?.provider_id ??
+    user.user_metadata?.sub ??
+    null
+
   // If no profile yet (trigger might be slow), create one
   if (!profile) {
     await supabase.from("profiles").insert({
       id: user.id,
       discord_username: user.user_metadata?.full_name ?? user.user_metadata?.name ?? null,
       avatar_url: user.user_metadata?.avatar_url ?? null,
+      discord_id: discordId,
       role: "user",
     })
+  } else if (!profile.discord_id && discordId) {
+    // Backfill for accounts created before discord_id was tracked
+    await supabase.from("profiles").update({ discord_id: discordId }).eq("id", user.id)
   }
 
   // If profile exists but no license key, redirect to license entry

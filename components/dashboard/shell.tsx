@@ -49,12 +49,18 @@ export default function DashboardShell({ user, children }: Props) {
       icon: <Icon icon="mdi:history" className="w-5 h-5" />,
     },
     {
+      href: "/dashboard/license",
+      label: "License",
+      icon: <Icon icon="mdi:key-variant" className="w-5 h-5" />,
+      licenseOnly: true,
+    },
+    {
       href: "/dashboard/admin",
       label: "Admin",
       icon: <Icon icon="la:user-shield" className="w-5 h-5" />,
       adminOnly: true,
     },
-  ].filter((item) => !item.adminOnly || user.role === "admin")
+  ].filter((item) => (!item.adminOnly || user.role === "admin") && (!item.licenseOnly || user.hasLicense))
 
   function isNavActive(href: string, exact?: boolean) {
     if (exact) return pathname === href
