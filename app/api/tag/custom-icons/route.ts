@@ -1,5 +1,6 @@
 import { createClient, createAdminClient } from "@/lib/supabase/server"
 import { rowToCustomIconEntry } from "@/lib/rank-tag-render"
+import { checkRateLimit } from "@/lib/rate-limit"
 import { NextResponse } from "next/server"
 
 const MAX_IMAGE_DATA_LENGTH = 50_000 // generous ceiling for a small pixel-art PNG data URL
@@ -80,6 +81,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Icon image is too large" }, { status: 400 })
   }
 
+  const rateLimit = checkRateLimit(`icon:create:${user.id}`)
+  if (rateLimit.limited) {
+    return NextResponse.json(
+      { error: `You're saving icons too quickly — try again in ${rateLimit.retryAfterSeconds}s.` },
+      { status: 429 }
+    )
+  }
+
   const { data: inserted, error: insertError } = await supabase
     .from("custom_icons")
     .insert({
@@ -114,6 +123,16 @@ export async function PATCH(req: Request) {
   }
   if (body.name === undefined && body.isPublic === undefined) {
     return NextResponse.json({ error: "Nothing to update" }, { status: 400 })
+  }
+
+  if (body.isPublic === true) {
+    const rateLimit = checkRateLimit(`icon:publish:${user.id}`)
+    if (rateLimit.limited) {
+      return NextResponse.json(
+        { error: `You're publishing too quickly — try again in ${rateLimit.retryAfterSeconds}s.` },
+        { status: 429 }
+      )
+    }
   }
 
   const update: Record<string, unknown> = {}
@@ -156,7 +175,15 @@ export async function DELETE(req: Request) {
     return NextResponse.json({ error: "Missing id" }, { status: 400 })
   }
 
-  const { error } = await supabase.from("custom_icons").delete().eq("id", id).eq("user_id", user.id)
+  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
+
+  // Admins can remove any icon from the community library, not just their own.
+  const query =
+    profile?.role === "admin"
+      ? createAdminClient().from("custom_icons").delete().eq("id", id)
+      : supabase.from("custom_icons").delete().eq("id", id).eq("user_id", user.id)
+
+  const { error } = await query
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })

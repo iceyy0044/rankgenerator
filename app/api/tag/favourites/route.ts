@@ -1,6 +1,7 @@
 import { createClient, createAdminClient } from "@/lib/supabase/server"
 import { configToDbRow, rowToFavouriteEntry } from "@/lib/rank-tag-render"
 import type { TagConfiguration } from "@/lib/tag-config-types"
+import { checkRateLimit } from "@/lib/rate-limit"
 import { NextResponse } from "next/server"
 
 export async function GET(req: Request) {
@@ -77,6 +78,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid tag configuration" }, { status: 400 })
   }
 
+  const rateLimit = checkRateLimit(`fav:create:${user.id}`)
+  if (rateLimit.limited) {
+    return NextResponse.json(
+      { error: `You're saving tags too quickly — try again in ${rateLimit.retryAfterSeconds}s.` },
+      { status: 429 }
+    )
+  }
+
   const row = {
     ...configToDbRow(body, user.id),
     name: body.name?.trim() || body.text || null,
@@ -126,6 +135,16 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ error: "Nothing to update" }, { status: 400 })
   }
 
+  if (body.isPublic === true) {
+    const rateLimit = checkRateLimit(`fav:publish:${user.id}`)
+    if (rateLimit.limited) {
+      return NextResponse.json(
+        { error: `You're publishing too quickly — try again in ${rateLimit.retryAfterSeconds}s.` },
+        { status: 429 }
+      )
+    }
+  }
+
   const update: Record<string, unknown> = {}
   if (body.name !== undefined) {
     if (!body.name.trim()) return NextResponse.json({ error: "Name can't be empty" }, { status: 400 })
@@ -173,11 +192,15 @@ export async function DELETE(req: Request) {
     return NextResponse.json({ error: "Missing id" }, { status: 400 })
   }
 
-  const { error } = await supabase
-    .from("tag_favourites")
-    .delete()
-    .eq("id", id)
-    .eq("user_id", user.id)
+  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
+
+  // Admins can remove any tag from the community library, not just their own.
+  const query =
+    profile?.role === "admin"
+      ? createAdminClient().from("tag_favourites").delete().eq("id", id)
+      : supabase.from("tag_favourites").delete().eq("id", id).eq("user_id", user.id)
+
+  const { error } = await query
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })

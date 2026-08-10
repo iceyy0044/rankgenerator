@@ -161,6 +161,7 @@ export default function TagSavedPanel({ onLoadConfig, refreshKey = 0, fullPage =
 
   async function saveFavourite(config: TagConfiguration, name?: string) {
     setSavingFav(true)
+    setError(null)
     try {
       const folderId = activeFolder !== "all" && activeFolder !== "none" ? activeFolder : null
       const res = await fetch("/api/tag/favourites", {
@@ -168,9 +169,11 @@ export default function TagSavedPanel({ onLoadConfig, refreshKey = 0, fullPage =
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...config, name, folderId }),
       })
+      const data = await res.json().catch(() => null)
       if (res.ok) {
-        const data = await res.json()
         setFavourites((prev) => [data.item, ...prev])
+      } else {
+        setError(data?.error ?? "Could not save tag")
       }
     } finally {
       setSavingFav(false)
@@ -214,12 +217,19 @@ export default function TagSavedPanel({ onLoadConfig, refreshKey = 0, fullPage =
   }
 
   async function togglePublic(item: TagFavouriteEntry) {
-    setFavourites((prev) => prev.map((f) => (f.id === item.id ? { ...f, isPublic: !f.isPublic } : f)))
-    await fetch("/api/tag/favourites", {
+    const nextPublic = !item.isPublic
+    setError(null)
+    setFavourites((prev) => prev.map((f) => (f.id === item.id ? { ...f, isPublic: nextPublic } : f)))
+    const res = await fetch("/api/tag/favourites", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: item.id, isPublic: !item.isPublic }),
+      body: JSON.stringify({ id: item.id, isPublic: nextPublic }),
     })
+    if (!res.ok) {
+      setFavourites((prev) => prev.map((f) => (f.id === item.id ? { ...f, isPublic: item.isPublic } : f)))
+      const data = await res.json().catch(() => null)
+      setError(data?.error ?? "Could not update tag")
+    }
   }
 
   function confirmDelete() {

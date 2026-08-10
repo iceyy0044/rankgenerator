@@ -171,6 +171,7 @@ export default function PixelIconEditor({ open, onOpenChange, initialIconId, onS
   const [painting, setPainting] = useState(false)
   const [iconName, setIconName] = useState("")
   const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const [panelTab, setPanelTab] = useState<PanelTab>("draw")
   const [myIcons, setMyIcons] = useState<CustomIconEntry[]>([])
@@ -182,6 +183,7 @@ export default function PixelIconEditor({ open, onOpenChange, initialIconId, onS
     if (!open) return
     setPanelTab("draw")
     setIconName("")
+    setError(null)
     gridFromIconId(initialIconId).then((g) => grid.load(g))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, initialIconId])
@@ -271,14 +273,18 @@ export default function PixelIconEditor({ open, onOpenChange, initialIconId, onS
     const dataUrl = canvas.toDataURL("image/png")
 
     setSaving(true)
+    setError(null)
     try {
       const res = await fetch("/api/tag/custom-icons", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: iconName.trim() || "Untitled Icon", imageData: dataUrl }),
       })
-      if (!res.ok) return
-      const data = await res.json()
+      const data = await res.json().catch(() => null)
+      if (!res.ok) {
+        setError(data?.error ?? "Could not save icon")
+        return
+      }
       onSave(makeLibraryIconId(data.item.id))
       onOpenChange(false)
     } finally {
@@ -297,12 +303,19 @@ export default function PixelIconEditor({ open, onOpenChange, initialIconId, onS
   }
 
   async function toggleMyIconPublic(item: CustomIconEntry) {
-    setMyIcons((prev) => prev.map((i) => (i.id === item.id ? { ...i, isPublic: !i.isPublic } : i)))
-    await fetch("/api/tag/custom-icons", {
+    const nextPublic = !item.isPublic
+    setError(null)
+    setMyIcons((prev) => prev.map((i) => (i.id === item.id ? { ...i, isPublic: nextPublic } : i)))
+    const res = await fetch("/api/tag/custom-icons", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: item.id, isPublic: !item.isPublic }),
+      body: JSON.stringify({ id: item.id, isPublic: nextPublic }),
     })
+    if (!res.ok) {
+      setMyIcons((prev) => prev.map((i) => (i.id === item.id ? { ...i, isPublic: item.isPublic } : i)))
+      const data = await res.json().catch(() => null)
+      setError(data?.error ?? "Could not update icon")
+    }
   }
 
   const hasAnyPixel = grid.value.some((c) => c !== null)
@@ -535,6 +548,8 @@ export default function PixelIconEditor({ open, onOpenChange, initialIconId, onS
             )}
           />
         )}
+
+        {error && <p className="text-xs text-red-400">{error}</p>}
 
         <DialogFooter>
           <button

@@ -49,6 +49,11 @@ export default function DashboardShell({ user, children }: Props) {
       icon: <Icon icon="mdi:history" className="w-5 h-5" />,
     },
     {
+      href: "/dashboard/community",
+      label: "Community",
+      icon: <Icon icon="mdi:account-group" className="w-5 h-5" />,
+    },
+    {
       href: "/dashboard/license",
       label: "License",
       icon: <Icon icon="mdi:key-variant" className="w-5 h-5" />,
