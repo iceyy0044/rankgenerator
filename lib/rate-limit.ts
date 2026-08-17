@@ -6,9 +6,13 @@
  */
 const lastActionAt = new Map<string, number>()
 
-export const COMMUNITY_RATE_LIMIT_MS = 30_000
+/** Saving your own tag/icon — cheap, private, not a spam vector, so just enough to absorb double-clicks. */
+export const SAVE_RATE_LIMIT_MS = 5_000
 
-export function checkRateLimit(key: string, minIntervalMs: number = COMMUNITY_RATE_LIMIT_MS) {
+/** Publishing to the Community library — the actual DB-spam/flooding concern, so a stricter cooldown. */
+export const PUBLISH_RATE_LIMIT_MS = 40_000
+
+export function checkRateLimit(key: string, minIntervalMs: number) {
   const now = Date.now()
   const last = lastActionAt.get(key)
   if (last !== undefined && now - last < minIntervalMs) {

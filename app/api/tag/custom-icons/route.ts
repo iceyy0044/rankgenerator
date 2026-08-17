@@ -1,6 +1,6 @@
 import { createClient, createAdminClient } from "@/lib/supabase/server"
 import { rowToCustomIconEntry } from "@/lib/rank-tag-render"
-import { checkRateLimit } from "@/lib/rate-limit"
+import { checkRateLimit, PUBLISH_RATE_LIMIT_MS, SAVE_RATE_LIMIT_MS } from "@/lib/rate-limit"
 import { NextResponse } from "next/server"
 
 const MAX_IMAGE_DATA_LENGTH = 50_000 // generous ceiling for a small pixel-art PNG data URL
@@ -81,7 +81,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Icon image is too large" }, { status: 400 })
   }
 
-  const rateLimit = checkRateLimit(`icon:create:${user.id}`)
+  const rateLimit = checkRateLimit(`icon:create:${user.id}`, SAVE_RATE_LIMIT_MS)
   if (rateLimit.limited) {
     return NextResponse.json(
       { error: `You're saving icons too quickly — try again in ${rateLimit.retryAfterSeconds}s.` },
@@ -126,7 +126,7 @@ export async function PATCH(req: Request) {
   }
 
   if (body.isPublic === true) {
-    const rateLimit = checkRateLimit(`icon:publish:${user.id}`)
+    const rateLimit = checkRateLimit(`icon:publish:${user.id}`, PUBLISH_RATE_LIMIT_MS)
     if (rateLimit.limited) {
       return NextResponse.json(
         { error: `You're publishing too quickly — try again in ${rateLimit.retryAfterSeconds}s.` },

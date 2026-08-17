@@ -1,7 +1,7 @@
 import { createClient, createAdminClient } from "@/lib/supabase/server"
 import { configToDbRow, rowToFavouriteEntry } from "@/lib/rank-tag-render"
 import type { TagConfiguration } from "@/lib/tag-config-types"
-import { checkRateLimit } from "@/lib/rate-limit"
+import { checkRateLimit, PUBLISH_RATE_LIMIT_MS, SAVE_RATE_LIMIT_MS } from "@/lib/rate-limit"
 import { NextResponse } from "next/server"
 
 export async function GET(req: Request) {
@@ -78,7 +78,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid tag configuration" }, { status: 400 })
   }
 
-  const rateLimit = checkRateLimit(`fav:create:${user.id}`)
+  const rateLimit = checkRateLimit(`fav:create:${user.id}`, SAVE_RATE_LIMIT_MS)
   if (rateLimit.limited) {
     return NextResponse.json(
       { error: `You're saving tags too quickly — try again in ${rateLimit.retryAfterSeconds}s.` },
@@ -136,7 +136,7 @@ export async function PATCH(req: Request) {
   }
 
   if (body.isPublic === true) {
-    const rateLimit = checkRateLimit(`fav:publish:${user.id}`)
+    const rateLimit = checkRateLimit(`fav:publish:${user.id}`, PUBLISH_RATE_LIMIT_MS)
     if (rateLimit.limited) {
       return NextResponse.json(
         { error: `You're publishing too quickly — try again in ${rateLimit.retryAfterSeconds}s.` },
