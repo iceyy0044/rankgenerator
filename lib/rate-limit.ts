@@ -7,10 +7,10 @@
 const lastActionAt = new Map<string, number>()
 
 /** Saving your own tag/icon — cheap, private, not a spam vector, so just enough to absorb double-clicks. */
-export const SAVE_RATE_LIMIT_MS = 5_000
+export const SAVE_RATE_LIMIT_MS = 3_000
 
-/** Publishing to the Community library — the actual DB-spam/flooding concern, so a stricter cooldown. */
-export const PUBLISH_RATE_LIMIT_MS = 40_000
+/** Publishing to the Community library — the actual DB-spam/flooding concern. */
+export const PUBLISH_RATE_LIMIT_MS = 3_000
 
 export function checkRateLimit(key: string, minIntervalMs: number) {
   const now = Date.now()
