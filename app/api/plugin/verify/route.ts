@@ -18,15 +18,16 @@ export async function POST(req: NextRequest) {
     // }
 
     const body = await req.json();
-    const { discord_username, license_key } = body;
+    const license_key = typeof body.license_key === "string" ? body.license_key.trim() : "";
+    const discord_username = typeof body.discord_username === "string" ? body.discord_username.trim() : "";
     const namespace =
       typeof body.namespace === "string" && body.namespace.trim()
         ? body.namespace.trim().toLowerCase()
         : DEFAULT_NAMESPACE;
 
-    if (!discord_username || !license_key) {
+    if (!license_key) {
       return NextResponse.json(
-        { valid: false, error: "Missing discord_username or license_key" },
+        { valid: false, error: "Missing license_key" },
         { status: 400 }
       );
     }
@@ -35,32 +36,10 @@ export async function POST(req: NextRequest) {
     const forwardedFor = req.headers.get("x-forwarded-for");
     const ip = forwardedFor ? forwardedFor.split(",")[0].trim() : "127.0.0.1";
 
-    // Fetch the profile associated with the Discord username
-    const { data: profileData, error: profileError } = await supabase
-      .from("profiles")
-      .select("license_key")
-      .eq("discord_username", discord_username)
-      .single();
-
-    if (profileError || !profileData) {
-      return NextResponse.json(
-        { valid: false, error: "Profile not found for the given Discord username." },
-        { status: 404 }
-      );
-    }
-
-    // Check if the provided license key matches the one in the user's profile
-    if (profileData.license_key !== license_key) {
-      return NextResponse.json(
-        { valid: false, error: "License key does not match the user's profile." },
-        { status: 403 }
-      );
-    }
-
-    // Fetch the license itself to check it's active and scoped to this resource
+    // Fetch the license itself to check it exists, is active, and is scoped to this resource
     const { data: licenseData, error: licenseError } = await supabase
       .from("license_keys")
-      .select("is_active, namespace")
+      .select("is_active, namespace, first_verified_at")
       .eq("key", license_key)
       .single();
 
@@ -83,6 +62,31 @@ export async function POST(req: NextRequest) {
         { valid: false, error: `This license is not valid for "${namespace}".` },
         { status: 403 }
       );
+    }
+
+    // discord_username is optional — if a resource sends one anyway (e.g. to
+    // link the key to a specific Discord identity), it's still cross-checked
+    // against the account that claimed the key on the website.
+    if (discord_username) {
+      const { data: profileData, error: profileError } = await supabase
+        .from("profiles")
+        .select("license_key")
+        .eq("discord_username", discord_username)
+        .single();
+
+      if (profileError || !profileData) {
+        return NextResponse.json(
+          { valid: false, error: "Profile not found for the given Discord username." },
+          { status: 404 }
+        );
+      }
+
+      if (profileData.license_key !== license_key) {
+        return NextResponse.json(
+          { valid: false, error: "License key does not match the user's profile." },
+          { status: 403 }
+        );
+      }
     }
 
     // IP locking logic
@@ -121,6 +125,16 @@ export async function POST(req: NextRequest) {
           { valid: false, error: "Failed to register new IP." },
           { status: 500 }
         );
+      }
+
+      // First time this key gets tied to an IP — mark it used so it shows
+      // up as such in the admin panel, even if no one ever claims it on
+      // the website (e.g. a resource whose users don't log in there).
+      if (!licenseData.first_verified_at) {
+        await supabase
+          .from("license_keys")
+          .update({ first_verified_at: new Date().toISOString() })
+          .eq("key", license_key);
       }
     }
 

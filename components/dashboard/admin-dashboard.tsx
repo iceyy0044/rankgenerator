@@ -9,6 +9,11 @@ interface LicenseKey {
   used_by: string | null
   used_at: string | null
   is_active: boolean
+  first_verified_at: string | null
+}
+
+function isUsed(k: LicenseKey) {
+  return Boolean(k.used_by || k.first_verified_at)
 }
 
 export default function AdminDashboardClient() {
@@ -62,8 +67,8 @@ export default function AdminDashboardClient() {
   }
 
   const totalKeys = keys.length
-  const usedKeys = keys.filter((k) => k.used_by).length
-  const activeKeys = keys.filter((k) => k.is_active && !k.used_by).length
+  const usedKeys = keys.filter(isUsed).length
+  const activeKeys = keys.filter((k) => k.is_active && !isUsed(k)).length
 
   return (
     <div className="flex flex-col gap-6 max-w-4xl mx-auto">
@@ -214,8 +219,11 @@ export default function AdminDashboardClient() {
                       </span>
                     </td>
                     <td className="px-4 py-3.5">
-                      {k.used_by ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-[rgba(201,162,39,0.1)] text-[#c9a227] border border-[rgba(201,162,39,0.2)]">
+                      {isUsed(k) ? (
+                        <span
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-[rgba(201,162,39,0.1)] text-[#c9a227] border border-[rgba(201,162,39,0.2)]"
+                          title={k.used_by ? "Claimed on the website" : "Verified via the plugin API, never claimed on the website"}
+                        >
                           Used
                         </span>
                       ) : k.is_active ? (
@@ -235,7 +243,9 @@ export default function AdminDashboardClient() {
                     </td>
                     <td className="px-4 py-3.5 hidden md:table-cell">
                       <span className="text-[#a3a3a3] text-xs">
-                        {k.used_at ? new Date(k.used_at).toLocaleDateString() : "—"}
+                        {k.used_at || k.first_verified_at
+                          ? new Date(k.used_at ?? k.first_verified_at!).toLocaleDateString()
+                          : "—"}
                       </span>
                     </td>
                     <td className="px-4 py-3.5 text-right">
