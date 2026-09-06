@@ -29,12 +29,18 @@ export async function POST(req: Request) {
     // Check key exists, is active, and unclaimed
     const { data: licenseData, error: licenseError } = await admin
       .from("license_keys")
-      .select("key, is_active, used_by")
+      .select("key, is_active, used_by, namespace")
       .eq("key", key)
       .single()
 
     if (licenseError || !licenseData) {
       return NextResponse.json({ error: "Invalid license key" }, { status: 400 })
+    }
+    if (licenseData.namespace !== "samsranks") {
+      return NextResponse.json(
+        { error: "This license key isn't valid for Sam's Ranks." },
+        { status: 400 }
+      )
     }
     if (!licenseData.is_active) {
       return NextResponse.json(

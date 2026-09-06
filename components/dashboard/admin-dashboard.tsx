@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react"
 
 interface LicenseKey {
   key: string
+  namespace: string
   created_at: string
   used_by: string | null
   used_at: string | null
@@ -15,6 +16,7 @@ export default function AdminDashboardClient() {
   const [loading, setLoading] = useState(true)
   const [generating, setGenerating] = useState(false)
   const [newKey, setNewKey] = useState<string | null>(null)
+  const [namespaceInput, setNamespaceInput] = useState("samsranks")
   const [copiedKey, setCopiedKey] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -37,7 +39,11 @@ export default function AdminDashboardClient() {
     setError(null)
     setNewKey(null)
 
-    const res = await fetch("/api/license/generate", { method: "POST" })
+    const res = await fetch("/api/license/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ namespace: namespaceInput.trim().toLowerCase() || "samsranks" }),
+    })
     const data = await res.json()
 
     if (!res.ok) {
@@ -83,31 +89,46 @@ export default function AdminDashboardClient() {
 
       {/* Generate section */}
       <div className="glass rounded-2xl p-6 flex flex-col gap-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
           <div>
             <h2 className="text-base font-semibold text-[#f5f5f5]">Generate License Key</h2>
             <p className="text-xs text-[#a3a3a3] mt-0.5">Each key can be used by one user to activate their account.</p>
           </div>
-          <button
-            onClick={handleGenerate}
-            disabled={generating}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-[#1a1a1a]
-              bg-[#c9a227] hover:bg-[#ddb62d] disabled:opacity-50 disabled:cursor-not-allowed
-              transition-all duration-150 shadow-[0_4px_20px_rgba(201,162,39,0.25)]
-              hover:shadow-[0_4px_28px_rgba(201,162,39,0.35)] active:scale-[0.98] text-sm"
-          >
-            {generating ? (
-              <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-              </svg>
-            ) : (
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-              </svg>
-            )}
-            {generating ? "Generating…" : "Generate Key"}
-          </button>
+          <div className="flex items-center gap-2">
+            <div className="flex flex-col gap-1">
+              <label htmlFor="namespace-input" className="text-[10px] text-[#a3a3a3] font-medium uppercase tracking-wider">
+                Namespace
+              </label>
+              <input
+                id="namespace-input"
+                value={namespaceInput}
+                onChange={(e) => setNamespaceInput(e.target.value)}
+                placeholder="samsranks"
+                className="w-36 px-3 py-2 rounded-lg bg-[#262626] border border-[rgba(255,255,255,0.1)] text-[#f5f5f5]
+                  placeholder-[#6b6b6b] font-mono text-xs focus:outline-none focus:border-[#c9a227] transition-all"
+              />
+            </div>
+            <button
+              onClick={handleGenerate}
+              disabled={generating}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-[#1a1a1a]
+                bg-[#c9a227] hover:bg-[#ddb62d] disabled:opacity-50 disabled:cursor-not-allowed
+                transition-all duration-150 shadow-[0_4px_20px_rgba(201,162,39,0.25)]
+                hover:shadow-[0_4px_28px_rgba(201,162,39,0.35)] active:scale-[0.98] text-sm"
+            >
+              {generating ? (
+                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+              ) : (
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
+              )}
+              {generating ? "Generating…" : "Generate Key"}
+            </button>
+          </div>
         </div>
 
         {error && (
@@ -169,6 +190,7 @@ export default function AdminDashboardClient() {
               <thead>
                 <tr className="border-b border-[rgba(255,255,255,0.08)]">
                   <th className="text-left px-6 py-3 text-xs font-semibold text-[#a3a3a3] uppercase tracking-wider">Key</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-[#a3a3a3] uppercase tracking-wider">Namespace</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-[#a3a3a3] uppercase tracking-wider">Status</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-[#a3a3a3] uppercase tracking-wider hidden sm:table-cell">Created</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-[#a3a3a3] uppercase tracking-wider hidden md:table-cell">Used At</th>
@@ -185,6 +207,11 @@ export default function AdminDashboardClient() {
                   >
                     <td className="px-6 py-3.5">
                       <span className="font-mono text-xs text-[#f5f5f5] opacity-90 break-all">{k.key}</span>
+                    </td>
+                    <td className="px-4 py-3.5">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-[rgba(255,255,255,0.06)] text-[#a3a3a3] border border-[rgba(255,255,255,0.1)] font-mono">
+                        {k.namespace}
+                      </span>
                     </td>
                     <td className="px-4 py-3.5">
                       {k.used_by ? (

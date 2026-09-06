@@ -24,7 +24,7 @@ export async function GET() {
 
     const { data: keys, error } = await admin
       .from("license_keys")
-      .select("key, created_at, used_by, used_at, is_active")
+      .select("key, namespace, created_at, used_by, used_at, is_active")
       .order("created_at", { ascending: false })
 
     if (error) {
